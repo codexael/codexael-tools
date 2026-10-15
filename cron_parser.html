@@ -1,0 +1,1543 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Codexael Toolstack — Cron Parser</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+        <!-- Metadata -->
+        <meta name="description" content="See what a cron expression means in plain English, plus its next run times.">
+        <meta name="author" content="Codexael">
+        <meta name="theme-color" content="#fff4e0" media="(prefers-color-scheme: light)">
+        <meta name="theme-color" content="#17140f" media="(prefers-color-scheme: dark)">
+
+        <!-- Open Graph -->
+        <meta property="og:title" content="Codexael Toolstack — Cron Expression Parser">
+        <meta property="og:description" content="See what a cron expression means in plain English, plus its next run times.">
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="https://tools.codexael.com/cron_parser.html">
+        <meta property="og:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+        <meta property="og:image:width" content="1200">
+        <meta property="og:image:height" content="630">
+        <meta property="og:image:type" content="image/png">
+        <meta property="og:image:alt" content="Codexael Toolstack — Cron Expression Parser">
+        <meta property="og:site_name" content="Codexael Toolstack">
+
+        <!-- Twitter Card -->
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="Codexael Toolstack — Cron Expression Parser">
+        <meta name="twitter:description" content="See what a cron expression means in plain English, plus its next run times.">
+        <meta name="twitter:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+
+        <!-- Favicon / App Icon -->
+        <link rel="icon" type="image/svg+xml" href="assets/images/codexael_icon.svg">
+        <link rel="apple-touch-icon" href="assets/images/codexael_icon.svg">
+
+        <!-- Bootstrap 5.2.0-beta1 -->
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+
+        <!-- Bootstrap with Popper 5.2.0-beta1 -->
+        <script src="js/bootstrap.bundle.min.js"></script>
+
+        <!-- Bootstrap Icons 1.11.3 -->
+        <link rel="stylesheet" href="css/bootstrap-icons.min.css">
+
+        <!-- Google fonts -->
+        <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+        <!-- Custom CSS -->
+        <link rel="stylesheet" href="css/keycaps.css">
+
+        <style>
+            .cron-body {
+                padding: 24px 22px 28px !important;
+                display: flex;
+                flex-direction: column;
+                gap: 22px;
+                overflow-y: auto;
+                flex: 1;
+                min-height: 0;
+            }
+
+            /* Sections keep their full height, so a wrapped description never overlaps the next section. */
+            .cron-body > * {
+                flex-shrink: 0;
+            }
+
+            .cron-input-row {
+                display: flex;
+                gap: 14px 18px;
+                flex-wrap: wrap;
+                align-items: center;
+            }
+
+            /* The cron expression box is big and bold so the schedule reads at a glance. */
+            .cron-input-row .input-cyan {
+                flex: 1 1 260px;
+                min-width: 0;
+                margin: 0;
+                padding: 12px 16px;
+                border-width: 4px;
+                box-shadow: 3px 3px 0 var(--ink);
+                font: 700 1.35rem var(--mono-font);
+                letter-spacing: 0.04em;
+            }
+
+            .cron-input-row .input-cyan:focus {
+                box-shadow: 2px 2px 0 var(--ink);
+            }
+
+            .cron-input-row .input-cyan.is-invalid {
+                border-color: var(--red);
+                box-shadow: 3px 3px 0 var(--red);
+            }
+
+            .cron-input-row .segmented-control {
+                flex: 0 0 auto;
+            }
+
+            /* Both time zone buttons share one fixed width so they line up. */
+            .cron-input-row .segmented-control label {
+                flex: 0 0 84px;
+                width: 84px;
+                min-width: 0;
+            }
+
+            .cron-presets {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 12px 10px;
+            }
+
+            /* Preset and quick pick buttons are small keycaps that light up in a palette colour on hover. */
+            .cron-inline-btn {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                padding: 4px 10px;
+                background: var(--paper);
+                color: var(--ink);
+                border: 2.5px solid var(--ink);
+                border-radius: 9px;
+                box-shadow: 0 2px 0 var(--ink);
+                font-size: 0.75rem;
+                font-weight: 700;
+                white-space: nowrap;
+                transition: transform 0.08s, box-shadow 0.08s, background-color 0.12s;
+            }
+
+            .cron-inline-btn:hover {
+                background: var(--c, var(--yellow));
+                color: #111111;
+                transform: translateY(1px);
+                box-shadow: 0 1px 0 var(--ink);
+            }
+
+            .cron-inline-btn:active {
+                transform: translateY(2px);
+                box-shadow: 0 0 0 var(--ink);
+            }
+
+            .cron-presets .cron-inline-btn:nth-child(5n + 2) { --c: var(--pink); }
+            .cron-presets .cron-inline-btn:nth-child(5n + 3) { --c: var(--cyan); }
+            .cron-presets .cron-inline-btn:nth-child(5n + 4) { --c: var(--lilac); }
+            .cron-presets .cron-inline-btn:nth-child(5n + 5) { --c: var(--lime); }
+
+            /* Parse errors show as a red sticker under the input. */
+            .cron-status {
+                align-self: center;
+                max-width: 100%;
+                padding: 4px 12px;
+                font-size: 0.82rem;
+                font-weight: 700;
+                text-align: center;
+                overflow-wrap: anywhere;
+            }
+
+            .cron-status:empty {
+                display: none;
+            }
+
+            .cron-status.cron-error {
+                background: var(--red);
+                color: #111111;
+                border: 3px solid var(--ink);
+                box-shadow: 2px 2px 0 var(--ink);
+                transform: rotate(-1.5deg);
+            }
+
+            /* The plain English meaning sits on a tilted yellow sticker. */
+            .cron-description {
+                align-self: center;
+                max-width: min(100%, 760px);
+                padding: 8px 16px;
+                background: var(--yellow);
+                color: #111111;
+                border: 3px solid var(--ink);
+                box-shadow: 3px 3px 0 var(--ink);
+                font-size: 1.05rem;
+                font-weight: 700;
+                line-height: 1.5;
+                text-align: center;
+                overflow-wrap: anywhere;
+                transform: rotate(-1deg);
+            }
+
+            .cron-description:empty {
+                display: none;
+            }
+
+            .cron-sections {
+                display: flex;
+                gap: 26px 22px;
+                flex-wrap: wrap;
+                align-items: flex-start;
+            }
+
+            .cron-section {
+                flex: 1 1 340px;
+                min-width: 0;
+                display: flex;
+                flex-direction: column;
+            }
+
+            /* Section titles are dark labels, and above each receipt they become folder tabs. */
+            .cron-section-title {
+                align-self: flex-start;
+                padding: 3px 10px;
+                background: var(--ink);
+                color: var(--bg);
+                font-family: var(--display-font);
+                font-size: 0.85rem;
+                text-transform: uppercase;
+                overflow-wrap: anywhere;
+            }
+
+            .cron-section .cron-section-title {
+                position: relative;
+                z-index: 1;
+                max-width: 100%;
+                margin-bottom: -3px;
+                padding: 6px 14px 8px;
+                background: var(--c, var(--cyan));
+                color: #111111;
+                border: 3px solid var(--ink);
+                border-bottom: 0;
+                border-radius: 10px 10px 0 0;
+            }
+
+            .cron-section + .cron-section {
+                --c: var(--pink);
+            }
+
+            /* Field and run lists are drawn as receipts with dashed lines between rows. */
+            .cron-grid {
+                display: flex;
+                flex-direction: column;
+                padding: 8px 14px 12px;
+                background: var(--paper);
+                color: var(--ink);
+                border: 3px solid var(--ink);
+                box-shadow: 3px 3px 0 var(--ink);
+            }
+
+            .cron-section .cron-grid {
+                border-top: 3px solid var(--ink);
+            }
+
+            .cron-row {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 10px;
+                padding: 8px 0;
+                font-size: 0.82rem;
+            }
+
+            .cron-row + .cron-row {
+                border-top: 2px dashed var(--ink);
+            }
+
+            .cron-row-label {
+                flex-shrink: 0;
+                font-weight: 700;
+                text-transform: uppercase;
+            }
+
+            .cron-row-raw {
+                display: inline-block;
+                margin-left: 8px;
+                padding: 0 6px;
+                background: var(--lime);
+                color: #111111;
+                border: 2px solid var(--ink);
+                font-family: var(--mono-font);
+                text-transform: none;
+            }
+
+            .cron-row-value {
+                display: flex;
+                flex-wrap: wrap;
+                align-items: center;
+                justify-content: flex-end;
+                gap: 4px 8px;
+                min-width: 0;
+                font-family: var(--mono-font);
+                text-align: right;
+                overflow-wrap: anywhere;
+            }
+
+            .cron-row-hint {
+                padding: 0 5px;
+                background: var(--bg);
+                border: 2px dashed var(--ink);
+                font-size: 0.7rem;
+                font-weight: 700;
+                white-space: nowrap;
+            }
+
+            .cron-empty {
+                padding: 10px 0 6px;
+                font-size: 0.8rem;
+                font-weight: 700;
+                text-align: center;
+                text-transform: uppercase;
+            }
+
+            /* The per run copy button is a tiny keycap. */
+            .cron-copy-btn {
+                flex-shrink: 0;
+                width: 28px;
+                height: 28px;
+                display: grid;
+                place-items: center;
+                padding: 0;
+                background: var(--paper);
+                color: var(--ink);
+                border: 2px solid var(--ink);
+                border-radius: 7px;
+                box-shadow: 0 1.5px 0 var(--ink);
+                font-size: 0.78rem;
+                transition: transform 0.08s, box-shadow 0.08s, background-color 0.12s;
+            }
+
+            .cron-copy-btn:hover {
+                background: var(--yellow);
+                color: #111111;
+                transform: translateY(0.5px);
+                box-shadow: 0 1px 0 var(--ink);
+            }
+
+            .cron-copy-btn:active {
+                transform: translateY(1.5px);
+                box-shadow: 0 0 0 var(--ink);
+            }
+
+            .cron-builder-section {
+                display: flex;
+                flex-direction: column;
+                gap: 14px;
+            }
+
+            .cron-builder-head {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 10px;
+                flex-wrap: wrap;
+            }
+
+            .cron-builder {
+                display: flex;
+                gap: 22px 20px;
+                flex-wrap: wrap;
+                align-items: stretch;
+            }
+
+            /* Each builder card is a paper card with its own palette colour for the label and picked keys. */
+            .cron-build-field {
+                --c: var(--yellow);
+                flex: 1 1 340px;
+                min-width: 0;
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+                padding: 12px 14px 16px;
+                background: var(--paper);
+                color: var(--ink);
+                border: 3px solid var(--ink);
+                box-shadow: 2.5px 2.5px 0 var(--ink);
+            }
+
+            .cron-build-field:nth-child(6n + 1) { --c: var(--lilac); }
+            .cron-build-field:nth-child(6n + 3) { --c: var(--pink); }
+            .cron-build-field:nth-child(6n + 4) { --c: var(--cyan); }
+            .cron-build-field:nth-child(6n + 5) { --c: var(--orange); }
+            .cron-build-field:nth-child(6n + 6) { --c: var(--lime); }
+
+            .cron-build-field[hidden] {
+                display: none;
+            }
+
+            .cron-build-top {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 10px;
+                flex-wrap: wrap;
+            }
+
+            .cron-build-label {
+                padding: 2px 10px;
+                background: var(--c);
+                color: #111111;
+                border: 3px solid var(--ink);
+                box-shadow: 1.5px 1.5px 0 var(--ink);
+                font-family: var(--display-font);
+                font-size: 0.85rem;
+                text-transform: uppercase;
+                transform: rotate(-2deg);
+            }
+
+            .cron-build-field .segmented-control {
+                gap: 6px;
+                padding-bottom: 4px;
+                font-size: 0.68rem;
+            }
+
+            .cron-build-field .segmented-control label {
+                padding: 4px 8px;
+                border-width: 2.5px;
+                border-radius: 8px;
+                box-shadow: 0 2px 0 var(--ink);
+                white-space: nowrap;
+            }
+
+            .cron-build-field .segmented-control label:hover {
+                box-shadow: 0 1px 0 var(--ink);
+            }
+
+            .cron-build-field .segmented-control input[type="radio"]:checked + label {
+                background: var(--c);
+                transform: translateY(2px);
+                box-shadow: 0 0 0 var(--ink), inset 0 1.5px 0 rgba(0, 0, 0, 0.2);
+            }
+
+            /* Each card is a size container, so the mode switch adapts to the card width instead of the screen width. */
+            .cron-build-field {
+                container-type: inline-size;
+            }
+
+            /* On a medium card the switch fills its own row and the four modes share it equally. */
+            @container (max-width: 400px) {
+                .cron-build-field .segmented-control {
+                    width: 100%;
+                }
+
+                .cron-build-field .segmented-control label {
+                    flex: 1 1 0;
+                    min-width: 0;
+                    padding: 4px 4px;
+                }
+            }
+
+            /* On a narrow card the switch becomes a two by two grid, so no label is cut off. */
+            @container (max-width: 320px) {
+                .cron-build-field .segmented-control {
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    row-gap: 8px;
+                }
+            }
+
+            .cron-build-pane {
+                display: flex;
+                flex-wrap: wrap;
+                align-items: center;
+                gap: 10px 8px;
+                font-size: 0.8rem;
+                font-weight: 700;
+            }
+
+            .cron-build-stack {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .cron-build-pane[hidden] {
+                display: none;
+            }
+
+            .cron-build-pane .input-cyan {
+                width: 70px;
+                margin: 0;
+                padding: 5px 8px;
+                box-shadow: 1.5px 1.5px 0 var(--ink);
+                font-size: 0.82rem;
+            }
+
+            .cron-build-pane .input-cyan:focus {
+                box-shadow: 0.5px 0.5px 0 var(--ink);
+            }
+
+            /* Month and weekday choices use the shared custom dropdown, sized to fit inline. */
+            .cron-build-pane .cdrop {
+                width: 136px;
+                margin: 0;
+            }
+
+            .cron-build-pane .cdrop-trigger {
+                padding: 5px 10px;
+                border-radius: 9px;
+                box-shadow: 0 2px 0 var(--ink);
+                font-size: 0.8rem;
+            }
+
+            .cron-build-hint {
+                font-size: 0.75rem;
+                font-weight: 400;
+                font-style: italic;
+            }
+
+            .cron-chips {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 9px 6px;
+            }
+
+            /* Value chips are small keycaps that sink and fill with the card colour when picked. */
+            .cron-chip {
+                min-width: 36px;
+                height: 30px;
+                padding: 0 6px;
+                background: var(--paper);
+                color: var(--ink);
+                border: 2.5px solid var(--ink);
+                border-radius: 7px;
+                box-shadow: 0 1.5px 0 var(--ink);
+                font: 700 0.72rem var(--mono-font);
+                transition: transform 0.08s, box-shadow 0.08s, background-color 0.12s;
+            }
+
+            .cron-chip:hover {
+                transform: translateY(0.5px);
+                box-shadow: 0 1px 0 var(--ink);
+            }
+
+            .cron-chip.active,
+            .cron-chip.active:hover {
+                background: var(--c);
+                color: #111111;
+                transform: translateY(1.5px);
+                box-shadow: 0 0 0 var(--ink), inset 0 1.5px 0 rgba(0, 0, 0, 0.22);
+            }
+
+            @media (max-width: 576px) {
+                .cron-body {
+                    padding: 18px 14px 22px !important;
+                }
+
+                .cron-input-row .input-cyan {
+                    flex-basis: 100%;
+                    font-size: 1.1rem;
+                }
+
+                .cron-description {
+                    font-size: 0.92rem;
+                }
+
+                .cron-build-field {
+                    padding: 12px 10px 14px;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <!-- Common layout -->
+        <div id="navbar-container"></div>
+
+        <div class="container-fluid tool-wrapper">
+            <div class="row">
+                <div class="col-md-10 offset-md-1">
+                    <div class="editor-panel">
+                        <div class="editor-header">
+                            <span class="editor-title">Cron Parser</span>
+                            <div class="editor-actions">
+                                <button title="Copy all details" data-shortcut="copy" onclick="copyAllDetails(this)"><i class="bi bi-copy icon-btn"></i></button>
+                                <div class="divider"></div>
+                                <button class="btn-danger" title="Clear" data-undo-clear onclick="clearAll()"><i class="bi bi-x-lg icon-btn"></i></button>
+                            </div>
+                        </div>
+
+                        <div class="editor-body cron-body invisible-scrollbars">
+                            <div class="cron-input-row">
+                                <input type="text" class="input-cyan" id="cronInput" aria-label="Cron expression" placeholder="e.g. */15 9-17 * * MON-FRI or @daily" spellcheck="false" autocomplete="off" autocapitalize="off">
+                                <div class="segmented-control btn-group" role="group" aria-label="Time zone for next runs">
+                                    <input type="radio" name="cronZone" id="zoneLocal" value="local">
+                                    <label for="zoneLocal" id="zoneLocalLabel">Local</label>
+
+                                    <input type="radio" name="cronZone" id="zoneUtc" value="utc">
+                                    <label for="zoneUtc">UTC</label>
+                                </div>
+                            </div>
+
+                            <div class="cron-status" id="cronStatus" role="status" aria-live="polite"></div>
+                            <div class="cron-description" id="cronDescription"></div>
+
+                            <div class="cron-presets" id="cronPresets"></div>
+
+                            <div class="cron-builder-section">
+                                <div class="cron-builder-head">
+                                    <span class="cron-section-title">Builder</span>
+                                    <div class="chip-toggle">
+                                        <input type="checkbox" id="cronSeconds">
+                                        <label for="cronSeconds">Include seconds</label>
+                                    </div>
+                                </div>
+                                <div class="cron-builder" id="cronBuilder"></div>
+                            </div>
+
+                            <div class="cron-sections">
+                                <div class="cron-section">
+                                    <span class="cron-section-title">Fields</span>
+                                    <div class="cron-grid" id="fieldsGrid"></div>
+                                </div>
+                                <div class="cron-section">
+                                    <span class="cron-section-title" id="runsTitle">Next runs</span>
+                                    <div class="cron-grid" id="runsGrid"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <div id="footer-container"></div>
+
+        <!-- Common JS -->
+        <script src="js/tool-help.js"></script>
+        <script src="js/storage.js"></script>
+        <script src="js/common.js"></script>
+        <script src="js/script.js"></script>
+        <script src="js/custom-dropdown.js"></script>
+
+        <!-- Custom JS -->
+        <script>
+            const pageTitle = "Cron Parser";
+
+            const STORAGE_ZONE_KEY = "cron_timezone";
+            const NEXT_RUN_COUNT = 10;
+            // The search stops after this many years, so an expression that never matches cannot freeze the page.
+            const SEARCH_YEARS = 10;
+            const REFRESH_MS = 30000;
+
+            const cronInput = document.getElementById("cronInput");
+            const cronStatus = document.getElementById("cronStatus");
+            const cronDescription = document.getElementById("cronDescription");
+            const fieldsGrid = document.getElementById("fieldsGrid");
+            const runsGrid = document.getElementById("runsGrid");
+            const runsTitle = document.getElementById("runsTitle");
+
+            const LOCAL_ZONE = Intl.DateTimeFormat().resolvedOptions().timeZone || "Local";
+
+            const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+            // Each field lists its allowed numbers and, for months and weekdays, the names that stand for them.
+            const FIELDS = {
+                second: { label: "Second", unit: "second", min: 0, max: 59, allowed: "0-59" },
+                minute: { label: "Minute", unit: "minute", min: 0, max: 59, allowed: "0-59" },
+                hour: { label: "Hour", unit: "hour", min: 0, max: 23, allowed: "0-23" },
+                dayOfMonth: { label: "Day of month", unit: "day", min: 1, max: 31, allowed: "1-31" },
+                month: { label: "Month", unit: "month", min: 1, max: 12, allowed: "1-12 or JAN-DEC", names: ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"] },
+                dayOfWeek: { label: "Day of week", unit: "day", min: 0, max: 6, allowed: "0-7 or SUN-SAT", names: ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"] }
+            };
+
+            const FIVE_FIELD_KEYS = ["minute", "hour", "dayOfMonth", "month", "dayOfWeek"];
+
+            const MACROS = {
+                "@yearly": "0 0 1 1 *",
+                "@annually": "0 0 1 1 *",
+                "@monthly": "0 0 1 * *",
+                "@weekly": "0 0 * * 0",
+                "@daily": "0 0 * * *",
+                "@midnight": "0 0 * * *",
+                "@hourly": "0 * * * *"
+            };
+
+            const PRESETS = [
+                ["Every minute", "* * * * *"],
+                ["Every 5 minutes", "*/5 * * * *"],
+                ["Every hour", "0 * * * *"],
+                ["Daily at midnight", "0 0 * * *"],
+                ["Weekdays at 09:00", "0 9 * * MON-FRI"],
+                ["Every Sunday", "0 0 * * SUN"],
+                ["First of the month", "0 0 1 * *"],
+                ["Every quarter", "0 0 1 */3 *"],
+                ["Every 30 seconds", "*/30 * * * * *"],
+                ["Twice a day", "0 9,21 * * *"],
+                ["Work hours every 15 min", "*/15 9-17 * * MON-FRI"],
+                ["Weekends at 10:00", "0 10 * * SAT,SUN"],
+                ["Yearly", "@yearly"]
+            ];
+
+            const BUILDER_KEYS = ["second", ...FIVE_FIELD_KEYS];
+
+            const BUILDER_MODES = [["every", "Every"], ["step", "Every N"], ["range", "Range"], ["specific", "Specific"]];
+
+            // Each field starts with sensible values for the "Every N" and "Range" modes.
+            const BUILDER_DEFAULTS = {
+                second: { step: 10, rangeFrom: 0, rangeTo: 30 },
+                minute: { step: 5, rangeFrom: 0, rangeTo: 30 },
+                hour: { step: 2, rangeFrom: 9, rangeTo: 17 },
+                dayOfMonth: { step: 2, rangeFrom: 1, rangeTo: 15 },
+                month: { step: 3, rangeFrom: 1, rangeTo: 6 },
+                dayOfWeek: { step: 2, rangeFrom: 1, rangeTo: 5 }
+            };
+
+            // Quick picks select a common group of values in "Specific" mode.
+            const QUICK_PICKS = {
+                second: [["Every 15", [0, 15, 30, 45]]],
+                minute: [["Quarter hours", [0, 15, 30, 45]], ["Half hours", [0, 30]]],
+                hour: [["Work hours", [9, 10, 11, 12, 13, 14, 15, 16, 17]], ["Night", [22, 23, 0, 1, 2, 3, 4, 5]]],
+                dayOfMonth: [["1st and 15th", [1, 15]], ["First week", [1, 2, 3, 4, 5, 6, 7]]],
+                month: [["Quarter starts", [1, 4, 7, 10]], ["First half", [1, 2, 3, 4, 5, 6]]],
+                dayOfWeek: [["Weekdays", [1, 2, 3, 4, 5]], ["Weekends", [0, 6]]]
+            };
+
+            const builderSeconds = document.getElementById("cronSeconds");
+            // Holds the controls of each builder field, so the page can read and update them.
+            const builderControls = {};
+            let builderState = createBuilderState();
+
+            // Holds the last parsed schedule, or null when the input is empty or invalid.
+            let currentSchedule = null;
+            // Holds the text lines of the next runs, so Copy can use them.
+            let currentRuns = [];
+
+            function pad2(value) {
+                return String(value).padStart(2, "0");
+            }
+
+            function joinList(items) {
+                if (items.length <= 1) return items[0] || "";
+                return `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}`;
+            }
+
+            // Turns one number or name into the field's number, or throws when it is out of range.
+            function parseValue(text, key) {
+                const spec = FIELDS[key];
+                // Sunday may be written as 7 as well as 0.
+                const max = key === "dayOfWeek" ? 7 : spec.max;
+                if (/^\d+$/.test(text)) {
+                    const value = Number(text);
+                    if (value < spec.min || value > max) throw new Error(`${spec.label} value ${text} must be from ${spec.min} to ${max}`);
+                    return value;
+                }
+                const index = spec.names ? spec.names.indexOf(text.toUpperCase()) : -1;
+                if (index === -1) throw new Error(`${spec.label} value "${text}" is not valid`);
+                return key === "month" ? index + 1 : index;
+            }
+
+            // Reads one field such as "1-5", "*/15" or "MON,WED,FRI" into its parts and the set of values it matches.
+            function parseField(text, key) {
+                const spec = FIELDS[key];
+                if (/[LW#]/i.test(text.replace(/[A-Z]{3}/gi, name => (spec.names && spec.names.includes(name.toUpperCase()) ? "" : name)))) {
+                    throw new Error(`${spec.label}: L, W and # are Quartz extensions and are not supported`);
+                }
+
+                const max = key === "dayOfWeek" ? 7 : spec.max;
+                const parts = text.split(",").map(partText => {
+                    const pieces = partText.split("/");
+                    if (pieces.length > 2 || pieces[0] === "") throw new Error(`${spec.label}: "${partText}" is not valid`);
+                    const [rangeText, stepText] = pieces;
+
+                    let step = 1;
+                    if (stepText !== undefined) {
+                        if (!/^\d+$/.test(stepText) || Number(stepText) < 1 || Number(stepText) > max) {
+                            throw new Error(`${spec.label}: step "${stepText}" must be a number from 1 to ${max}`);
+                        }
+                        step = Number(stepText);
+                    }
+
+                    if (rangeText === "*" || rangeText === "?") {
+                        if (rangeText === "?" && key !== "dayOfMonth" && key !== "dayOfWeek") {
+                            throw new Error(`${spec.label}: "?" is only allowed in the day fields`);
+                        }
+                        return { kind: "all", start: spec.min, end: spec.max, step };
+                    }
+
+                    const bounds = rangeText.split("-");
+                    if (bounds.length > 2) throw new Error(`${spec.label}: "${partText}" is not valid`);
+                    if (bounds.length === 2) {
+                        const start = parseValue(bounds[0], key);
+                        const end = parseValue(bounds[1], key);
+                        if (start > end) throw new Error(`${spec.label}: range ${rangeText} goes backwards`);
+                        return { kind: "range", start, end, step };
+                    }
+
+                    const start = parseValue(rangeText, key);
+                    // A single value with a step, such as "5/15", runs from that value to the end of the field.
+                    if (stepText !== undefined) return { kind: "from", start, end: spec.max, step };
+                    return { kind: "single", start, end: start, step };
+                });
+
+                const values = new Set();
+                parts.forEach(part => {
+                    for (let value = part.start; value <= part.end; value += part.step) values.add(key === "dayOfWeek" && value === 7 ? 0 : value);
+                });
+
+                return {
+                    key,
+                    text,
+                    parts,
+                    values,
+                    // A wildcard field matches every value and needs no words in the description.
+                    wildcard: parts.length === 1 && parts[0].kind === "all" && parts[0].step === 1,
+                    // Classic cron treats a field that starts with "*" as unrestricted when it combines the two day fields.
+                    starred: text[0] === "*" || text[0] === "?"
+                };
+            }
+
+            // Reads a whole expression or macro into a schedule, or returns an error message.
+            function parseExpression(raw) {
+                let text = raw.trim().replace(/\s+/g, " ");
+                const lower = text.toLowerCase();
+                let macro = null;
+
+                if (lower === "@reboot") return { error: "@reboot runs once at start-up and has no time schedule" };
+                if (lower.startsWith("@")) {
+                    if (!MACROS[lower]) return { error: `Unknown macro "${text}", try @yearly, @monthly, @weekly, @daily or @hourly` };
+                    macro = lower;
+                    text = MACROS[lower];
+                }
+
+                const tokens = text.split(" ");
+                if (tokens.length !== 5 && tokens.length !== 6) {
+                    return { error: `Expected 5 fields, or 6 with seconds first, but found ${tokens.length}` };
+                }
+
+                const hasSeconds = tokens.length === 6;
+                const keys = hasSeconds ? ["second", ...FIVE_FIELD_KEYS] : FIVE_FIELD_KEYS;
+                const fields = {};
+                try {
+                    keys.forEach((key, i) => fields[key] = parseField(tokens[i], key));
+                    if (!hasSeconds) fields.second = parseField("0", "second");
+                } catch (error) {
+                    return { error: error.message };
+                }
+                return { macro, hasSeconds, fields, keys, expanded: tokens.join(" ") };
+            }
+
+            // Checks the two day fields together, where classic cron runs on either one when both are restricted.
+            function dayMatches(fields, day, weekday) {
+                const dom = fields.dayOfMonth;
+                const dow = fields.dayOfWeek;
+                const domHit = dom.values.has(day);
+                const dowHit = dow.values.has(weekday);
+                if (dom.starred || dow.starred) return domHit && dowHit;
+                return domHit || dowHit;
+            }
+
+            // Returns functions that read and build dates in either local time or UTC.
+            function clockFor(utc) {
+                if (utc) {
+                    return {
+                        read: d => ({ year: d.getUTCFullYear(), month: d.getUTCMonth() + 1, day: d.getUTCDate(), weekday: d.getUTCDay(), hour: d.getUTCHours(), minute: d.getUTCMinutes(), second: d.getUTCSeconds() }),
+                        make: (year, month, day, hour, minute, second) => new Date(Date.UTC(year, month - 1, day, hour, minute, second))
+                    };
+                }
+                return {
+                    read: d => ({ year: d.getFullYear(), month: d.getMonth() + 1, day: d.getDate(), weekday: d.getDay(), hour: d.getHours(), minute: d.getMinutes(), second: d.getSeconds() }),
+                    make: (year, month, day, hour, minute, second) => new Date(year, month - 1, day, hour, minute, second)
+                };
+            }
+
+            // Finds the next matching times after the start, skipping whole months, days, hours and minutes that cannot match.
+            function findNextRuns(schedule, start, count, utc) {
+                const clock = clockFor(utc);
+                const fields = schedule.fields;
+                const limit = start.getTime() + SEARCH_YEARS * 366 * 86400000;
+                const runs = [];
+                let time = new Date(Math.floor(start.getTime() / 1000) * 1000 + 1000);
+                let guard = 0;
+
+                while (runs.length < count && time.getTime() <= limit && guard++ < 200000) {
+                    const p = clock.read(time);
+                    let next;
+                    if (!fields.month.values.has(p.month)) next = clock.make(p.year, p.month + 1, 1, 0, 0, 0);
+                    else if (!dayMatches(fields, p.day, p.weekday)) next = clock.make(p.year, p.month, p.day + 1, 0, 0, 0);
+                    else if (!fields.hour.values.has(p.hour)) next = clock.make(p.year, p.month, p.day, p.hour + 1, 0, 0);
+                    else if (!fields.minute.values.has(p.minute)) next = clock.make(p.year, p.month, p.day, p.hour, p.minute + 1, 0);
+                    else if (!fields.second.values.has(p.second)) next = clock.make(p.year, p.month, p.day, p.hour, p.minute, p.second + 1);
+                    else {
+                        runs.push(time);
+                        next = new Date(time.getTime() + 1000);
+                    }
+                    // A daylight saving change can map a local time to an earlier moment, so time always moves forward.
+                    time = next.getTime() > time.getTime() ? next : new Date(time.getTime() + 1000);
+                }
+                return runs;
+            }
+
+            function formatFieldValue(value, key) {
+                if (key === "month") return MONTH_NAMES[value - 1];
+                if (key === "dayOfWeek") return DAY_NAMES[value % 7];
+                if (key === "hour") return `${pad2(value)}:00`;
+                return String(value);
+            }
+
+            // Describes one comma part of a field, such as "every 15 minutes" or "Monday through Friday".
+            function describePart(part, key) {
+                const spec = FIELDS[key];
+                const fmt = value => formatFieldValue(value, key);
+                if (part.kind === "single") return fmt(part.start);
+                if (part.step === 1) return part.kind === "all" ? `every ${spec.unit}` : `${fmt(part.start)} through ${fmt(part.end)}`;
+                const every = `every ${part.step} ${spec.unit}s`;
+                if (part.kind === "all") return every;
+                return `${every} from ${fmt(part.start)} through ${fmt(part.end)}`;
+            }
+
+            function hasOnlySteps(field) {
+                return field.parts.every(part => part.step !== 1);
+            }
+
+            function hasNoSteps(field) {
+                return field.parts.every(part => part.step === 1);
+            }
+
+            function describeParts(field) {
+                return joinList(field.parts.map(part => describePart(part, field.key)));
+            }
+
+            // Describes a second or minute field, such as "at minutes 0 and 30" or "every 5 minutes".
+            function describeClockField(field) {
+                const unit = FIELDS[field.key].unit;
+                if (field.wildcard) return `every ${unit}`;
+                if (hasNoSteps(field)) {
+                    const plural = field.parts.length > 1 || field.parts[0].kind !== "single";
+                    return `at ${unit}${plural ? "s" : ""} ${describeParts(field)}`;
+                }
+                // A list that mixes steps with plain values names the unit on each plain value.
+                return joinList(field.parts.map(part => {
+                    if (part.kind === "single") return `at ${unit} ${part.start}`;
+                    if (part.step === 1) return `at ${unit}s ${part.start} through ${part.end}`;
+                    return describePart(part, field.key);
+                }));
+            }
+
+            // Describes an hour field, using "between 09:00 and 17:59" for plain hours and ranges.
+            function describeHourField(field) {
+                if (hasNoSteps(field)) {
+                    return joinList(field.parts.map(part => `between ${pad2(part.start)}:00 and ${pad2(part.end)}:59`));
+                }
+                return describeParts(field);
+            }
+
+            // Builds a plain English sentence for the whole schedule.
+            function describeSchedule(schedule) {
+                const { fields, hasSeconds } = schedule;
+                const phrases = [];
+                const isFixed = field => field.parts.length === 1 && field.parts[0].kind === "single";
+                const isSingles = field => field.parts.every(part => part.kind === "single");
+
+                if (isFixed(fields.minute) && isFixed(fields.second) && isSingles(fields.hour)) {
+                    // Fixed clock times read best as "at 09:00 and 17:00".
+                    const minute = pad2(fields.minute.parts[0].start);
+                    const second = hasSeconds ? `:${pad2(fields.second.parts[0].start)}` : "";
+                    const hours = [...fields.hour.values].sort((a, b) => a - b);
+                    phrases.push(`at ${joinList(hours.map(hour => `${pad2(hour)}:${minute}${second}`))}`);
+                } else {
+                    // A seconds field fixed at 0 adds nothing, and any other seconds field already implies "every minute".
+                    const showSecond = hasSeconds && !(isFixed(fields.second) && fields.second.parts[0].start === 0);
+                    if (showSecond) {
+                        const secondText = describeClockField(fields.second);
+                        phrases.push(fields.minute.wildcard && isSingles(fields.second) ? `${secondText} past every minute` : secondText);
+                    }
+                    if (!showSecond && isFixed(fields.minute) && fields.minute.parts[0].start === 0 && fields.hour.wildcard) {
+                        phrases.push("every hour");
+                    } else if (!(showSecond && fields.minute.wildcard)) {
+                        const minuteText = describeClockField(fields.minute);
+                        phrases.push(fields.hour.wildcard && isSingles(fields.minute) ? `${minuteText} past every hour` : minuteText);
+                    }
+                    if (!fields.hour.wildcard) phrases.push(describeHourField(fields.hour));
+                }
+
+                const dom = fields.dayOfMonth;
+                const dow = fields.dayOfWeek;
+                const domText = dom.wildcard ? "" : (hasOnlySteps(dom) ? `${describeParts(dom)} of the month` : `on day${dom.values.size > 1 ? "s" : ""} ${describeParts(dom)} of the month`);
+                const dowText = dow.wildcard ? "" : (hasNoSteps(dow) ? `on ${describeParts(dow)}` : describeParts(dow));
+                if (domText && dowText && !dom.starred && !dow.starred) phrases.push(`${domText} or ${dowText}`);
+                else phrases.push(domText, dowText);
+
+                const month = fields.month;
+                if (!month.wildcard) phrases.push(hasNoSteps(month) ? `in ${describeParts(month)}` : describeParts(month));
+
+                const sentence = phrases.filter(Boolean).join(", ");
+                return sentence.charAt(0).toUpperCase() + sentence.slice(1);
+            }
+
+            // Lists the values a field matches, or says that it matches every value.
+            function describeFieldValues(field) {
+                if (field.wildcard) return `every ${FIELDS[field.key].unit}`;
+                const short = value => (field.key === "month" ? MONTH_NAMES[value - 1].slice(0, 3) : (field.key === "dayOfWeek" ? DAY_NAMES[value].slice(0, 3) : String(value)));
+                const sorted = [...field.values].sort((a, b) => a - b);
+                // A weekday list reads Monday first, so Sunday goes to the end.
+                if (field.key === "dayOfWeek" && sorted[0] === 0 && sorted.length > 1) sorted.push(sorted.shift());
+                return sorted.map(short).join(", ");
+            }
+
+            function isUtc() {
+                return document.getElementById("zoneUtc").checked;
+            }
+
+            function formatRun(date, utc, withSeconds) {
+                return new Intl.DateTimeFormat("en-GB", {
+                    weekday: "short",
+                    day: "2-digit",
+                    month: "short",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    second: withSeconds ? "2-digit" : undefined,
+                    hourCycle: "h23",
+                    timeZone: utc ? "UTC" : undefined
+                }).format(date);
+            }
+
+            // Shows how far away a time is, such as "in 3 hours".
+            function formatRelative(date, now) {
+                const seconds = Math.round((date.getTime() - now.getTime()) / 1000);
+                const units = [["year", 31536000], ["month", 2592000], ["day", 86400], ["hour", 3600], ["minute", 60], ["second", 1]];
+                const [unit, size] = units.find(([, size]) => Math.abs(seconds) >= size) || units[units.length - 1];
+                return new Intl.RelativeTimeFormat("en", { numeric: "auto" }).format(Math.round(seconds / size), unit);
+            }
+
+            // Adds one label and value row to a grid, with an optional hint and copy button.
+            function addRow(grid, label, value, options = {}) {
+                const row = document.createElement("div");
+                row.className = "cron-row";
+
+                const labelEl = document.createElement("span");
+                labelEl.className = "cron-row-label";
+                labelEl.textContent = label;
+                if (options.raw) {
+                    const rawEl = document.createElement("span");
+                    rawEl.className = "cron-row-raw";
+                    rawEl.textContent = options.raw;
+                    labelEl.appendChild(rawEl);
+                }
+
+                const valueEl = document.createElement("span");
+                valueEl.className = "cron-row-value";
+
+                const textEl = document.createElement("span");
+                textEl.textContent = value;
+                valueEl.appendChild(textEl);
+
+                if (options.hint) {
+                    const hintEl = document.createElement("span");
+                    hintEl.className = "cron-row-hint";
+                    hintEl.textContent = options.hint;
+                    valueEl.appendChild(hintEl);
+                }
+
+                if (options.copy) {
+                    const copyBtn = document.createElement("button");
+                    copyBtn.className = "cron-copy-btn";
+                    copyBtn.title = "Copy this time";
+                    copyBtn.innerHTML = '<i class="bi bi-copy icon-btn"></i>';
+                    copyBtn.addEventListener("click", () => copyText(value, copyBtn));
+                    valueEl.appendChild(copyBtn);
+                }
+
+                row.append(labelEl, valueEl);
+                grid.appendChild(row);
+            }
+
+            function showEmpty(grid, message) {
+                grid.innerHTML = "";
+                const empty = document.createElement("div");
+                empty.className = "cron-empty";
+                empty.textContent = message;
+                grid.appendChild(empty);
+            }
+
+            function setStatus(message, isError = false) {
+                cronStatus.textContent = message;
+                cronStatus.classList.toggle("cron-error", isError);
+            }
+
+            function renderFields(schedule) {
+                fieldsGrid.innerHTML = "";
+                if (schedule.macro) addRow(fieldsGrid, "Macro", schedule.expanded, { raw: schedule.macro });
+                schedule.keys.forEach(key => {
+                    const field = schedule.fields[key];
+                    addRow(fieldsGrid, FIELDS[key].label, describeFieldValues(field), { raw: field.text });
+                });
+            }
+
+            function renderRuns() {
+                const utc = isUtc();
+                runsTitle.textContent = `Next runs (${utc ? "UTC" : LOCAL_ZONE})`;
+                currentRuns = [];
+                if (!currentSchedule) {
+                    showEmpty(runsGrid, "Enter a cron expression to see when it runs next");
+                    return;
+                }
+
+                const now = new Date();
+                const runs = findNextRuns(currentSchedule, now, NEXT_RUN_COUNT, utc);
+                if (!runs.length) {
+                    showEmpty(runsGrid, `No run in the next ${SEARCH_YEARS} years, so this date may not exist`);
+                    return;
+                }
+
+                runsGrid.innerHTML = "";
+                runs.forEach((run, i) => {
+                    const text = formatRun(run, utc, currentSchedule.hasSeconds);
+                    currentRuns.push(text);
+                    addRow(runsGrid, `${i + 1}.`, text, { hint: formatRelative(run, now), copy: true });
+                });
+            }
+
+            // Rebuilds the description, field list and next runs from the current input, and loads the builder unless the builder made the change.
+            function analyze(options = {}) {
+                const fromBuilder = options.fromBuilder === true;
+                const raw = cronInput.value;
+                currentSchedule = null;
+                cronInput.classList.remove("is-invalid");
+
+                if (!raw.trim()) {
+                    setStatus("");
+                    cronDescription.textContent = "";
+                    showEmpty(fieldsGrid, "Enter a cron expression or pick an example above");
+                    if (!fromBuilder) resetBuilderModes();
+                } else {
+                    const parsed = parseExpression(raw);
+                    if (parsed.error) {
+                        setStatus(parsed.error, true);
+                        cronInput.classList.add("is-invalid");
+                        cronDescription.textContent = "";
+                        showEmpty(fieldsGrid, "No details for an invalid expression");
+                    } else {
+                        setStatus("");
+                        currentSchedule = parsed;
+                        cronDescription.textContent = describeSchedule(parsed);
+                        renderFields(parsed);
+                        if (!fromBuilder) loadBuilder(parsed);
+                    }
+                }
+                renderRuns();
+                if (!fromBuilder) syncBuilderUI();
+            }
+
+            // Returns a fresh builder where every field matches every value.
+            function createBuilderState() {
+                const fields = {};
+                BUILDER_KEYS.forEach(key => {
+                    const defaults = BUILDER_DEFAULTS[key];
+                    fields[key] = {
+                        mode: "every",
+                        step: defaults.step,
+                        stepStart: FIELDS[key].min,
+                        rangeFrom: defaults.rangeFrom,
+                        rangeTo: defaults.rangeTo,
+                        rangeStep: 1,
+                        values: new Set()
+                    };
+                });
+                return { seconds: false, fields };
+            }
+
+            // Sets every field back to "Every" but keeps the numbers, so Undo Clear finds the number boxes unchanged.
+            function resetBuilderModes() {
+                builderState.seconds = false;
+                BUILDER_KEYS.forEach(key => {
+                    builderState.fields[key].mode = "every";
+                    builderState.fields[key].values = new Set();
+                });
+            }
+
+            // Returns the largest step a field allows, which matches what the parser accepts.
+            function maxStep(key) {
+                return key === "dayOfWeek" ? 7 : FIELDS[key].max;
+            }
+
+            // Writes one value as cron text, using names for months and weekdays.
+            function valueToken(key, value) {
+                const names = FIELDS[key].names;
+                if (!names) return String(value);
+                return key === "month" ? names[value - 1] : names[value];
+            }
+
+            function chipLabel(key, value) {
+                if (key === "month") return MONTH_NAMES[value - 1].slice(0, 3);
+                if (key === "dayOfWeek") return DAY_NAMES[value].slice(0, 3);
+                return String(value);
+            }
+
+            // Lists the values a field can take, with Monday first for weekdays.
+            function fieldValues(key) {
+                if (key === "dayOfWeek") return [1, 2, 3, 4, 5, 6, 0];
+                const { min, max } = FIELDS[key];
+                return Array.from({ length: max - min + 1 }, (_, i) => min + i);
+            }
+
+            // Writes picked values as short cron text, turning runs of three or more into ranges.
+            function compressValues(key, values) {
+                const sorted = [...values].sort((a, b) => a - b);
+                const parts = [];
+                for (let i = 0; i < sorted.length;) {
+                    let j = i;
+                    while (j + 1 < sorted.length && sorted[j + 1] === sorted[j] + 1) j++;
+                    if (j - i >= 2) parts.push(`${valueToken(key, sorted[i])}-${valueToken(key, sorted[j])}`);
+                    else for (let k = i; k <= j; k++) parts.push(valueToken(key, sorted[k]));
+                    i = j + 1;
+                }
+                return parts.join(",");
+            }
+
+            // Builds the cron text for one field from its builder settings.
+            function buildFieldText(key) {
+                const state = builderState.fields[key];
+                const spec = FIELDS[key];
+                if (state.mode === "step") return state.stepStart === spec.min ? `*/${state.step}` : `${state.stepStart}/${state.step}`;
+                if (state.mode === "range") {
+                    const range = `${valueToken(key, state.rangeFrom)}-${valueToken(key, state.rangeTo)}`;
+                    return state.rangeStep > 1 ? `${range}/${state.rangeStep}` : range;
+                }
+                if (state.mode === "specific") {
+                    // No pick, or every pick, means the same as "*".
+                    if (!state.values.size || state.values.size === spec.max - spec.min + 1) return "*";
+                    return compressValues(key, state.values);
+                }
+                return "*";
+            }
+
+            function buildExpression() {
+                const keys = builderState.seconds ? BUILDER_KEYS : FIVE_FIELD_KEYS;
+                return keys.map(buildFieldText).join(" ");
+            }
+
+            // Copies a parsed field into the builder, using the simplest mode that shows it exactly.
+            function loadBuilderField(key, field) {
+                const state = builderState.fields[key];
+                const spec = FIELDS[key];
+                const part = field.parts[0];
+
+                if (field.wildcard) {
+                    state.mode = "every";
+                } else if (field.parts.length === 1 && part.kind === "all") {
+                    Object.assign(state, { mode: "step", step: part.step, stepStart: spec.min });
+                } else if (field.parts.length === 1 && part.kind === "from") {
+                    Object.assign(state, { mode: "step", step: part.step, stepStart: part.start });
+                } else if (field.parts.length === 1 && part.kind === "range" && part.end <= spec.max) {
+                    // A weekday range that ends on 7 has no matching choice in the list, so it falls through to "Specific".
+                    Object.assign(state, { mode: "range", rangeFrom: part.start, rangeTo: part.end, rangeStep: part.step });
+                } else {
+                    Object.assign(state, { mode: "specific", values: new Set(field.values) });
+                }
+            }
+
+            // Copies a whole parsed schedule into the builder.
+            function loadBuilder(schedule) {
+                builderState.seconds = schedule.hasSeconds;
+                schedule.keys.forEach(key => loadBuilderField(key, schedule.fields[key]));
+                // Fields missing from a 5-field expression go back to "Every".
+                if (!schedule.hasSeconds) builderState.fields.second.mode = "every";
+            }
+
+            // Writes the builder result into the input and refreshes the page without reloading the builder.
+            function applyBuilder() {
+                cronInput.value = buildExpression();
+                analyze({ fromBuilder: true });
+                syncBuilderUI();
+            }
+
+            // Reads a number control, and returns null while it is empty or out of range.
+            function readNumber(control, min, max) {
+                if (control.value === "") return null;
+                const value = Number(control.value);
+                return Number.isInteger(value) && value >= min && value <= max ? value : null;
+            }
+
+            // Makes a number box, or a list of names for months and weekdays.
+            function makeValueControl(key, label) {
+                let control;
+                if (FIELDS[key].names) {
+                    control = document.createElement("select");
+                    fieldValues(key).forEach(value => {
+                        const option = document.createElement("option");
+                        option.value = value;
+                        option.textContent = key === "month" ? MONTH_NAMES[value - 1] : DAY_NAMES[value];
+                        control.appendChild(option);
+                    });
+                } else {
+                    control = document.createElement("input");
+                    control.type = "number";
+                    control.min = FIELDS[key].min;
+                    control.max = FIELDS[key].max;
+                }
+                control.className = "input-cyan";
+                control.setAttribute("aria-label", `${FIELDS[key].label} ${label}`);
+                return control;
+            }
+
+            function makeStepControl(key, label) {
+                const control = document.createElement("input");
+                control.type = "number";
+                control.min = 1;
+                control.max = maxStep(key);
+                control.className = "input-cyan";
+                control.setAttribute("aria-label", `${FIELDS[key].label} ${label}`);
+                return control;
+            }
+
+            function makeText(text, className) {
+                const span = document.createElement("span");
+                if (className) span.className = className;
+                span.textContent = text;
+                return span;
+            }
+
+            // Builds the card for one field with its mode switch and the controls for each mode.
+            function renderBuilderField(key) {
+                const spec = FIELDS[key];
+                const plural = `${spec.unit}s`;
+                const controls = { radios: {}, panes: {}, chips: new Map() };
+
+                const card = document.createElement("div");
+                card.className = "cron-build-field";
+
+                const top = document.createElement("div");
+                top.className = "cron-build-top";
+                top.appendChild(makeText(spec.label, "cron-build-label"));
+
+                const modes = document.createElement("div");
+                modes.className = "segmented-control btn-group";
+                modes.setAttribute("role", "group");
+                modes.setAttribute("aria-label", `${spec.label} mode`);
+                BUILDER_MODES.forEach(([mode, label]) => {
+                    const id = `build-${key}-${mode}`;
+                    const radio = document.createElement("input");
+                    radio.type = "radio";
+                    radio.name = `build-${key}`;
+                    radio.id = id;
+                    radio.value = mode;
+                    const radioLabel = document.createElement("label");
+                    radioLabel.htmlFor = id;
+                    radioLabel.textContent = label;
+                    radio.addEventListener("change", () => {
+                        const state = builderState.fields[key];
+                        state.mode = mode;
+                        if (mode === "specific") {
+                            // The chips start from what the field matches now, or from one value so the field does not silently mean "every".
+                            const current = currentSchedule && currentSchedule.keys.includes(key) ? currentSchedule.fields[key] : null;
+                            if (current && !current.wildcard) state.values = new Set(current.values);
+                            else if (!state.values.size) state.values.add(key === "dayOfWeek" ? 1 : spec.min);
+                        }
+                        applyBuilder();
+                    });
+                    controls.radios[mode] = radio;
+                    modes.append(radio, radioLabel);
+                });
+                top.appendChild(modes);
+                card.appendChild(top);
+
+                const everyPane = document.createElement("div");
+                everyPane.className = "cron-build-pane";
+                everyPane.appendChild(makeText(`Matches every ${spec.unit}`, "cron-build-hint"));
+
+                const stepPane = document.createElement("div");
+                stepPane.className = "cron-build-pane";
+                controls.step = makeStepControl(key, "step");
+                controls.stepStart = makeValueControl(key, "start");
+                stepPane.append(makeText("Every"), controls.step, makeText(`${plural}, starting at`), controls.stepStart);
+
+                const rangePane = document.createElement("div");
+                rangePane.className = "cron-build-pane";
+                controls.rangeFrom = makeValueControl(key, "range start");
+                controls.rangeTo = makeValueControl(key, "range end");
+                controls.rangeStep = makeStepControl(key, "range step");
+                rangePane.append(makeText("From"), controls.rangeFrom, makeText("to"), controls.rangeTo, makeText(", every"), controls.rangeStep, makeText(plural));
+
+                const specificPane = document.createElement("div");
+                specificPane.className = "cron-build-pane cron-build-stack";
+                const picks = document.createElement("div");
+                picks.className = "cron-chips";
+                const pickButton = (label, values) => {
+                    const btn = document.createElement("button");
+                    btn.className = "cron-inline-btn";
+                    btn.textContent = label;
+                    btn.addEventListener("click", () => {
+                        builderState.fields[key].values = new Set(values);
+                        applyBuilder();
+                    });
+                    picks.appendChild(btn);
+                };
+                pickButton("All", fieldValues(key));
+                pickButton("None", []);
+                (QUICK_PICKS[key] || []).forEach(([label, values]) => pickButton(label, values));
+
+                const chips = document.createElement("div");
+                chips.className = "cron-chips";
+                fieldValues(key).forEach(value => {
+                    const chip = document.createElement("button");
+                    chip.className = "cron-chip";
+                    chip.textContent = chipLabel(key, value);
+                    chip.title = formatFieldValue(value, key);
+                    chip.addEventListener("click", () => {
+                        const values = builderState.fields[key].values;
+                        if (values.has(value)) values.delete(value);
+                        else values.add(value);
+                        applyBuilder();
+                    });
+                    controls.chips.set(value, chip);
+                    chips.appendChild(chip);
+                });
+                controls.noneHint = makeText(`Nothing picked, so it matches every ${spec.unit}`, "cron-build-hint");
+                specificPane.append(picks, chips, controls.noneHint);
+
+                controls.panes = { every: everyPane, step: stepPane, range: rangePane, specific: specificPane };
+                card.append(everyPane, stepPane, rangePane, specificPane);
+
+                // Each change is used as soon as it is valid, and a bad number is put back when the box loses focus.
+                const bind = (control, prop, min, max) => {
+                    const apply = () => {
+                        const value = readNumber(control, min, max);
+                        if (value === null) return false;
+                        if (builderState.fields[key][prop] !== value) {
+                            builderState.fields[key][prop] = value;
+                            applyBuilder();
+                        }
+                        return true;
+                    };
+                    control.addEventListener("input", apply);
+                    control.addEventListener("change", () => {
+                        if (!apply()) control.value = builderState.fields[key][prop];
+                    });
+                };
+                bind(controls.step, "step", 1, maxStep(key));
+                bind(controls.stepStart, "stepStart", spec.min, spec.max);
+                bind(controls.rangeFrom, "rangeFrom", spec.min, spec.max);
+                bind(controls.rangeTo, "rangeTo", spec.min, spec.max);
+                bind(controls.rangeStep, "rangeStep", 1, maxStep(key));
+
+                // The dropdowns are enhanced after they are in the card, because the wrapper is placed next to each select.
+                if (spec.names) [controls.stepStart, controls.rangeFrom, controls.rangeTo].forEach(select => CustomDropdown.enhance(select));
+
+                controls.card = card;
+                builderControls[key] = controls;
+                return card;
+            }
+
+            function renderBuilder() {
+                const container = document.getElementById("cronBuilder");
+                BUILDER_KEYS.forEach(key => container.appendChild(renderBuilderField(key)));
+                builderSeconds.addEventListener("change", () => {
+                    builderState.seconds = builderSeconds.checked;
+                    // Seconds start at 0, so turning them on keeps the same schedule.
+                    const second = builderState.fields.second;
+                    if (builderState.seconds && second.mode === "every") Object.assign(second, { mode: "specific", values: new Set([0]) });
+                    applyBuilder();
+                });
+            }
+
+            // Shows the builder state in its controls, leaving alone the box the user is typing in.
+            function syncBuilderUI() {
+                builderSeconds.checked = builderState.seconds;
+                BUILDER_KEYS.forEach(key => {
+                    const state = builderState.fields[key];
+                    const controls = builderControls[key];
+                    controls.card.hidden = key === "second" && !builderState.seconds;
+                    controls.radios[state.mode].checked = true;
+                    Object.entries(controls.panes).forEach(([mode, pane]) => pane.hidden = mode !== state.mode);
+                    ["step", "stepStart", "rangeFrom", "rangeTo", "rangeStep"].forEach(prop => {
+                        const control = controls[prop];
+                        if (document.activeElement === control || control.value === String(state[prop])) return;
+                        control.value = state[prop];
+                        if (control.tagName === "SELECT") CustomDropdown.refresh(control);
+                    });
+                    controls.chips.forEach((chip, value) => {
+                        const active = state.values.has(value);
+                        chip.classList.toggle("active", active);
+                        chip.setAttribute("aria-pressed", active ? "true" : "false");
+                    });
+                    controls.noneHint.hidden = state.values.size > 0;
+                });
+            }
+
+            function renderPresets() {
+                const container = document.getElementById("cronPresets");
+                PRESETS.forEach(([label, expression]) => {
+                    const btn = document.createElement("button");
+                    btn.className = "cron-inline-btn";
+                    btn.title = expression;
+                    btn.textContent = label;
+                    btn.addEventListener("click", () => {
+                        cronInput.value = expression;
+                        analyze();
+                        cronInput.focus();
+                    });
+                    container.appendChild(btn);
+                });
+            }
+
+            function copyText(text, btn) {
+                if (isBlank(text, "Nothing to copy")) return;
+                navigator.clipboard.writeText(text).then(() => {
+                    showSuccessToast("Copied to clipboard");
+                    if (btn) {
+                        const icon = btn.querySelector("i");
+                        const original = icon.className;
+                        icon.className = "bi bi-check-lg";
+                        setTimeout(() => icon.className = original, 1000);
+                    }
+                });
+            }
+
+            // Copies the expression, its description, each field and the next runs as plain text.
+            function copyAllDetails(btn) {
+                if (!currentSchedule) {
+                    copyText("", btn);
+                    return;
+                }
+                const lines = [`Expression: ${cronInput.value.trim()}`, `Description: ${cronDescription.textContent}`, "", "Fields"];
+                if (currentSchedule.macro) lines.push(`Macro: ${currentSchedule.expanded}`);
+                currentSchedule.keys.forEach(key => {
+                    const field = currentSchedule.fields[key];
+                    lines.push(`${FIELDS[key].label} (${field.text}): ${describeFieldValues(field)}`);
+                });
+                if (currentRuns.length) lines.push("", runsTitle.textContent, ...currentRuns.map((run, i) => `${i + 1}. ${run}`));
+                copyText(lines.join("\n"), btn);
+            }
+
+            function clearAll() {
+                cronInput.value = "";
+                analyze();
+            }
+
+            function onZoneChange() {
+                setStorageString(STORAGE_ZONE_KEY, isUtc() ? "utc" : "local");
+                renderRuns();
+            }
+
+            document.getElementById("zoneLocalLabel").title = LOCAL_ZONE;
+            document.getElementById(getStorageString(STORAGE_ZONE_KEY, "local") === "utc" ? "zoneUtc" : "zoneLocal").checked = true;
+            document.querySelectorAll('input[name="cronZone"]').forEach(radio => radio.addEventListener("change", onZoneChange));
+            cronInput.addEventListener("input", () => analyze());
+
+            renderPresets();
+            renderBuilder();
+            analyze();
+
+            // Keeps the "in 3 minutes" hints and the run list current while the page stays open.
+            setInterval(() => {
+                if (currentSchedule && !document.hidden) renderRuns();
+            }, REFRESH_MS);
+        </script>
+    </body>
+</html>

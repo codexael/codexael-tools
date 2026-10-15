@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Codexael Toolstack — Hash Calculator</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+        <!-- Metadata -->
+        <meta name="description" content="Generate MD5, SHA and HMAC hashes from any text in seconds.">
+        <meta name="author" content="Codexael">
+        <meta name="theme-color" content="#fff4e0" media="(prefers-color-scheme: light)">
+        <meta name="theme-color" content="#17140f" media="(prefers-color-scheme: dark)">
+
+        <!-- Open Graph -->
+        <meta property="og:title" content="Codexael Toolstack — Hash Calculator: MD5, SHA & HMAC">
+        <meta property="og:description" content="Generate MD5, SHA and HMAC hashes from any text in seconds.">
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="https://tools.codexael.com/hash_calculator.html">
+        <meta property="og:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+        <meta property="og:image:width" content="1200">
+        <meta property="og:image:height" content="630">
+        <meta property="og:image:type" content="image/png">
+        <meta property="og:image:alt" content="Codexael Toolstack — Hash Calculator: MD5, SHA & HMAC">
+        <meta property="og:site_name" content="Codexael Toolstack">
+
+        <!-- Twitter Card -->
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="Codexael Toolstack — Hash Calculator: MD5, SHA & HMAC">
+        <meta name="twitter:description" content="Generate MD5, SHA and HMAC hashes from any text in seconds.">
+        <meta name="twitter:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+
+        <!-- Favicon / App Icon -->
+        <link rel="icon" type="image/svg+xml" href="assets/images/codexael_icon.svg">
+        <link rel="apple-touch-icon" href="assets/images/codexael_icon.svg">
+
+        <!-- Bootstrap 5.2.0-beta1 -->
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+
+        <!-- Bootstrap with Popper 5.2.0-beta1 -->
+        <script src="js/bootstrap.bundle.min.js"></script>
+
+        <!-- Crypto 4.2.0 -->
+        <script src="js/crypto-js.min.js"></script>
+
+        <!-- Bootstrap Icons 1.11.3 -->
+        <link rel="stylesheet" href="css/bootstrap-icons.min.css">
+
+        <!-- CodeMirror 5.65.21 -->
+        <link rel="stylesheet" href="css/codemirror/codemirror.css">
+
+        <!-- Google fonts -->
+        <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+        <!-- Custom CSS -->
+        <link rel="stylesheet" href="css/find-replace.css">
+        <link rel="stylesheet" href="css/keycaps.css">
+    </head>
+    <body>
+        <!-- Common layout -->
+        <div id="navbar-container"></div>
+
+        <div class="container-fluid tool-wrapper">
+            <div class="row g-3 g-md-0 gx-md-3 gx-0">
+
+                <!-- Left Editor -->
+                <div id="inputEditor" class="col-md-5 editor-panel">
+                    <div class="editor-header">
+                        <span class="editor-title">Input</span>
+                        <div class="editor-actions">
+                            <button title="Download" onclick="downloadData('hash_calculator.txt')"><i class="bi bi-download icon-btn"></i></button>
+                            <button title="Print" onclick="printData({ title: pageTitle })"><i class="bi bi-printer icon-btn"></i></button>
+                            <div class="divider"></div>
+                            <button class="btn-danger" title="Clear" data-undo-clear onclick="clearHashInputs()"><i class="bi bi-x-lg icon-btn"></i></button>
+                            <button title="Copy" onclick="copyToClipboard(codeMirrorInput, 'copyInputEditor')"><i class="bi bi-copy icon-btn" id="copyInputEditor"></i></button>
+                            <button title="Fullscreen" onclick="toggleEditorFullScreen('inputEditor')"><i class="bi bi-arrows-fullscreen icon-btn"></i></button>
+                        </div>
+                    </div>
+
+                    <textarea class="editor-body" id="input" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"></textarea>
+
+                    <div class="editor-footer">
+                        <div class="status">
+                            <span>Ln <b id="inputCurrentLine">1</b></span>
+                            <span>Col <b id="inputCurrentColumn">1</b></span>
+                            <span>Lines <b id="inputTotalLines">1</b></span>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Center Actions -->
+                <div class="col-md-2 center-col action-panel text-center invisible-scrollbars">
+                    <div class="center-actions-wrapper">
+                        <button class="btn action-btn-ghost" onclick="openFilePicker()"><i class="bi bi-upload"></i> Upload Data</button>
+                        <input type="file" id="fileInput" accept="*" hidden onchange="handleFileSelect(event)">
+                    </div>
+                    <div class="center-actions-wrapper overflow-hidden">
+                        <div class="center-actions-label">Output Format</div>
+                        <div class="segmented-control btn-group full-width" role="group" aria-label="Radio toggle">
+                            <input type="radio" name="output_format" id="hex" value="hex">
+                            <label for="hex">Hex</label>
+
+                            <input type="radio" name="output_format" id="base64" value="base64">
+                            <label for="base64">Base64</label>
+                        </div>
+                    </div>
+                    <div class="center-actions-wrapper">
+                        <div class="center-actions-label">Algorithms</div>
+                        <div class="chip-group">
+                            <div class="chip-toggle">
+                                <input class="algorithm-checkbox" type="checkbox" id="md5" checked>
+                                <label for="md5">MD5</label>
+                            </div>
+                            <div class="chip-toggle">
+                                <input class="algorithm-checkbox" type="checkbox" id="sha1" checked>
+                                <label for="sha1">SHA-1</label>
+                            </div>
+                            <div class="chip-toggle">
+                                <input class="algorithm-checkbox" type="checkbox" id="sha256" checked>
+                                <label for="sha256">SHA-256</label>
+                            </div>
+                            <div class="chip-toggle">
+                                <input class="algorithm-checkbox" type="checkbox" id="sha512" checked>
+                                <label for="sha512">SHA-512</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="center-actions-wrapper">
+                        <div class="center-actions-label">HMAC</div>
+                        <div class="chk-card">
+                            <input type="checkbox" id="hmacMode">
+                            <div class="chk-card-text">
+                                <label for="hmacMode">Mode</label>
+                                <small>Requires a secret key below</small>
+                            </div>
+                        </div>
+                        <div class="input-secret-wrap">
+                            <input type="password" id="secretkey" class="input-cyan" title="Secret key..." placeholder="Secret key..." oninput="generateHash()">
+                            <button class="toggle-visibility" type="button" title="Show/Hide"><i class="bi bi-eye"></i></button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Editor -->
+                <div id="outputEditor" class="col-md-5 editor-panel">
+                    <div class="editor-header">
+                        <span class="editor-title">Output</span>
+                        <div class="editor-actions">
+                            <button title="Download" onclick="downloadData('hash_calculator.txt', false)"><i class="bi bi-download icon-btn"></i></button>
+                            <button title="Print" onclick="printData({ title: pageTitle, isInput: false })"><i class="bi bi-printer icon-btn"></i></button>
+                            <div class="divider"></div>
+                            <button class="btn-danger" title="Clear" data-undo-clear="Output cleared" onclick="clearInput(codeMirrorOutput)"><i class="bi bi-x-lg icon-btn"></i></button>
+                            <button title="Copy" data-shortcut="copy" onclick="copyToClipboard(codeMirrorOutput, 'copyOutputEditor')"><i class="bi bi-copy icon-btn" id="copyOutputEditor"></i></button>
+                            <button title="Fullscreen" onclick="toggleEditorFullScreen('outputEditor')"><i class="bi bi-arrows-fullscreen icon-btn"></i></button>
+                        </div>
+                    </div>
+
+                    <textarea class="editor-body" id="output" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"></textarea>
+
+                    <div class="editor-footer">
+                        <div class="status">
+                            <span>Ln <b id="outputCurrentLine">1</b></span>
+                            <span>Col <b id="outputCurrentColumn">1</b></span>
+                            <span>Lines <b id="outputTotalLines">1</b></span>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+
+        <!-- CodeMirror 5.65.21 -->
+        <script src="js/codemirror/codemirror.js"></script>
+        <script src="js/codemirror/active-line.js"></script>
+
+        <div id="footer-container"></div>
+
+        <!-- Common JS -->
+        <script src="js/tool-help.js"></script>
+        <script src="js/storage.js"></script>
+        <script src="js/common.js"></script>
+        <script src="js/custom-input.js"></script>
+        <script src="js/script.js"></script>
+        <script src="js/find-replace.js"></script>
+
+        <!-- Custom JS -->
+        <script>
+
+            // Elements
+            const pageTitle = "Hash Calculator";
+            const STORAGE_OUTPUT_FORMAT_KEY = "output_format";
+
+            const input = document.getElementById("input");
+            const output = document.getElementById("output");
+            const fileInput = document.getElementById("fileInput");
+
+            const md5 = document.getElementById("md5");
+            const sha1 = document.getElementById("sha1");
+            const sha256 = document.getElementById("sha256");
+            const sha512 = document.getElementById("sha512");
+
+            const hmacMode = document.getElementById("hmacMode");
+            const secretkey = document.getElementById("secretkey");
+
+            const inputTotalLines = document.getElementById('inputTotalLines');
+            const inputCurrentLine = document.getElementById('inputCurrentLine');
+            const inputCurrentColumn = document.getElementById('inputCurrentColumn');
+
+            const outputTotalLines = document.getElementById('outputTotalLines');
+            const outputCurrentLine = document.getElementById('outputCurrentLine');
+            const outputCurrentColumn = document.getElementById('outputCurrentColumn');
+
+            const codeMirrorInput = createCodeMirrorEditor(input);
+            const codeMirrorOutput = createCodeMirrorEditor(output);
+            codeMirrorOutput.setOption("readOnly", true);
+
+            setupEditors([
+                createEditorConfig(codeMirrorInput, inputTotalLines, inputCurrentLine, inputCurrentColumn),
+                createEditorConfig(codeMirrorOutput, outputTotalLines, outputCurrentLine, outputCurrentColumn)
+            ]);
+
+            const algorithmFunctions = {
+                md5: (msg, key, hmac) => hmac ? CryptoJS.HmacMD5(msg, key) : CryptoJS.MD5(msg),
+                sha1: (msg, key, hmac) => hmac ? CryptoJS.HmacSHA1(msg, key) : CryptoJS.SHA1(msg),
+                sha256: (msg, key, hmac) => hmac ? CryptoJS.HmacSHA256(msg, key) : CryptoJS.SHA256(msg),
+                sha512: (msg, key, hmac) => hmac ? CryptoJS.HmacSHA512(msg, key) : CryptoJS.SHA512(msg),
+            };
+            const algorithmLabels = { md5:'MD5', sha1:'SHA-1', sha256:'SHA-256', sha512:'SHA-512' };
+
+            // Runs after HTML content has fully loaded, get hash calculator output format from local storage
+            window.addEventListener("DOMContentLoaded", () => {
+                const output_format = document.querySelectorAll("input[name='output_format']");
+                const saved_output_format = getStorageString(STORAGE_OUTPUT_FORMAT_KEY);
+
+                let anyChecked = false;
+
+                output_format.forEach(type => {
+                    if (type.value === saved_output_format) {
+                        type.checked = true;
+                        anyChecked = true;
+                    }
+                });
+
+                if (!anyChecked) {
+                    output_format[0].checked = true;
+                    setStorageString(STORAGE_OUTPUT_FORMAT_KEY, output_format[0].value);
+                }
+
+                output_format.forEach(radio => {
+                    radio.addEventListener("change", () => {
+                        setStorageString(STORAGE_OUTPUT_FORMAT_KEY, radio.value);
+                        generateHash();
+                    });
+                });
+            });
+
+            function clearHashInputs() {
+                clearInputs();
+                secretkey.value = "";
+            }
+
+            document.querySelectorAll('.algorithm-checkbox').forEach(checkbox => {
+                checkbox.addEventListener('change', generateHash);
+            });
+            hmacMode.addEventListener('change', generateHash);
+            codeMirrorInput.on("change", generateHash);
+
+            function generateHash() {
+                clearInput(codeMirrorOutput);
+
+                try {
+                    if (!codeMirrorInput.getValue()) return;
+
+                    const selectedAlgorithms =  Array.from(document.querySelectorAll('.algorithm-checkbox:checked')).map(cb => cb.id);
+
+                    if (selectedAlgorithms.length === 0) {
+                        showErrorToast("Select at least one algorithm");
+                        return;
+                    }
+
+                    let generatedHash = "";
+
+                    selectedAlgorithms.forEach(algorithm => {
+                        if (generatedHash) generatedHash += "\n\n";
+                        const result = algorithmFunctions[algorithm](codeMirrorInput.getValue(), secretkey.value, hmacMode.checked);
+                        const selectedOutputFormat = document.querySelector('input[name="output_format"]:checked');
+                        const hash = selectedOutputFormat && selectedOutputFormat.id === 'base64' ? result.toString(CryptoJS.enc.Base64) : result.toString();
+                        const prefix = hmacMode.checked ? 'HMAC-' : '';
+                        generatedHash += `${prefix}${algorithmLabels[algorithm]}:\n${hash}`;
+                    });
+
+                    codeMirrorOutput.setValue(generatedHash);
+                } catch (error) {
+                    console.log("Processing hash error:", error.message);
+                    showErrorToast("Invalid hash");
+                }
+            }
+        </script>
+        
+    </body>
+</html>

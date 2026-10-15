@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Codexael Toolstack — ZIP / PIN Code Lookup</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta http-equiv="Content-Security-Policy" content="connect-src https://api.zippopotam.us; object-src 'none'; base-uri 'none'; form-action 'none'">
+
+        <!-- Metadata -->
+        <meta name="description" content="Find the city, area and state for any postal code in about 70 countries.">
+        <meta name="author" content="Codexael">
+        <meta name="theme-color" content="#fff4e0" media="(prefers-color-scheme: light)">
+        <meta name="theme-color" content="#17140f" media="(prefers-color-scheme: dark)">
+
+        <!-- Open Graph -->
+        <meta property="og:title" content="Codexael Toolstack — ZIP / PIN Code Lookup">
+        <meta property="og:description" content="Find the city, area and state for any postal code in about 70 countries.">
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="https://tools.codexael.com/postal_code_lookup.html">
+        <meta property="og:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+        <meta property="og:image:width" content="1200">
+        <meta property="og:image:height" content="630">
+        <meta property="og:image:type" content="image/png">
+        <meta property="og:image:alt" content="Codexael Toolstack — ZIP / PIN Code Lookup">
+        <meta property="og:site_name" content="Codexael Toolstack">
+
+        <!-- Twitter Card -->
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="Codexael Toolstack — ZIP / PIN Code Lookup">
+        <meta name="twitter:description" content="Find the city, area and state for any postal code in about 70 countries.">
+        <meta name="twitter:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+
+        <!-- Favicon / App Icon -->
+        <link rel="icon" type="image/svg+xml" href="assets/images/codexael_icon.svg">
+        <link rel="apple-touch-icon" href="assets/images/codexael_icon.svg">
+
+        <!-- Bootstrap 5.2.0-beta1 -->
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+
+        <!-- Bootstrap with Popper 5.2.0-beta1 -->
+        <script src="js/bootstrap.bundle.min.js"></script>
+
+        <!-- Bootstrap Icons 1.11.3 -->
+        <link rel="stylesheet" href="css/bootstrap-icons.min.css">
+
+        <!-- Google fonts -->
+        <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+        <!-- Custom CSS -->
+        <link rel="stylesheet" href="css/keycaps.css">
+
+        <style>
+            /* The body grows with its content and does not clip, so the open country list can extend below it. */
+            .zip-body {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                gap: 18px;
+                padding: 24px 22px 28px;
+                overflow: visible;
+            }
+
+            .zip-form {
+                display: grid;
+                grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+                align-items: end;
+                gap: 14px;
+            }
+
+            .zip-form label {
+                display: block;
+                margin-bottom: 6px;
+                font-size: 0.75rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.04em;
+            }
+
+            .zip-form .cdrop,
+            .zip-form select,
+            .zip-form input { margin-bottom: 0; }
+
+            .zip-form input {
+                text-transform: uppercase;
+            }
+
+            /* Bootstrap btn hover and active states would hide the ink border without these values. */
+            .zip-form .btn {
+                --bs-btn-hover-border-color: var(--ink);
+                --bs-btn-active-border-color: var(--ink);
+                width: auto;
+                margin-bottom: 0;
+            }
+
+            .zip-hint,
+            .zip-status {
+                margin: 0;
+                font-size: 0.8rem;
+                font-weight: 700;
+            }
+
+            .zip-body.loading .result-card,
+            .zip-body.loading .place-list { opacity: 0.55; }
+
+            /* The summary of a found code sits on a lime card that keeps dark text in both themes. */
+            .result-card {
+                display: flex;
+                flex-wrap: wrap;
+                align-items: center;
+                gap: 6px 18px;
+                padding: 18px 22px;
+                background: var(--lime);
+                color: #111111;
+                border: 3px solid var(--ink);
+                border-radius: 12px;
+                box-shadow: 4px 4px 0 var(--ink);
+            }
+
+            .result-code {
+                font-family: var(--display-font);
+                font-size: 1.6rem;
+                line-height: 1.2;
+            }
+
+            .result-where {
+                flex: 1 1 220px;
+                min-width: 0;
+                font-weight: 700;
+                overflow-wrap: anywhere;
+            }
+
+            .result-where small {
+                display: block;
+                font-weight: 400;
+            }
+
+            .place-list {
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                margin: 0;
+                padding: 0;
+                list-style: none;
+            }
+
+            .place-list li {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                padding: 10px 12px;
+                background: var(--paper);
+                border: 2px solid var(--ink);
+                border-radius: 8px;
+                font-size: 0.85rem;
+                line-height: 1.45;
+            }
+
+            .place-list .place-text {
+                flex: 1;
+                min-width: 0;
+                overflow-wrap: anywhere;
+            }
+
+            .place-list .place-text b { display: block; }
+
+            .place-list .place-coords {
+                font-variant-numeric: tabular-nums;
+            }
+
+            .place-list a,
+            .place-list button {
+                flex: none;
+                padding: 2px 6px;
+                background: none;
+                border: 0;
+                color: var(--ink);
+                font-size: 1rem;
+            }
+
+            .zip-meta {
+                font-size: 0.75rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.04em;
+            }
+
+            .privacy-note {
+                padding: 10px 12px;
+                border: 2px dashed var(--ink);
+                font-size: 0.75rem;
+                font-weight: 700;
+                line-height: 1.5;
+            }
+
+            @media (max-width: 576px) {
+                .zip-body {
+                    padding: 20px 16px 24px;
+                }
+
+                .zip-form {
+                    grid-template-columns: 1fr;
+                }
+
+                .zip-form .btn {
+                    width: 100%;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <!-- Common layout -->
+        <div id="navbar-container"></div>
+
+        <div class="container-fluid tool-wrapper">
+            <div class="row">
+                <div class="col-md-8 offset-md-2">
+                    <div class="editor-panel">
+                        <div class="editor-header">
+                            <span class="editor-title">ZIP / PIN Code Lookup</span>
+                            <div class="editor-actions">
+                                <button title="Copy all places" data-shortcut="copy" onclick="copyAll(this)"><i class="bi bi-copy icon-btn"></i></button>
+                                <div class="divider"></div>
+                                <button title="Clear" onclick="clearLookup()"><i class="bi bi-trash3 icon-btn"></i></button>
+                            </div>
+                        </div>
+
+                        <div class="editor-body zip-body" id="zipBody">
+
+                            <div class="zip-form">
+                                <div>
+                                    <label for="countrySelect">Country</label>
+                                    <select class="form-control" id="countrySelect"></select>
+                                </div>
+                                <div>
+                                    <label for="codeInput">Postal code</label>
+                                    <input type="text" class="form-control input-cyan" id="codeInput" maxlength="12" autocomplete="postal-code" spellcheck="false" placeholder="Postal code">
+                                </div>
+                                <button class="btn action-btn-primary" id="lookupBtn" data-shortcut="run" onclick="lookUp()"><i class="bi bi-search"></i> Look up</button>
+                            </div>
+
+                            <p class="zip-hint" id="zipHint"></p>
+                            <p class="zip-status" id="zipStatus" role="status"></p>
+
+                            <div id="resultArea" hidden>
+                                <div class="result-card">
+                                    <span class="result-code" id="resultCode"></span>
+                                    <span class="result-where" id="resultWhere"></span>
+                                </div>
+                                <div class="zip-meta mt-3 mb-2" id="placeCount"></div>
+                                <ul class="place-list" id="placeList"></ul>
+                            </div>
+
+                            <div class="privacy-note">
+                                <i class="bi bi-info-circle"></i> Places come from <a href="https://zippopotam.us" target="_blank" rel="noopener noreferrer">Zippopotam.us</a>, a free public API. Only the country and postal code you look up are sent. Map links open OpenStreetMap.
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <div id="footer-container"></div>
+
+        <!-- Common JS -->
+        <script src="js/tool-help.js"></script>
+        <script src="js/storage.js"></script>
+        <script src="js/common.js"></script>
+        <script src="js/custom-dropdown.js"></script>
+        <script src="js/script.js"></script>
+        <script src="js/api-client.js"></script>
+
+        <!-- Custom JS -->
+        <script>
+
+            const pageTitle = "ZIP / PIN Code Lookup";
+
+            const LOOKUP_URL = "https://api.zippopotam.us/";
+            const LOOKUP_MAX_BYTES = 262144;
+            const COUNTRY_KEY = "toolstack_zip_country";
+
+            // These are the countries Zippopotam.us supports, by ISO code.
+            const COUNTRIES = ["AD", "AR", "AS", "AT", "AU", "BD", "BE", "BG", "BR", "CA", "CH", "CZ", "DE", "DK", "DO", "ES", "FI", "FO", "FR", "GB", "GF", "GG", "GL", "GP", "GT", "GU", "HR", "HU", "IM", "IN", "IS", "IT", "JE", "JP", "LI", "LK", "LT", "LU", "MC", "MD", "MH", "MK", "MP", "MQ", "MX", "MY", "NL", "NO", "NZ", "PH", "PK", "PL", "PM", "PR", "PT", "RE", "RU", "SE", "SI", "SJ", "SK", "SM", "TH", "TR", "US", "VA", "VI", "YT", "ZA"];
+
+            // Example codes and notes for countries where the expected format is not obvious.
+            const COUNTRY_HINTS = {
+                US: { example: "90210", note: "Enter a 5-digit ZIP code." },
+                IN: { example: "400001", note: "Enter a 6-digit PIN code." },
+                GB: { example: "SW1A", note: "Only the first part of a UK postcode is used, such as SW1A from SW1A 1AA." },
+                CA: { example: "M5V", note: "Only the first 3 characters of a Canadian postal code are used, such as M5V from M5V 3L9." },
+                DE: { example: "10115" },
+                FR: { example: "75001" },
+                AU: { example: "2000" },
+                JP: { example: "100-0001", note: "Enter the code with its hyphen, such as 100-0001." },
+                NL: { example: "1012", note: "Only the 4 digits of a Dutch postcode are used, such as 1012 from 1012 AB." },
+                BR: { example: "01000-000", note: "Enter the code with its hyphen, such as 01000-000." },
+                PT: { example: "1000-001", note: "Enter the code with its hyphen, such as 1000-001." }
+            };
+
+            const zipBody = document.getElementById("zipBody");
+            const countrySelect = document.getElementById("countrySelect");
+            const codeInput = document.getElementById("codeInput");
+            const lookupBtn = document.getElementById("lookupBtn");
+            const zipHint = document.getElementById("zipHint");
+            const zipStatus = document.getElementById("zipStatus");
+            const resultArea = document.getElementById("resultArea");
+            const resultCode = document.getElementById("resultCode");
+            const resultWhere = document.getElementById("resultWhere");
+            const placeCount = document.getElementById("placeCount");
+            const placeList = document.getElementById("placeList");
+
+            let currentResult = null;
+            let lookupController = null;
+            let retryWhenOnline = false;
+
+            // Returns the country's name in the visitor's language, or its code when the browser cannot name it.
+            const countryNames = (() => {
+                try {
+                    return new Intl.DisplayNames([navigator.language || "en"], { type: "region" });
+                } catch {
+                    return null;
+                }
+            })();
+
+            function countryName(code) {
+                try {
+                    return countryNames?.of(code) || code;
+                } catch {
+                    return code;
+                }
+            }
+
+            // Picks the saved country, then the browser's region, then the United States.
+            function defaultCountry() {
+                const saved = getStorageString(COUNTRY_KEY, "");
+                if (COUNTRIES.includes(saved)) return saved;
+                const region = (navigator.language || "").split("-")[1]?.toUpperCase();
+                return COUNTRIES.includes(region) ? region : "US";
+            }
+
+            function setupCountries() {
+                countrySelect.innerHTML = COUNTRIES
+                    .map(code => ({ code, name: countryName(code) }))
+                    .sort((a, b) => a.name.localeCompare(b.name))
+                    .map(({ code, name }) => `<option value="${code}">${name} (${code})</option>`)
+                    .join("");
+                countrySelect.value = defaultCountry();
+                CustomDropdown.enhance(countrySelect, { search: true });
+                countrySelect.addEventListener("change", () => {
+                    try { setStorageString(COUNTRY_KEY, countrySelect.value); } catch { /* The choice still works for this visit. */ }
+                    updateHint();
+                });
+                updateHint();
+            }
+
+            // Shows the example and format note for the chosen country.
+            function updateHint() {
+                const hint = COUNTRY_HINTS[countrySelect.value];
+                codeInput.placeholder = hint ? `e.g. ${hint.example}` : "Postal code";
+                zipHint.textContent = hint?.note || "";
+                zipHint.hidden = !hint?.note;
+            }
+
+            // Cleans the typed code and keeps only the part the service understands for that country.
+            function normaliseCode(country, raw) {
+                let code = raw.trim().toUpperCase().replace(/\s+/g, " ");
+                if (country === "GB") code = code.split(" ")[0];
+                if (country === "CA") code = code.replace(/\s/g, "").slice(0, 3);
+                if (country === "NL") code = code.replace(/\s/g, "").slice(0, 4);
+                return code;
+            }
+
+            // Checks that the reply holds at least one place and keeps only the fields the page shows.
+            function parsePlaces(reply) {
+                if (!reply || !Array.isArray(reply.places) || !reply.places.length) return null;
+                const places = reply.places
+                    .filter(place => place && typeof place["place name"] === "string")
+                    .map(place => ({
+                        name: place["place name"].trim(),
+                        state: typeof place.state === "string" ? place.state.trim() : "",
+                        lat: Number(place.latitude),
+                        lon: Number(place.longitude)
+                    }));
+                if (!places.length) return null;
+                return {
+                    code: typeof reply["post code"] === "string" ? reply["post code"] : "",
+                    country: typeof reply.country === "string" ? reply.country : "",
+                    places
+                };
+            }
+
+            function setLoading(isLoading) {
+                zipBody.classList.toggle("loading", isLoading);
+                lookupBtn.disabled = isLoading;
+            }
+
+            function hasCoords(place) {
+                return Number.isFinite(place.lat) && Number.isFinite(place.lon) && Math.abs(place.lat) <= 90 && Math.abs(place.lon) <= 180;
+            }
+
+            function mapUrl(place) {
+                return `https://www.openstreetmap.org/?mlat=${place.lat}&mlon=${place.lon}#map=14/${place.lat}/${place.lon}`;
+            }
+
+            function describePlace(place) {
+                const coords = hasCoords(place) ? ` (${place.lat}, ${place.lon})` : "";
+                return `${place.name}${place.state ? `, ${place.state}` : ""}${coords}`;
+            }
+
+            // Draws the summary card and one row for each place with copy and map buttons.
+            function showResult(result) {
+                currentResult = result;
+                const states = [...new Set(result.places.map(place => place.state).filter(Boolean))];
+                resultCode.textContent = result.code;
+                resultWhere.replaceChildren(result.places[0].name + (result.places.length > 1 ? ` and ${result.places.length - 1} more` : ""));
+                const region = document.createElement("small");
+                region.textContent = [states.join(", "), result.country].filter(Boolean).join(" · ");
+                resultWhere.append(region);
+                placeCount.textContent = `${result.places.length} place${result.places.length === 1 ? "" : "s"} found`;
+
+                placeList.replaceChildren(...result.places.map(place => {
+                    const row = document.createElement("li");
+                    const text = document.createElement("div");
+                    text.className = "place-text";
+                    const name = document.createElement("b");
+                    name.textContent = place.name;
+                    const detail = document.createElement("span");
+                    detail.className = "place-coords";
+                    detail.textContent = [place.state, hasCoords(place) ? `${place.lat}, ${place.lon}` : ""].filter(Boolean).join(" · ");
+                    text.append(name, detail);
+                    row.append(text);
+
+                    if (hasCoords(place)) {
+                        const map = document.createElement("a");
+                        map.href = mapUrl(place);
+                        map.target = "_blank";
+                        map.rel = "noopener noreferrer";
+                        map.title = "Show on map";
+                        map.innerHTML = '<i class="bi bi-geo-alt"></i>';
+                        row.append(map);
+                    }
+
+                    const copy = document.createElement("button");
+                    copy.type = "button";
+                    copy.title = "Copy this place";
+                    copy.innerHTML = '<i class="bi bi-copy"></i>';
+                    copy.addEventListener("click", () => copyText(`${result.code} · ${describePlace(place)}`, copy));
+                    row.append(copy);
+                    return row;
+                }));
+
+                resultArea.hidden = false;
+            }
+
+            // Looks up the typed code and keeps the last result on screen when the request fails.
+            async function lookUp() {
+                const country = countrySelect.value;
+                const code = normaliseCode(country, codeInput.value);
+                if (!code) {
+                    showInfoToast("Enter a postal code to look up");
+                    codeInput.focus();
+                    return;
+                }
+                if (!/^[A-Z0-9][A-Z0-9 -]{0,11}$/.test(code)) {
+                    zipStatus.textContent = "Postal codes can only use letters, numbers, spaces and hyphens.";
+                    return;
+                }
+
+                if (lookupController) lookupController.abort();
+                const controller = new AbortController();
+                lookupController = controller;
+                retryWhenOnline = false;
+                setLoading(true);
+                zipStatus.textContent = "Looking up...";
+
+                try {
+                    const reply = await fetchPublicJson(`${LOOKUP_URL}${country.toLowerCase()}/${encodeURIComponent(code)}`, {
+                        serviceName: "The postal code service",
+                        maxBytes: LOOKUP_MAX_BYTES,
+                        signal: controller.signal
+                    });
+                    const result = parsePlaces(reply);
+                    if (!result) throw new ApiError("The postal code service sent no places", "invalid");
+                    zipStatus.textContent = "";
+                    showResult(result);
+                } catch (error) {
+                    // A request replaced by a newer one ends quietly.
+                    if (error.kind === "aborted") return;
+
+                    // The service answers 404 when it does not know the code, which is a normal result and not a failure.
+                    if (error.status === 404) {
+                        zipStatus.textContent = `No places found for ${code} in ${countryName(country)}. Check the code and the country.`;
+                        currentResult = null;
+                        resultArea.hidden = true;
+                        return;
+                    }
+
+                    showErrorToast(error.message);
+                    if (error.kind === "offline") {
+                        retryWhenOnline = true;
+                        zipStatus.textContent = "You are offline. The lookup will run when your connection comes back.";
+                    } else {
+                        zipStatus.textContent = `${error.message}. Click Look up to try again.`;
+                    }
+                } finally {
+                    if (lookupController === controller) {
+                        lookupController = null;
+                        setLoading(false);
+                    }
+                }
+            }
+
+            function copyText(text, btn) {
+                if (isBlank(text, "Nothing to copy")) return;
+                navigator.clipboard.writeText(text).then(() => {
+                    showSuccessToast("Copied to clipboard");
+                    if (btn) {
+                        const icon = btn.querySelector("i");
+                        const original = icon.className;
+                        icon.className = "bi bi-check-lg";
+                        setTimeout(() => icon.className = original, 1000);
+                    }
+                }).catch(() => showErrorToast("Could not copy, your browser blocked the clipboard"));
+            }
+
+            // Copies every place for the current code, one per line.
+            function copyAll(btn) {
+                if (!currentResult) return showInfoToast("Look up a postal code first");
+                const lines = currentResult.places.map(place => describePlace(place));
+                copyText(`${currentResult.code}, ${currentResult.country}\n${lines.join("\n")}`, btn);
+            }
+
+            function clearLookup() {
+                if (lookupController) lookupController.abort();
+                codeInput.value = "";
+                zipStatus.textContent = "";
+                currentResult = null;
+                retryWhenOnline = false;
+                resultArea.hidden = true;
+                codeInput.focus();
+            }
+
+            // Enter in the code field runs the lookup.
+            codeInput.addEventListener("keydown", event => {
+                if (event.key === "Enter" && !event.ctrlKey && !event.metaKey) {
+                    event.preventDefault();
+                    lookUp();
+                }
+            });
+
+            setupCountries();
+
+            // A lookup that failed while offline runs again when the connection comes back.
+            window.addEventListener("online", () => {
+                if (retryWhenOnline && !lookupController) lookUp();
+            });
+        </script>
+
+    </body>
+</html>

@@ -1,0 +1,1072 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Codexael Toolstack — IP Address Lookup</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <!-- This page may only send network requests to the lookup service. -->
+        <meta http-equiv="Content-Security-Policy" content="connect-src https://ipwho.is; object-src 'none'; base-uri 'none'; form-action 'none'">
+        <meta name="referrer" content="no-referrer">
+
+        <!-- Metadata -->
+        <meta name="description" content="Find any IP's location and ISP, and work out subnets.">
+        <meta name="author" content="Codexael">
+        <meta name="theme-color" content="#fff4e0" media="(prefers-color-scheme: light)">
+        <meta name="theme-color" content="#17140f" media="(prefers-color-scheme: dark)">
+
+        <!-- Open Graph -->
+        <meta property="og:title" content="Codexael Toolstack — IP Address Lookup & Subnet Calculator">
+        <meta property="og:description" content="Find any IP's location and ISP, and work out subnets.">
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="https://tools.codexael.com/ip_address_lookup.html">
+        <meta property="og:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+        <meta property="og:image:width" content="1200">
+        <meta property="og:image:height" content="630">
+        <meta property="og:image:type" content="image/png">
+        <meta property="og:image:alt" content="Codexael Toolstack — IP Address Lookup & Subnet Calculator">
+        <meta property="og:site_name" content="Codexael Toolstack">
+
+        <!-- Twitter Card -->
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="Codexael Toolstack — IP Address Lookup & Subnet Calculator">
+        <meta name="twitter:description" content="Find any IP's location and ISP, and work out subnets.">
+        <meta name="twitter:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+
+        <!-- Favicon / App Icon -->
+        <link rel="icon" type="image/svg+xml" href="assets/images/codexael_icon.svg">
+        <link rel="apple-touch-icon" href="assets/images/codexael_icon.svg">
+
+        <!-- Bootstrap 5.2.0-beta1 -->
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+
+        <!-- Bootstrap with Popper 5.2.0-beta1 -->
+        <script src="js/bootstrap.bundle.min.js"></script>
+
+        <!-- Bootstrap Icons 1.11.3 -->
+        <link rel="stylesheet" href="css/bootstrap-icons.min.css">
+
+        <!-- Google fonts -->
+        <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+        <!-- Custom CSS -->
+        <link rel="stylesheet" href="css/keycaps.css">
+
+        <style>
+            .ip-body {
+                padding: 24px 22px 28px;
+                display: flex;
+                flex-direction: column;
+                gap: 22px;
+                overflow-y: auto;
+                flex: 1;
+                min-height: 0;
+                line-height: 1.5;
+            }
+
+            .ip-input-row {
+                display: flex;
+                gap: 14px;
+                flex-wrap: wrap;
+                align-items: stretch;
+            }
+
+            .ip-input-row .input-cyan {
+                flex: 1 1 260px;
+                min-width: 0;
+                margin-bottom: 0;
+            }
+
+            .ip-input-row .action-btn-primary,
+            .ip-input-row .ip-inline-btn {
+                width: auto;
+                flex: 0 0 auto;
+                margin-bottom: 0;
+            }
+
+            /* The My IP button is a paper keycap that turns cyan when hovered. */
+            .ip-inline-btn {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                padding: 9px 14px;
+                background: var(--paper);
+                color: var(--ink);
+                border: 3px solid var(--ink);
+                border-radius: 12px;
+                box-shadow: 0 2.5px 0 var(--ink);
+                font-family: var(--display-font);
+                font-size: 0.9rem;
+                text-transform: uppercase;
+                white-space: nowrap;
+                transition: transform 0.08s, box-shadow 0.08s, background-color 0.12s;
+            }
+
+            .ip-inline-btn:hover {
+                background: var(--cyan);
+                color: #111111;
+                transform: translateY(1px);
+                box-shadow: 0 1.5px 0 var(--ink);
+            }
+
+            .ip-inline-btn:active {
+                transform: translateY(2.5px);
+                box-shadow: 0 0 0 var(--ink);
+            }
+
+            .ip-inline-btn:disabled {
+                background: #dddddd;
+                color: #777777;
+                border-color: #999999;
+                box-shadow: 0 2.5px 0 #999999;
+                transform: none;
+                cursor: wait;
+            }
+
+            /* The status line is a tilted sticker that hides when it has no text. */
+            .ip-status {
+                display: inline-flex;
+                align-items: center;
+                gap: 10px;
+                align-self: center;
+                max-width: 100%;
+                padding: 4px 12px;
+                background: var(--yellow);
+                color: #111111;
+                border: 3px solid var(--ink);
+                box-shadow: 2px 2px 0 var(--ink);
+                font-size: 0.8rem;
+                font-weight: 700;
+                text-align: center;
+                text-transform: uppercase;
+                overflow-wrap: anywhere;
+                transform: rotate(-1.5deg);
+            }
+
+            .ip-status:empty {
+                display: none;
+            }
+
+            .ip-status.ip-error {
+                background: var(--red);
+                transform: rotate(1.5deg);
+            }
+
+            /* A small square spinner turns beside the status while a lookup runs. */
+            .ip-input-row:has(#myIpBtn:disabled) + .ip-status:not(.ip-error)::before {
+                content: "";
+                flex: none;
+                width: 16px;
+                height: 16px;
+                background: var(--lilac);
+                border: 3px solid #111111;
+                animation: ip-spin 1.2s steps(8) infinite;
+            }
+
+            @keyframes ip-spin {
+                to { transform: rotate(360deg); }
+            }
+
+            .ip-sections {
+                display: flex;
+                gap: 26px 22px;
+                flex-wrap: wrap;
+                align-items: flex-start;
+            }
+
+            .ip-section {
+                --c: var(--yellow);
+                flex: 1 1 340px;
+                min-width: 0;
+                display: flex;
+                flex-direction: column;
+            }
+
+            .ip-section:nth-child(2) {
+                --c: var(--cyan);
+            }
+
+            .ip-section:nth-child(3) {
+                --c: var(--lilac);
+            }
+
+            /* Each section title is a coloured sticker pinned to the top of its card. */
+            .ip-section-title {
+                position: relative;
+                z-index: 1;
+                align-self: flex-start;
+                margin: 0 0 -10px 12px;
+                padding: 2px 10px;
+                background: var(--c);
+                color: #111111;
+                border: 3px solid var(--ink);
+                box-shadow: 1.5px 1.5px 0 var(--ink);
+                font-family: var(--display-font);
+                font-size: 0.85rem;
+                text-transform: uppercase;
+                transform: rotate(-2deg);
+            }
+
+            .ip-info-grid {
+                display: flex;
+                flex-direction: column;
+                padding: 14px 14px 6px;
+                background: var(--paper);
+                color: var(--ink);
+                border: 3px solid var(--ink);
+                box-shadow: 3px 3px 0 var(--ink);
+            }
+
+            .ip-info-row {
+                display: flex;
+                align-items: baseline;
+                justify-content: space-between;
+                gap: 12px;
+                padding: 9px 0;
+                font-size: 0.82rem;
+            }
+
+            .ip-info-row + .ip-info-row {
+                border-top: 2px dashed var(--ink);
+            }
+
+            .ip-info-label {
+                flex-shrink: 0;
+                font-size: 0.72rem;
+                font-weight: 700;
+                text-transform: uppercase;
+            }
+
+            .ip-info-value {
+                display: flex;
+                align-items: center;
+                justify-content: flex-end;
+                gap: 8px;
+                min-width: 0;
+                text-align: right;
+                overflow-wrap: anywhere;
+            }
+
+            .ip-info-value > span {
+                min-width: 0;
+                overflow-wrap: anywhere;
+            }
+
+            /* The empty message sits in a dashed box under a tilted question key. */
+            .ip-empty {
+                display: grid;
+                justify-items: center;
+                gap: 10px;
+                margin-bottom: 8px;
+                padding: 16px 10px;
+                border: 2px dashed var(--ink);
+                font-size: 0.78rem;
+                font-weight: 700;
+                text-align: center;
+                text-transform: uppercase;
+            }
+
+            .ip-empty::before {
+                content: "?";
+                width: 40px;
+                height: 40px;
+                display: grid;
+                place-items: center;
+                background: var(--c);
+                color: #111111;
+                border: 3px solid var(--ink);
+                border-radius: 50%;
+                box-shadow: 1.5px 1.5px 0 var(--ink);
+                font-family: var(--display-font);
+                font-size: 1.1rem;
+                transform: rotate(-8deg);
+            }
+
+            /* Row copy buttons are small keycaps that sink when pressed. */
+            .ip-copy-btn {
+                flex-shrink: 0;
+                width: 28px;
+                height: 28px;
+                display: grid;
+                place-items: center;
+                padding: 0;
+                background: var(--paper);
+                color: var(--ink);
+                border: 2.5px solid var(--ink);
+                border-radius: 7px;
+                box-shadow: 0 1.5px 0 var(--ink);
+                font-size: 0.75rem;
+                transition: transform 0.08s, box-shadow 0.08s, background-color 0.12s;
+            }
+
+            .ip-copy-btn:hover {
+                background: var(--yellow);
+                color: #111111;
+                transform: translateY(0.5px);
+                box-shadow: 0 1px 0 var(--ink);
+            }
+
+            .ip-copy-btn:active {
+                transform: translateY(1.5px);
+                box-shadow: 0 0 0 var(--ink);
+            }
+
+            /* Scope badges are stickers coloured by address scope. */
+            .ip-badge {
+                display: inline-block;
+                padding: 0 8px;
+                background: var(--paper);
+                color: #111111;
+                border: 2.5px solid var(--ink);
+                box-shadow: 1px 1px 0 var(--ink);
+                font-size: 0.72rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                transform: rotate(-2deg);
+            }
+
+            .ip-badge.ip-scope-public {
+                background: var(--lime);
+            }
+
+            .ip-badge.ip-scope-private {
+                background: var(--orange);
+            }
+
+            .ip-badge.ip-scope-special {
+                background: var(--lilac);
+            }
+
+            @media (max-width: 480px) {
+                .ip-body {
+                    padding: 20px 16px 24px;
+                }
+
+                .ip-input-row .action-btn-primary,
+                .ip-input-row .ip-inline-btn {
+                    flex: 1 1 0;
+                }
+
+                .ip-info-row {
+                    flex-direction: column;
+                    align-items: stretch;
+                    gap: 4px;
+                }
+
+                .ip-info-value {
+                    justify-content: space-between;
+                    text-align: left;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <!-- Common layout -->
+        <div id="navbar-container"></div>
+
+        <div class="container-fluid tool-wrapper">
+            <div class="row">
+                <div class="col-md-10 offset-md-1">
+                    <div class="editor-panel">
+                        <div class="editor-header">
+                            <span class="editor-title">IP Address Lookup</span>
+                            <div class="editor-actions">
+                                <button title="Copy all details" data-shortcut="copy" onclick="copyAllDetails(this)"><i class="bi bi-copy icon-btn"></i></button>
+                                <div class="divider"></div>
+                                <button class="btn-danger" title="Clear" data-undo-clear onclick="clearAll()"><i class="bi bi-x-lg icon-btn"></i></button>
+                            </div>
+                        </div>
+
+                        <div class="editor-body ip-body invisible-scrollbars">
+                            <div class="ip-input-row">
+                                <input type="text" class="input-cyan" id="ipInput" aria-label="IP address or CIDR" placeholder="e.g. 8.8.8.8, 192.168.1.10/24 or 2001:db8::1/64" spellcheck="false" autocomplete="off" autocapitalize="off">
+                                <button class="btn action-btn-primary" id="lookupBtn" data-shortcut="run" data-shortcut-label="Look up the location" onclick="lookupLocation()"><i class="bi bi-geo-alt"></i> Look up</button>
+                                <button class="ip-inline-btn" id="myIpBtn" title="Find and look up your public IP address" onclick="lookupMyIp()"><i class="bi bi-person-badge"></i> My IP</button>
+                            </div>
+
+                            <div class="ip-status" id="ipStatus" role="status" aria-live="polite"></div>
+
+                            <div class="ip-sections">
+                                <div class="ip-section">
+                                    <span class="ip-section-title">Address</span>
+                                    <div class="ip-info-grid" id="addressGrid"></div>
+                                </div>
+                                <div class="ip-section" id="subnetSection">
+                                    <span class="ip-section-title">Subnet</span>
+                                    <div class="ip-info-grid" id="subnetGrid"></div>
+                                </div>
+                                <div class="ip-section">
+                                    <span class="ip-section-title">Location &amp; network</span>
+                                    <div class="ip-info-grid" id="locationGrid"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <div id="footer-container"></div>
+
+        <!-- Common JS -->
+        <script src="js/tool-help.js"></script>
+        <script src="js/storage.js"></script>
+        <script src="js/common.js"></script>
+        <script src="js/script.js"></script>
+
+        <!-- Custom JS -->
+        <script>
+            const pageTitle = "IP Address Lookup";
+
+            const LOOKUP_URL = "https://ipwho.is/";
+            const LOOKUP_TIMEOUT_MS = 10000;
+            // A real lookup reply is about 1 KB, so anything far larger is refused unread.
+            const LOOKUP_MAX_BYTES = 32 * 1024;
+            const LOOKUP_MAX_TEXT = 120;
+            const OFFLINE_MESSAGE = "You are offline, connect to the internet to look up location";
+
+            const ipInput = document.getElementById("ipInput");
+            const ipStatus = document.getElementById("ipStatus");
+            const addressGrid = document.getElementById("addressGrid");
+            const subnetGrid = document.getElementById("subnetGrid");
+            const locationGrid = document.getElementById("locationGrid");
+            const lookupBtn = document.getElementById("lookupBtn");
+            const myIpBtn = document.getElementById("myIpBtn");
+
+            // Holds the last successful lookup response, or null when none is showing.
+            let lookupResult = null;
+            let lookupController = null;
+            // Holds the parsed address of the running lookup, or null when it is a "My IP" lookup or none is running.
+            let lookupTarget = null;
+
+            // Special ranges are checked in order, so narrower ranges come before wider ones.
+            const IPV4_RANGES = [
+                ["255.255.255.255/32", "Limited broadcast", "special"],
+                ["0.0.0.0/8", "This network", "special"],
+                ["10.0.0.0/8", "Private (RFC 1918)", "private"],
+                ["100.64.0.0/10", "Shared address space (CGNAT)", "private"],
+                ["127.0.0.0/8", "Loopback", "special"],
+                ["169.254.0.0/16", "Link-local", "special"],
+                ["172.16.0.0/12", "Private (RFC 1918)", "private"],
+                ["192.0.0.0/24", "IETF protocol assignments", "special"],
+                ["192.0.2.0/24", "Documentation (TEST-NET-1)", "special"],
+                ["192.88.99.0/24", "6to4 relay anycast", "special"],
+                ["192.168.0.0/16", "Private (RFC 1918)", "private"],
+                ["198.18.0.0/15", "Benchmarking", "special"],
+                ["198.51.100.0/24", "Documentation (TEST-NET-2)", "special"],
+                ["203.0.113.0/24", "Documentation (TEST-NET-3)", "special"],
+                ["224.0.0.0/4", "Multicast", "special"],
+                ["240.0.0.0/4", "Reserved", "special"]
+            ];
+
+            const IPV6_RANGES = [
+                ["::/128", "Unspecified", "special"],
+                ["::1/128", "Loopback", "special"],
+                ["::ffff:0:0/96", "IPv4-mapped", "special"],
+                ["64:ff9b::/96", "IPv4/IPv6 translation (NAT64)", "special"],
+                ["100::/64", "Discard-only", "special"],
+                ["2001:db8::/32", "Documentation", "special"],
+                ["2001::/32", "Teredo tunnelling", "special"],
+                ["2002::/16", "6to4", "special"],
+                ["fc00::/7", "Unique local (private)", "private"],
+                ["fe80::/10", "Link-local", "special"],
+                ["ff00::/8", "Multicast", "special"],
+                ["2000::/3", "Global unicast", "public"]
+            ];
+
+            // Parses dotted IPv4 text into a BigInt, or returns null when it is not valid.
+            function parseIPv4(text) {
+                if (!/^\d{1,3}(\.\d{1,3}){3}$/.test(text)) return null;
+                const octets = text.split(".");
+                if (octets.some(part => (part.length > 1 && part[0] === "0") || Number(part) > 255)) return null;
+                return octets.reduce((acc, part) => (acc << 8n) | BigInt(part), 0n);
+            }
+
+            // Parses IPv6 text, including "::" and a trailing IPv4 part, into a BigInt, or returns null when it is not valid.
+            function parseIPv6(text) {
+                const address = text.split("%")[0].toLowerCase();
+                if (!address.includes(":")) return null;
+
+                const halves = address.split("::");
+                if (halves.length > 2) return null;
+
+                const toGroups = half => {
+                    if (half === "") return [];
+                    const parts = half.split(":");
+                    const groups = [];
+                    for (let i = 0; i < parts.length; i++) {
+                        const part = parts[i];
+                        if (i === parts.length - 1 && part.includes(".")) {
+                            const v4 = parseIPv4(part);
+                            if (v4 === null) return null;
+                            groups.push(Number(v4 >> 16n), Number(v4 & 0xffffn));
+                        } else if (/^[0-9a-f]{1,4}$/.test(part)) {
+                            groups.push(parseInt(part, 16));
+                        } else {
+                            return null;
+                        }
+                    }
+                    return groups;
+                };
+
+                const head = toGroups(halves[0]);
+                const tail = halves.length === 2 ? toGroups(halves[1]) : [];
+                if (head === null || tail === null) return null;
+                // An embedded IPv4 part is only allowed at the very end of the address.
+                if (halves.length === 2 && halves[0].includes(".")) return null;
+
+                let groups;
+                if (halves.length === 2) {
+                    const missing = 8 - head.length - tail.length;
+                    if (missing < 1) return null;
+                    groups = [...head, ...new Array(missing).fill(0), ...tail];
+                } else {
+                    if (head.length !== 8) return null;
+                    groups = head;
+                }
+                return groups.reduce((acc, group) => (acc << 16n) | BigInt(group), 0n);
+            }
+
+            // Reads "address" or "address/prefix" text into its version, value and prefix, or returns an error message.
+            function parseInput(raw) {
+                const text = raw.trim();
+                const slash = text.indexOf("/");
+                const addressText = slash === -1 ? text : text.slice(0, slash);
+                const prefixText = slash === -1 ? null : text.slice(slash + 1);
+
+                let version = 4;
+                let value = parseIPv4(addressText);
+                if (value === null) {
+                    version = 6;
+                    value = parseIPv6(addressText);
+                }
+                if (value === null) return { error: "Not a valid IPv4 or IPv6 address" };
+
+                const bits = version === 4 ? 32 : 128;
+                let prefix = null;
+                if (prefixText !== null) {
+                    if (!/^\d{1,3}$/.test(prefixText) || Number(prefixText) > bits) {
+                        return { error: `Prefix must be a number from 0 to ${bits}` };
+                    }
+                    prefix = Number(prefixText);
+                }
+                return { version, value, prefix, bits };
+            }
+
+            function maskFor(prefix, bits) {
+                const all = (1n << BigInt(bits)) - 1n;
+                return all ^ ((1n << BigInt(bits - prefix)) - 1n);
+            }
+
+            function formatIPv4(value) {
+                return [24n, 16n, 8n, 0n].map(shift => Number((value >> shift) & 0xffn)).join(".");
+            }
+
+            function ipv6Groups(value) {
+                const groups = [];
+                for (let shift = 112n; shift >= 0n; shift -= 16n) groups.push(Number((value >> shift) & 0xffffn));
+                return groups;
+            }
+
+            function formatIPv6Expanded(value) {
+                return ipv6Groups(value).map(group => group.toString(16).padStart(4, "0")).join(":");
+            }
+
+            // Shortens IPv6 text by RFC 5952: the longest run of two or more zero groups becomes "::".
+            function formatIPv6Compressed(value) {
+                const groups = ipv6Groups(value);
+                let bestStart = -1;
+                let bestLength = 0;
+                for (let i = 0; i < 8;) {
+                    if (groups[i] !== 0) { i++; continue; }
+                    let j = i;
+                    while (j < 8 && groups[j] === 0) j++;
+                    if (j - i > bestLength) { bestStart = i; bestLength = j - i; }
+                    i = j;
+                }
+                const hex = groups.map(group => group.toString(16));
+                if (bestLength < 2) return hex.join(":");
+                const head = hex.slice(0, bestStart).join(":");
+                const tail = hex.slice(bestStart + bestLength).join(":");
+                return `${head}::${tail}`;
+            }
+
+            function formatAddress(value, version) {
+                return version === 4 ? formatIPv4(value) : formatIPv6Compressed(value);
+            }
+
+            function formatBinary(value, version) {
+                if (version === 4) return [24n, 16n, 8n, 0n].map(shift => ((value >> shift) & 0xffn).toString(2).padStart(8, "0")).join(".");
+                return ipv6Groups(value).map(group => group.toString(2).padStart(16, "0")).join(":");
+            }
+
+            function formatHex(value, version) {
+                return "0x" + value.toString(16).toUpperCase().padStart(version === 4 ? 8 : 32, "0");
+            }
+
+            function formatReverseDns(value, version) {
+                if (version === 4) return formatIPv4(value).split(".").reverse().join(".") + ".in-addr.arpa";
+                return formatIPv6Expanded(value).replace(/:/g, "").split("").reverse().join(".") + ".ip6.arpa";
+            }
+
+            // Formats an address count with separators, and as a power of two when it is very large.
+            function formatCount(count, hostBits) {
+                const exact = count.toLocaleString("en-US");
+                return hostBits > 32 ? `2^${hostBits} (${exact})` : exact;
+            }
+
+            // Finds the first special range that holds the address, falling back to a public or reserved label.
+            function classify(value, version) {
+                const ranges = version === 4 ? IPV4_RANGES : IPV6_RANGES;
+                for (const [cidr, label, scope] of ranges) {
+                    const range = parseInput(cidr);
+                    const mask = maskFor(range.prefix, range.bits);
+                    if ((value & mask) === (range.value & mask)) return { label, scope };
+                }
+                return version === 4 ? { label: "Public", scope: "public" } : { label: "Reserved", scope: "special" };
+            }
+
+            function ipv4Class(value) {
+                const first = Number(value >> 24n);
+                if (first < 128) return "A";
+                if (first < 192) return "B";
+                if (first < 224) return "C";
+                if (first < 240) return "D (multicast)";
+                return "E (reserved)";
+            }
+
+            // Adds one label and value row to a grid, with an optional copy button and badge class.
+            function addRow(grid, label, value, options = {}) {
+                const row = document.createElement("div");
+                row.className = "ip-info-row";
+
+                const labelEl = document.createElement("span");
+                labelEl.className = "ip-info-label";
+                labelEl.textContent = label;
+
+                const valueEl = document.createElement("span");
+                valueEl.className = "ip-info-value";
+
+                const textEl = document.createElement("span");
+                if (options.badge) textEl.className = `ip-badge ip-scope-${options.badge}`;
+                textEl.textContent = value;
+                textEl.dataset.copyLabel = label;
+                valueEl.appendChild(textEl);
+
+                if (options.copy !== false) {
+                    const copyBtn = document.createElement("button");
+                    copyBtn.className = "ip-copy-btn";
+                    copyBtn.title = `Copy ${label.toLowerCase()}`;
+                    copyBtn.innerHTML = '<i class="bi bi-copy icon-btn"></i>';
+                    copyBtn.addEventListener("click", () => copyText(value, copyBtn));
+                    valueEl.appendChild(copyBtn);
+                }
+
+                row.append(labelEl, valueEl);
+                grid.appendChild(row);
+            }
+
+            function showEmpty(grid, message) {
+                grid.innerHTML = "";
+                const empty = document.createElement("div");
+                empty.className = "ip-empty";
+                empty.textContent = message;
+                grid.appendChild(empty);
+            }
+
+            function setStatus(message, isError = false) {
+                ipStatus.textContent = message;
+                ipStatus.classList.toggle("ip-error", isError);
+            }
+
+            // Rebuilds the address and subnet panels from the current input text.
+            function analyze() {
+                const raw = ipInput.value;
+                if (!raw.trim()) {
+                    setStatus("");
+                    showEmpty(addressGrid, "Enter an IP address to see its details");
+                    showEmpty(subnetGrid, "Add a prefix such as /24 to see the subnet");
+                    return null;
+                }
+
+                const parsed = parseInput(raw);
+                if (parsed.error) {
+                    setStatus(parsed.error, true);
+                    showEmpty(addressGrid, "No details for an invalid address");
+                    showEmpty(subnetGrid, "Add a prefix such as /24 to see the subnet");
+                    return null;
+                }
+
+                setStatus("");
+                renderAddress(parsed);
+                renderSubnet(parsed);
+                return parsed;
+            }
+
+            function renderAddress({ version, value }) {
+                addressGrid.innerHTML = "";
+                const { label, scope } = classify(value, version);
+
+                addRow(addressGrid, "Address", formatAddress(value, version));
+                addRow(addressGrid, "Version", `IPv${version}`, { copy: false });
+                addRow(addressGrid, "Type", label, { copy: false, badge: scope });
+
+                if (version === 4) {
+                    addRow(addressGrid, "Class", ipv4Class(value), { copy: false });
+                } else {
+                    addRow(addressGrid, "Expanded", formatIPv6Expanded(value));
+                    if ((value >> 32n) === 0xffffn) addRow(addressGrid, "Mapped IPv4", formatIPv4(value & 0xffffffffn));
+                }
+
+                addRow(addressGrid, "Decimal", value.toString());
+                addRow(addressGrid, "Hex", formatHex(value, version));
+                addRow(addressGrid, "Binary", formatBinary(value, version));
+                addRow(addressGrid, "Reverse DNS", formatReverseDns(value, version));
+            }
+
+            function renderSubnet({ version, value, prefix, bits }) {
+                if (prefix === null) {
+                    showEmpty(subnetGrid, "Add a prefix such as /24 to see the subnet");
+                    return;
+                }
+
+                subnetGrid.innerHTML = "";
+                const mask = maskFor(prefix, bits);
+                const hostMask = ((1n << BigInt(bits)) - 1n) ^ mask;
+                const network = value & mask;
+                const last = network | hostMask;
+                const hostBits = bits - prefix;
+                const total = 1n << BigInt(hostBits);
+
+                addRow(subnetGrid, "CIDR", `${formatAddress(network, version)}/${prefix}`);
+                addRow(subnetGrid, "Network", formatAddress(network, version));
+
+                if (version === 4) {
+                    addRow(subnetGrid, "Netmask", formatIPv4(mask));
+                    addRow(subnetGrid, "Wildcard", formatIPv4(hostMask));
+                    addRow(subnetGrid, "Broadcast", formatIPv4(last));
+
+                    // A /31 uses both addresses for a point-to-point link, and a /32 is one host (RFC 3021).
+                    const first = prefix >= 31 ? network : network + 1n;
+                    const lastHost = prefix >= 31 ? last : last - 1n;
+                    const usable = prefix >= 31 ? total : total - 2n;
+                    addRow(subnetGrid, "First host", formatIPv4(first));
+                    addRow(subnetGrid, "Last host", formatIPv4(lastHost));
+                    addRow(subnetGrid, "Total addresses", formatCount(total, hostBits), { copy: false });
+                    addRow(subnetGrid, "Usable hosts", formatCount(usable, hostBits), { copy: false });
+                } else {
+                    addRow(subnetGrid, "First address", formatIPv6Compressed(network));
+                    addRow(subnetGrid, "Last address", formatIPv6Compressed(last));
+                    addRow(subnetGrid, "Total addresses", formatCount(total, hostBits), { copy: false });
+                }
+            }
+
+            // Turns a two-letter country code into its flag emoji.
+            function countryFlag(code) {
+                if (!/^[A-Za-z]{2}$/.test(code || "")) return "";
+                return String.fromCodePoint(...code.toUpperCase().split("").map(char => 0x1f1e6 + char.charCodeAt(0) - 65));
+            }
+
+            function renderLocation() {
+                if (!lookupResult) {
+                    showEmpty(locationGrid, 'Click "Look up" or "My IP" to see location and network');
+                    return;
+                }
+
+                locationGrid.innerHTML = "";
+                const data = lookupResult;
+                const place = text => text || "Unknown";
+
+                addRow(locationGrid, "Looked up", data.ip);
+                addRow(locationGrid, "Country", `${countryFlag(data.countryCode)} ${place(data.country)}`.trim(), { copy: false });
+                addRow(locationGrid, "Region", place(data.region), { copy: false });
+                addRow(locationGrid, "City", place(data.city), { copy: false });
+                if (data.postal) addRow(locationGrid, "Postal code", data.postal, { copy: false });
+
+                if (data.latitude !== null && data.longitude !== null) {
+                    addRow(locationGrid, "Coordinates", `${data.latitude.toFixed(4)}, ${data.longitude.toFixed(4)}`);
+                }
+
+                if (data.timezoneId) addRow(locationGrid, "Timezone", `${data.timezoneId}${data.timezoneUtc ? ` (UTC${data.timezoneUtc})` : ""}`, { copy: false });
+                addRow(locationGrid, "ISP", place(data.isp), { copy: false });
+                if (data.org && data.org !== data.isp) addRow(locationGrid, "Organisation", data.org, { copy: false });
+                if (data.asn) addRow(locationGrid, "ASN", `AS${data.asn}`);
+                if (data.domain) addRow(locationGrid, "Domain", data.domain);
+            }
+
+            // Turns any reply value into short plain text, dropping control and text-direction characters that could hide or reorder what is shown.
+            function cleanText(value, maxLength = LOOKUP_MAX_TEXT) {
+                if (typeof value !== "string" && typeof value !== "number") return "";
+                const text = String(value)
+                    .replace(/[\u0000-\u001f\u007f-\u009f​-‏‪-‮⁠-⁩﻿]/g, "")
+                    .replace(/\s+/g, " ")
+                    .trim();
+                return text.length > maxLength ? text.slice(0, maxLength - 1) + "…" : text;
+            }
+
+            // Returns the text only when it fully matches the pattern, so odd values are dropped instead of shown.
+            function matchText(value, pattern, maxLength = LOOKUP_MAX_TEXT) {
+                const text = cleanText(value, maxLength + 1);
+                return text.length <= maxLength && pattern.test(text) ? text : "";
+            }
+
+            // Returns a finite number inside the limits, or null for anything else.
+            function boundedNumber(value, limit) {
+                if (typeof value !== "number" && typeof value !== "string") return null;
+                const number = Number(value);
+                return value !== "" && Number.isFinite(number) && Math.abs(number) <= limit ? number : null;
+            }
+
+            function isPlainObject(value) {
+                return value !== null && typeof value === "object" && !Array.isArray(value);
+            }
+
+            // Copies only the known fields out of an untrusted reply, checking the type and shape of each one, or returns null when the reply cannot be trusted.
+            function sanitizeLookup(raw, expected) {
+                if (!isPlainObject(raw)) return null;
+
+                // The reply must name a valid single address, and the same one that was asked for.
+                const parsedIp = typeof raw.ip === "string" && raw.ip.length <= 64 ? parseInput(raw.ip) : { error: true };
+                if (parsedIp.error || parsedIp.prefix !== null) return null;
+                if (expected && (expected.version !== parsedIp.version || expected.value !== parsedIp.value)) return null;
+
+                const connection = isPlainObject(raw.connection) ? raw.connection : {};
+                const timezone = isPlainObject(raw.timezone) ? raw.timezone : {};
+                const asn = boundedNumber(connection.asn, 4294967295);
+
+                return Object.freeze({
+                    ip: formatAddress(parsedIp.value, parsedIp.version),
+                    country: cleanText(raw.country),
+                    countryCode: matchText(raw.country_code, /^[A-Za-z]{2}$/, 2),
+                    region: cleanText(raw.region),
+                    city: cleanText(raw.city),
+                    postal: cleanText(raw.postal, 20),
+                    latitude: boundedNumber(raw.latitude, 90),
+                    longitude: boundedNumber(raw.longitude, 180),
+                    timezoneId: matchText(timezone.id, /^[A-Za-z0-9_+\-]+(\/[A-Za-z0-9_+\-]+)*$/, 64),
+                    timezoneUtc: matchText(timezone.utc, /^[+-]\d{2}:\d{2}$/, 6),
+                    isp: cleanText(connection.isp),
+                    org: cleanText(connection.org),
+                    asn: asn !== null && Number.isInteger(asn) && asn > 0 ? asn : null,
+                    domain: matchText(connection.domain, /^(?=.{1,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/i, 253)
+                });
+            }
+
+            // Reads the reply body as JSON while refusing bodies that are not JSON or are too large.
+            async function readJsonReply(response) {
+                const type = response.headers.get("Content-Type") || "";
+                if (!/^application\/json\b/i.test(type)) throw new Error("Lookup service sent an unexpected reply");
+
+                const declared = Number(response.headers.get("Content-Length"));
+                if (declared > LOOKUP_MAX_BYTES) throw new Error("Lookup service reply was too large");
+
+                const text = await response.text();
+                if (text.length > LOOKUP_MAX_BYTES) throw new Error("Lookup service reply was too large");
+
+                try {
+                    return JSON.parse(text);
+                } catch {
+                    throw new Error("Lookup service sent an unreadable reply");
+                }
+            }
+
+            // Shows a lookup problem in the status line, and also as a toast unless the lookup started on its own.
+            function reportLookupError(message, quiet) {
+                setStatus(message, true);
+                if (!quiet) showErrorToast(message);
+            }
+
+            // Fetches and checks location data for one parsed address, or for the caller when no address is given.
+            async function fetchLookup(expected, { quiet = false } = {}) {
+                if (lookupController) lookupController.abort();
+                if (!navigator.onLine) {
+                    lookupController = null;
+                    lookupTarget = null;
+                    lookupBtn.disabled = false;
+                    myIpBtn.disabled = false;
+                    reportLookupError(OFFLINE_MESSAGE, quiet);
+                    return null;
+                }
+
+                // Each request keeps its own controller, so a newer request never gets aborted or unlocked by an older one.
+                const controller = new AbortController();
+                lookupController = controller;
+                lookupTarget = expected;
+                const timer = setTimeout(() => controller.abort("timeout"), LOOKUP_TIMEOUT_MS);
+
+                const address = expected ? formatAddress(expected.value, expected.version) : "";
+                lookupBtn.disabled = true;
+                myIpBtn.disabled = true;
+                setStatus(address ? `Looking up ${address}...` : "Finding your public IP...");
+
+                try {
+                    const response = await fetch(LOOKUP_URL + encodeURIComponent(address), {
+                        signal: controller.signal,
+                        cache: "no-store",
+                        credentials: "omit",
+                        referrerPolicy: "no-referrer",
+                        redirect: "error",
+                        mode: "cors"
+                    });
+                    if (!response.ok) throw new Error(`Lookup service returned HTTP ${response.status}`);
+
+                    const raw = await readJsonReply(response);
+                    // The service's own error text is not shown, so it cannot put misleading words on the page.
+                    if (!isPlainObject(raw) || raw.success !== true) throw new Error("Lookup service could not find this address");
+
+                    const data = sanitizeLookup(raw, expected);
+                    if (!data) throw new Error("Lookup service sent details that did not match the address");
+                    return data;
+                } catch (error) {
+                    const reason = controller.signal.aborted ? controller.signal.reason : null;
+                    // A request replaced by a newer one or stopped by Clear ends quietly.
+                    if (controller.signal.aborted && reason !== "timeout" && reason !== "offline") return null;
+
+                    let message = error.message || "Lookup failed";
+                    if (reason === "offline" || !navigator.onLine) message = OFFLINE_MESSAGE;
+                    else if (reason === "timeout") message = "Lookup timed out, please try again";
+                    else if (error instanceof TypeError) message = "Could not reach the lookup service";
+                    reportLookupError(message, quiet);
+                    return null;
+                } finally {
+                    clearTimeout(timer);
+                    if (lookupController === controller) {
+                        lookupController = null;
+                        lookupTarget = null;
+                        lookupBtn.disabled = false;
+                        myIpBtn.disabled = false;
+                    }
+                }
+            }
+
+            async function lookupLocation() {
+                const parsed = analyze();
+                if (!parsed) {
+                    if (!ipInput.value.trim()) showInfoToast("Enter an IP address, or click My IP");
+                    return;
+                }
+
+                const { scope } = classify(parsed.value, parsed.version);
+                if (scope !== "public") {
+                    showInfoToast("Only public addresses have a location");
+                    return;
+                }
+
+                // A second request for the address already being looked up is skipped, so repeated clicks do not use up the rate limit.
+                if (lookupController && isSameAddress(lookupTarget, parsed)) {
+                    setStatus(`Looking up ${formatAddress(parsed.value, parsed.version)}...`);
+                    return;
+                }
+
+                const data = await fetchLookup(parsed);
+                if (!data) return;
+
+                lookupResult = data;
+                setStatus("");
+                renderLocation();
+            }
+
+            // Looks up the caller's own address, and stays silent apart from the status line when it starts on its own.
+            async function lookupMyIp({ quiet = false } = {}) {
+                const data = await fetchLookup(null, { quiet });
+                if (!data) return;
+
+                lookupResult = data;
+                ipInput.value = data.ip;
+                analyze();
+                setStatus("");
+                renderLocation();
+                if (!quiet) showSuccessToast("Found your public IP");
+            }
+
+            // Stops a running lookup at once when the connection drops, instead of waiting for the timeout.
+            function onConnectionLost() {
+                if (lookupController) lookupController.abort("offline");
+                else if (!lookupResult) setStatus(OFFLINE_MESSAGE, true);
+            }
+
+            // Finds the visitor's IP again when the connection comes back, if nothing else has been looked up yet.
+            function onConnectionBack() {
+                if (ipStatus.textContent === OFFLINE_MESSAGE) setStatus("");
+                if (!lookupResult && !lookupController && !ipInput.value.trim()) lookupMyIp({ quiet: true });
+            }
+
+            function copyText(text, btn) {
+                if (isBlank(text, "Nothing to copy")) return;
+                navigator.clipboard.writeText(text).then(() => {
+                    showSuccessToast("Copied to clipboard");
+                    if (btn) {
+                        const icon = btn.querySelector("i");
+                        const original = icon.className;
+                        icon.className = "bi bi-check-lg";
+                        setTimeout(() => icon.className = original, 1000);
+                    }
+                });
+            }
+
+            // Copies every visible row as "Label: value" lines, grouped by section.
+            function copyAllDetails(btn) {
+                const sections = [["Address", addressGrid], ["Subnet", subnetGrid], ["Location & network", locationGrid]];
+                const text = sections.map(([title, grid]) => {
+                    const lines = Array.from(grid.querySelectorAll("[data-copy-label]")).map(el => `${el.dataset.copyLabel}: ${el.textContent}`);
+                    return lines.length ? `${title}\n${lines.join("\n")}` : "";
+                }).filter(Boolean).join("\n\n");
+                copyText(text, btn);
+            }
+
+            // Hides an old lookup once the input points at a different address.
+            function isSameAddress(a, b) {
+                return Boolean(a && b) && a.version === b.version && a.value === b.value;
+            }
+
+            // Stops a running lookup once the input points at a different address, so an old reply never fills the panel or overwrites what was typed.
+            function onInputChange() {
+                const parsed = analyze();
+                if (lookupController) {
+                    if (isSameAddress(lookupTarget, parsed)) setStatus(`Looking up ${formatAddress(parsed.value, parsed.version)}...`);
+                    else lookupController.abort();
+                }
+                if (lookupResult) {
+                    const sameAddress = parsed && parseInput(lookupResult.ip).value === parsed.value;
+                    if (!sameAddress) {
+                        lookupResult = null;
+                        renderLocation();
+                    }
+                }
+            }
+
+            function clearAll() {
+                if (lookupController) lookupController.abort();
+                ipInput.value = "";
+                lookupResult = null;
+                analyze();
+                renderLocation();
+            }
+
+            // Gives Undo Clear the lookup result, which is not kept in a form field.
+            function getPageUndoState() {
+                return { lookup: lookupResult };
+            }
+
+            function restorePageUndoState(state) {
+                lookupResult = state.lookup;
+                renderLocation();
+            }
+
+            ipInput.addEventListener("input", onInputChange);
+            ipInput.addEventListener("keydown", event => {
+                // Holding Enter down sends only one lookup.
+                if (event.key === "Enter" && !event.repeat && !event.ctrlKey && !event.metaKey) lookupLocation();
+            });
+
+            analyze();
+            renderLocation();
+            window.addEventListener("offline", onConnectionLost);
+            window.addEventListener("online", onConnectionBack);
+
+            // Shows the visitor's own public IP as soon as the page opens.
+            lookupMyIp({ quiet: true });
+        </script>
+    </body>
+</html>

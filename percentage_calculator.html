@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Codexael Toolstack — Percentage Calculator</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+        <!-- Metadata -->
+        <meta name="description" content="Work out percentages, increases, decreases and discounts in seconds.">
+        <meta name="author" content="Codexael">
+        <meta name="theme-color" content="#fff4e0" media="(prefers-color-scheme: light)">
+        <meta name="theme-color" content="#17140f" media="(prefers-color-scheme: dark)">
+
+        <!-- Open Graph -->
+        <meta property="og:title" content="Codexael Toolstack — Percentage Calculator">
+        <meta property="og:description" content="Work out percentages, increases, decreases and discounts in seconds.">
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="https://tools.codexael.com/percentage_calculator.html">
+        <meta property="og:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+        <meta property="og:image:width" content="1200">
+        <meta property="og:image:height" content="630">
+        <meta property="og:image:type" content="image/png">
+        <meta property="og:image:alt" content="Codexael Toolstack — Percentage Calculator">
+        <meta property="og:site_name" content="Codexael Toolstack">
+
+        <!-- Twitter Card -->
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="Codexael Toolstack — Percentage Calculator">
+        <meta name="twitter:description" content="Work out percentages, increases, decreases and discounts in seconds.">
+        <meta name="twitter:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+
+        <!-- Favicon / App Icon -->
+        <link rel="icon" type="image/svg+xml" href="assets/images/codexael_icon.svg">
+        <link rel="apple-touch-icon" href="assets/images/codexael_icon.svg">
+
+        <!-- Bootstrap 5.2.0-beta1 -->
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+
+        <!-- Bootstrap with Popper 5.2.0-beta1 -->
+        <script src="js/bootstrap.bundle.min.js"></script>
+
+        <!-- Bootstrap Icons 1.11.3 -->
+        <link rel="stylesheet" href="css/bootstrap-icons.min.css">
+
+        <!-- Google fonts -->
+        <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+        <!-- Custom CSS -->
+        <link rel="stylesheet" href="css/keycaps.css">
+
+        <style>
+            .percent-body {
+                flex: 1 1 auto;
+                min-height: 0;
+                display: flex;
+                flex-direction: column;
+                gap: 22px;
+                padding: 24px 22px 28px;
+                overflow-y: auto;
+            }
+
+            .percent-mode-group {
+                display: flex;
+                flex-direction: column;
+                gap: 14px;
+            }
+
+            /* Field labels are small ink tags above each input. */
+            .percent-field label {
+                display: table;
+                margin-bottom: 8px;
+                padding: 2px 10px;
+                background: var(--ink);
+                color: var(--bg);
+                font-family: var(--display-font);
+                font-size: 0.72rem;
+                text-transform: uppercase;
+            }
+
+            .percent-field .input-stepper {
+                margin-bottom: 0;
+            }
+
+            .percent-inline-toggle {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                width: 300px;
+                max-width: 100%;
+                align-self: center;
+                padding-top: 4px;
+            }
+
+            .percent-inline-toggle .segmented-control {
+                width: 100%;
+            }
+
+            /* The result is a yellow sticker that keeps dark text in both themes. */
+            .percent-result-box {
+                margin-top: auto;
+                min-height: 96px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 18px;
+                background: var(--yellow);
+                color: #111111;
+                border: 4px solid var(--ink);
+                box-shadow: 3px 3px 0 var(--ink);
+                font-size: 1rem;
+                font-weight: 700;
+                line-height: 1.6;
+                text-align: center;
+                overflow-wrap: anywhere;
+                transform: rotate(-1deg);
+            }
+
+            .percent-result-box .percent-result-value {
+                font-family: var(--display-font);
+                font-weight: 400;
+                font-size: 1.6rem;
+                text-transform: uppercase;
+                vertical-align: middle;
+            }
+
+            /* The empty state is a dashed paper box without the sticker tilt. */
+            .percent-result-box.percent-placeholder {
+                background: var(--paper);
+                color: var(--ink);
+                border-style: dashed;
+                box-shadow: none;
+                font-size: 0.85rem;
+                text-transform: uppercase;
+                transform: none;
+            }
+
+            .percent-result-box .percent-increase,
+            .percent-result-box .percent-decrease {
+                display: inline-block;
+                padding: 0 10px;
+                border: 3px solid #111111;
+                box-shadow: 1.5px 1.5px 0 #111111;
+                transform: rotate(-2deg);
+            }
+
+            .percent-result-box .percent-increase {
+                background: var(--lime);
+            }
+
+            .percent-result-box .percent-decrease {
+                background: var(--red);
+            }
+
+            @media (max-width: 480px) {
+                .percent-body {
+                    padding: 20px 16px 24px;
+                }
+
+                .percent-result-box .percent-result-value {
+                    font-size: 1.3rem;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <!-- Common layout -->
+        <div id="navbar-container"></div>
+
+        <div class="container-fluid tool-wrapper">
+            <div class="row">
+                <div class="col-md-6 offset-md-3">
+                    <div class="editor-panel">
+                        <div class="editor-header">
+                            <span class="editor-title">Percentage Calculator</span>
+                            <div class="editor-actions">
+                                <button title="Copy result" data-shortcut="copy" onclick="copyText(currentResultText, this)"><i class="bi bi-copy icon-btn"></i></button>
+                                <div class="divider"></div>
+                                <button class="btn-danger" title="Clear" data-undo-clear onclick="clearAll()"><i class="bi bi-x-lg icon-btn"></i></button>
+                            </div>
+                        </div>
+
+                        <div class="percent-body">
+                            <div class="segmented-control btn-group percentage-types" role="group" aria-label="Calculation mode">
+                                <input type="radio" name="percentMode" id="modeOf" value="of" checked>
+                                <label for="modeOf">X% of Y</label>
+
+                                <input type="radio" name="percentMode" id="modeWhat" value="what">
+                                <label for="modeWhat">X is % of Y</label>
+
+                                <input type="radio" name="percentMode" id="modeChange" value="change">
+                                <label for="modeChange">% Change</label>
+
+                                <input type="radio" name="percentMode" id="modeAdjust" value="adjust">
+                                <label for="modeAdjust">Increase/Decrease</label>
+                            </div>
+
+                            <div class="percent-mode-group" id="groupOf">
+                                <div class="percent-field">
+                                    <label for="ofPercent">Percentage (X)</label>
+                                    <div class="input-stepper">
+                                        <button type="button" data-step="dec" title="Decrease"><i class="bi bi-dash"></i></button>
+                                        <div class="stepper-divider"></div>
+                                        <input type="number" id="ofPercent" placeholder="e.g. 20">
+                                        <div class="stepper-divider"></div>
+                                        <button type="button" data-step="inc" title="Increase"><i class="bi bi-plus"></i></button>
+                                    </div>
+                                </div>
+                                <div class="percent-field">
+                                    <label for="ofValue">Of value (Y)</label>
+                                    <div class="input-stepper">
+                                        <button type="button" data-step="dec" title="Decrease"><i class="bi bi-dash"></i></button>
+                                        <div class="stepper-divider"></div>
+                                        <input type="number" id="ofValue" placeholder="e.g. 150">
+                                        <div class="stepper-divider"></div>
+                                        <button type="button" data-step="inc" title="Increase"><i class="bi bi-plus"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="percent-mode-group d-none" id="groupWhat">
+                                <div class="percent-field">
+                                    <label for="whatValue">Value (X)</label>
+                                    <div class="input-stepper">
+                                        <button type="button" data-step="dec" title="Decrease"><i class="bi bi-dash"></i></button>
+                                        <div class="stepper-divider"></div>
+                                        <input type="number" id="whatValue" placeholder="e.g. 30">
+                                        <div class="stepper-divider"></div>
+                                        <button type="button" data-step="inc" title="Increase"><i class="bi bi-plus"></i></button>
+                                    </div>
+                                </div>
+                                <div class="percent-field">
+                                    <label for="whatTotal">Total (Y)</label>
+                                    <div class="input-stepper">
+                                        <button type="button" data-step="dec" title="Decrease"><i class="bi bi-dash"></i></button>
+                                        <div class="stepper-divider"></div>
+                                        <input type="number" id="whatTotal" placeholder="e.g. 150">
+                                        <div class="stepper-divider"></div>
+                                        <button type="button" data-step="inc" title="Increase"><i class="bi bi-plus"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="percent-mode-group d-none" id="groupChange">
+                                <div class="percent-field">
+                                    <label for="changeFrom">From (X)</label>
+                                    <div class="input-stepper">
+                                        <button type="button" data-step="dec" title="Decrease"><i class="bi bi-dash"></i></button>
+                                        <div class="stepper-divider"></div>
+                                        <input type="number" id="changeFrom" placeholder="e.g. 80">
+                                        <div class="stepper-divider"></div>
+                                        <button type="button" data-step="inc" title="Increase"><i class="bi bi-plus"></i></button>
+                                    </div>
+                                </div>
+                                <div class="percent-field">
+                                    <label for="changeTo">To (Y)</label>
+                                    <div class="input-stepper">
+                                        <button type="button" data-step="dec" title="Decrease"><i class="bi bi-dash"></i></button>
+                                        <div class="stepper-divider"></div>
+                                        <input type="number" id="changeTo" placeholder="e.g. 100">
+                                        <div class="stepper-divider"></div>
+                                        <button type="button" data-step="inc" title="Increase"><i class="bi bi-plus"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="percent-mode-group d-none" id="groupAdjust">
+                                <div class="percent-field">
+                                    <label for="adjustValue">Value (Y)</label>
+                                    <div class="input-stepper">
+                                        <button type="button" data-step="dec" title="Decrease"><i class="bi bi-dash"></i></button>
+                                        <div class="stepper-divider"></div>
+                                        <input type="number" id="adjustValue" placeholder="e.g. 200">
+                                        <div class="stepper-divider"></div>
+                                        <button type="button" data-step="inc" title="Increase"><i class="bi bi-plus"></i></button>
+                                    </div>
+                                </div>
+                                <div class="percent-field">
+                                    <label for="adjustPercent">Percentage (X)</label>
+                                    <div class="input-stepper">
+                                        <button type="button" data-step="dec" title="Decrease"><i class="bi bi-dash"></i></button>
+                                        <div class="stepper-divider"></div>
+                                        <input type="number" id="adjustPercent" placeholder="e.g. 15">
+                                        <div class="stepper-divider"></div>
+                                        <button type="button" data-step="inc" title="Increase"><i class="bi bi-plus"></i></button>
+                                    </div>
+                                </div>
+                                <div class="percent-inline-toggle">
+                                    <div class="segmented-control btn-group full-width" role="group" aria-label="Adjust direction">
+                                        <input type="radio" name="adjustDirection" id="adjustIncrease" value="increase" checked>
+                                        <label for="adjustIncrease">Increase</label>
+
+                                        <input type="radio" name="adjustDirection" id="adjustDecrease" value="decrease">
+                                        <label for="adjustDecrease">Decrease</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="percent-result-box percent-placeholder" id="resultBox">
+                                <span id="resultBoxText">Enter values above to see the result</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <div id="footer-container"></div>
+
+        <!-- Common JS -->
+        <script src="js/tool-help.js"></script>
+        <script src="js/storage.js"></script>
+        <script src="js/common.js"></script>
+        <script src="js/custom-input.js"></script>
+        <script src="js/script.js"></script>
+
+        <!-- Custom JS -->
+        <script>
+            const pageTitle = "Percentage Calculator";
+
+            const modeGroups = {
+                of: document.getElementById("groupOf"),
+                what: document.getElementById("groupWhat"),
+                change: document.getElementById("groupChange"),
+                adjust: document.getElementById("groupAdjust")
+            };
+
+            const resultBox = document.getElementById("resultBox");
+            const resultBoxText = document.getElementById("resultBoxText");
+
+            const ofPercent = document.getElementById("ofPercent");
+            const ofValue = document.getElementById("ofValue");
+            const whatValue = document.getElementById("whatValue");
+            const whatTotal = document.getElementById("whatTotal");
+            const changeFrom = document.getElementById("changeFrom");
+            const changeTo = document.getElementById("changeTo");
+            const adjustValue = document.getElementById("adjustValue");
+            const adjustPercent = document.getElementById("adjustPercent");
+
+            let currentResultText = "";
+
+            function copyText(text, btn) {
+                if (isBlank(text, "Nothing to copy")) return;
+                navigator.clipboard.writeText(text).then(() => {
+                    showSuccessToast("Copied to clipboard");
+                    if (btn) {
+                        const icon = btn.querySelector("i");
+                        const original = icon.className;
+                        icon.className = "bi bi-check-lg";
+                        setTimeout(() => icon.className = original, 1000);
+                    }
+                });
+            }
+
+            function getActiveMode() {
+                return document.querySelector('input[name="percentMode"]:checked').value;
+            }
+
+            function formatNumber(value) {
+                return Number(value.toFixed(4)).toString();
+            }
+
+            function showPlaceholder() {
+                resultBox.classList.add("percent-placeholder");
+                resultBoxText.innerHTML = "Enter values above to see the result";
+                currentResultText = "";
+            }
+
+            function showResult(html, text) {
+                resultBox.classList.remove("percent-placeholder");
+                resultBoxText.innerHTML = html;
+                currentResultText = text;
+            }
+
+            function calculate() {
+                const mode = getActiveMode();
+
+                if (mode === "of") {
+                    const x = parseFloat(ofPercent.value);
+                    const y = parseFloat(ofValue.value);
+                    if (isNaN(x) || isNaN(y)) return showPlaceholder();
+
+                    const result = formatNumber((x / 100) * y);
+                    showResult(
+                        `${x}% of ${y} is <span class="percent-result-value">${result}</span>`,
+                        `${x}% of ${y} is ${result}`
+                    );
+
+                } else if (mode === "what") {
+                    const x = parseFloat(whatValue.value);
+                    const y = parseFloat(whatTotal.value);
+                    if (isNaN(x) || isNaN(y) || y === 0) return showPlaceholder();
+
+                    const result = formatNumber((x / y) * 100);
+                    showResult(
+                        `${x} is <span class="percent-result-value">${result}%</span> of ${y}`,
+                        `${x} is ${result}% of ${y}`
+                    );
+
+                } else if (mode === "change") {
+                    const x = parseFloat(changeFrom.value);
+                    const y = parseFloat(changeTo.value);
+                    if (isNaN(x) || isNaN(y) || x === 0) return showPlaceholder();
+
+                    const rawChange = ((y - x) / Math.abs(x)) * 100;
+                    const result = formatNumber(Math.abs(rawChange));
+                    const direction = rawChange >= 0 ? "increase" : "decrease";
+                    const cssClass = rawChange >= 0 ? "percent-increase" : "percent-decrease";
+                    showResult(
+                        `<span class="percent-result-value ${cssClass}">${result}% ${direction}</span>`,
+                        `${result}% ${direction}`
+                    );
+
+                } else if (mode === "adjust") {
+                    const y = parseFloat(adjustValue.value);
+                    const x = parseFloat(adjustPercent.value);
+                    if (isNaN(x) || isNaN(y)) return showPlaceholder();
+
+                    const direction = document.querySelector('input[name="adjustDirection"]:checked').value;
+                    const delta = (x / 100) * y;
+                    const newValue = formatNumber(direction === "increase" ? y + delta : y - delta);
+                    showResult(
+                        `New value: <span class="percent-result-value">${newValue}</span>`,
+                        `New value: ${newValue}`
+                    );
+                }
+            }
+
+            document.querySelectorAll('input[name="percentMode"]').forEach(radio => {
+                radio.addEventListener("change", () => {
+                    Object.entries(modeGroups).forEach(([key, el]) => el.classList.toggle("d-none", key !== radio.value));
+                    calculate();
+                });
+            });
+
+            document.querySelectorAll('.percent-body input[type="number"], .percent-body input[type="radio"][name="adjustDirection"]')
+                .forEach(input => input.addEventListener("input", calculate));
+
+            document.querySelectorAll('input[name="adjustDirection"]').forEach(radio => radio.addEventListener("change", calculate));
+
+            function clearAll() {
+                document.querySelectorAll(".percent-body input[type='number']").forEach(input => input.value = "");
+                document.getElementById("modeOf").checked = true;
+                document.getElementById("adjustIncrease").checked = true;
+                Object.entries(modeGroups).forEach(([key, el]) => el.classList.toggle("d-none", key !== "of"));
+                showPlaceholder();
+            }
+        </script>
+    </body>
+</html>

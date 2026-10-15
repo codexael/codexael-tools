@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Codexael Toolstack — Calculator</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+        <!-- Metadata -->
+        <meta name="description" content="A quick, simple calculator for everyday sums.">
+        <meta name="author" content="Codexael">
+        <meta name="theme-color" content="#fff4e0" media="(prefers-color-scheme: light)">
+        <meta name="theme-color" content="#17140f" media="(prefers-color-scheme: dark)">
+
+        <!-- Open Graph -->
+        <meta property="og:title" content="Codexael Toolstack — Online Calculator">
+        <meta property="og:description" content="A quick, simple calculator for everyday sums.">
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="https://tools.codexael.com/calculator.html">
+        <meta property="og:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+        <meta property="og:image:width" content="1200">
+        <meta property="og:image:height" content="630">
+        <meta property="og:image:type" content="image/png">
+        <meta property="og:image:alt" content="Codexael Toolstack — Online Calculator">
+        <meta property="og:site_name" content="Codexael Toolstack">
+
+        <!-- Twitter Card -->
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="Codexael Toolstack — Online Calculator">
+        <meta name="twitter:description" content="A quick, simple calculator for everyday sums.">
+        <meta name="twitter:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+
+        <!-- Favicon / App Icon -->
+        <link rel="icon" type="image/svg+xml" href="assets/images/codexael_icon.svg">
+        <link rel="apple-touch-icon" href="assets/images/codexael_icon.svg">
+
+        <!-- Bootstrap 5.2.0-beta1 -->
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+
+        <!-- Bootstrap with Popper 5.2.0-beta1 -->
+        <script src="js/bootstrap.bundle.min.js"></script>
+
+        <!-- Bootstrap Icons 1.11.3 -->
+        <link rel="stylesheet" href="css/bootstrap-icons.min.css">
+
+        <!-- Google fonts -->
+        <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+        <!-- Custom CSS -->
+        <link rel="stylesheet" href="css/keycaps.css">
+
+        <style>
+            .calculator-body {
+                flex: 1;
+                padding: 22px 20px 24px;
+                display: flex;
+                flex-direction: column;
+                gap: 20px;
+                overflow-y: auto;
+            }
+
+            /* The screen is a green LCD block that keeps dark digits in both themes. */
+            .calc-screen {
+                display: flex;
+                flex-direction: column;
+                align-items: flex-end;
+                justify-content: flex-end;
+                gap: 2px;
+                min-height: 116px;
+                padding: 10px 16px 12px;
+                background: #cfe8a9;
+                color: #111111;
+                border: 4px solid var(--ink);
+                border-radius: 12px;
+                box-shadow: inset 0 2.5px 0 rgba(0, 0, 0, 0.14), 3px 3px 0 var(--ink);
+            }
+
+            /* A small brand sticker sits in the top left corner of the screen. */
+            .calc-screen::before {
+                content: "Toolstack calc";
+                align-self: flex-start;
+                margin-bottom: auto;
+                padding: 0 6px;
+                background: #111111;
+                color: #cfe8a9;
+                font-family: var(--display-font);
+                font-size: 0.62rem;
+                text-transform: uppercase;
+                transform: rotate(-2deg);
+            }
+
+            .calc-expression,
+            .calc-result {
+                max-width: 100%;
+                white-space: nowrap;
+                overflow-x: auto;
+                scrollbar-width: none;
+                font-family: var(--mono-font);
+                font-weight: 700;
+            }
+
+            .calc-expression::-webkit-scrollbar,
+            .calc-result::-webkit-scrollbar {
+                display: none;
+            }
+
+            .calc-expression {
+                font-size: 0.9rem;
+                opacity: 0.6;
+            }
+
+            .calc-result {
+                font-size: 2.4rem;
+                line-height: 1.15;
+            }
+
+            .calc-memory-row {
+                display: grid;
+                grid-template-columns: repeat(4, 1fr);
+                gap: 10px;
+            }
+
+            /* Memory keys are short lilac keycaps that sink when pressed. */
+            .calc-mem-btn {
+                padding: 5px 4px;
+                background: var(--lilac);
+                color: #111111;
+                border: 3px solid var(--ink);
+                border-radius: 9px;
+                box-shadow: 0 2px 0 var(--ink);
+                font-family: var(--display-font);
+                font-size: 0.8rem;
+                transition: transform 0.08s, box-shadow 0.08s;
+            }
+
+            .calc-mem-btn:hover {
+                transform: translateY(1px);
+                box-shadow: 0 1px 0 var(--ink);
+            }
+
+            .calc-mem-btn:active {
+                transform: translateY(2px);
+                box-shadow: 0 0 0 var(--ink);
+            }
+
+            .calc-grid {
+                display: grid;
+                grid-template-columns: repeat(4, 1fr);
+                gap: 16px 12px;
+                padding-bottom: 6px;
+            }
+
+            /* Every key is a chunky keycap with an inner ring and a deep shadow. */
+            .calc-btn {
+                position: relative;
+                min-height: 60px;
+                padding: 8px 0;
+                background: var(--c, var(--paper));
+                color: var(--ink);
+                border: 3px solid var(--ink);
+                border-radius: 12px;
+                box-shadow: 0 3px 0 var(--ink);
+                font-family: var(--display-font);
+                font-size: 1.45rem;
+                line-height: 1;
+                transition: transform 0.08s, box-shadow 0.08s;
+            }
+
+            .calc-btn::before {
+                content: "";
+                position: absolute;
+                inset: 4px 4px 7px;
+                border: 2px solid rgba(0, 0, 0, 0.12);
+                border-radius: 8px;
+                pointer-events: none;
+            }
+
+            .calc-btn:hover {
+                transform: translateY(1px);
+                box-shadow: 0 2px 0 var(--ink);
+            }
+
+            .calc-btn:active {
+                transform: translateY(3px);
+                box-shadow: 0 0 0 var(--ink);
+            }
+
+            /* Backspace and percent are yellow function keys. */
+            .calc-grid > .calc-btn:nth-child(2),
+            .calc-grid > .calc-btn:nth-child(3) {
+                --c: var(--yellow);
+                color: #111111;
+            }
+
+            .calc-btn.calc-op {
+                --c: var(--cyan);
+                color: #111111;
+            }
+
+            /* The equals key is a wide pink key so it stands out on the bottom row. */
+            .calc-btn.calc-equals {
+                --c: var(--pink);
+                grid-column: span 2;
+                font-size: 1.9rem;
+            }
+
+            .calc-btn.calc-danger {
+                --c: var(--red);
+                color: #111111;
+            }
+
+            .calc-history-section {
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                padding-top: 16px;
+                border-top: 3px dashed var(--ink);
+            }
+
+            .calc-history-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+            }
+
+            .calc-history-title {
+                padding: 2px 10px;
+                background: var(--ink);
+                color: var(--bg);
+                font-family: var(--display-font);
+                font-size: 0.8rem;
+                text-transform: uppercase;
+            }
+
+            .calc-history-clear {
+                width: 34px;
+                height: 34px;
+                display: grid;
+                place-items: center;
+                padding: 0;
+                background: var(--paper);
+                color: var(--ink);
+                border: 2.5px solid var(--ink);
+                border-radius: 8px;
+                box-shadow: 0 2px 0 var(--ink);
+                transition: transform 0.08s, box-shadow 0.08s, background-color 0.12s;
+            }
+
+            .calc-history-clear:hover {
+                transform: translateY(1px);
+                box-shadow: 0 1px 0 var(--ink);
+                background: var(--red);
+                color: #111111;
+            }
+
+            .calc-history-clear:active {
+                transform: translateY(2px);
+                box-shadow: 0 0 0 var(--ink);
+            }
+
+            /* The history list reads like a till receipt with dashed lines between entries. */
+            .calc-history-list {
+                max-height: 160px;
+                overflow-y: auto;
+                display: flex;
+                flex-direction: column;
+                padding: 4px 10px;
+                background: var(--bg);
+                border: 3px solid var(--ink);
+            }
+
+            .calc-history-item {
+                padding: 6px;
+                font-family: var(--mono-font);
+                font-size: 0.8rem;
+                font-weight: 700;
+                overflow-wrap: anywhere;
+                cursor: pointer;
+            }
+
+            .calc-history-item + .calc-history-item {
+                border-top: 2px dashed var(--ink);
+            }
+
+            .calc-history-item:hover {
+                background: var(--yellow);
+                color: #111111;
+            }
+
+            .calc-history-empty {
+                padding: 6px 2px;
+                font-size: 0.8rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                opacity: 0.6;
+            }
+
+            @media (max-width: 480px) {
+                .calculator-body {
+                    padding: 18px 14px 20px;
+                }
+
+                .calc-grid {
+                    gap: 14px 9px;
+                }
+
+                .calc-btn {
+                    min-height: 54px;
+                    font-size: 1.25rem;
+                }
+
+                .calc-result {
+                    font-size: 2rem;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <!-- Common layout -->
+        <div id="navbar-container"></div>
+
+        <div class="container-fluid tool-wrapper">
+            <div class="row">
+                <div class="col-md-5 offset-md-4 col-12">
+                    <div class="editor-panel">
+                        <div class="editor-header">
+                            <span class="editor-title">Calculator</span>
+                            <div class="editor-actions">
+                                <button title="Copy result" data-shortcut="copy" onclick="copyText(currentInput, this)"><i class="bi bi-copy icon-btn"></i></button>
+                                <div class="divider"></div>
+                                <button class="btn-danger" title="Clear" data-undo-clear onclick="clearAll()"><i class="bi bi-x-lg icon-btn"></i></button>
+                            </div>
+                        </div>
+
+                        <div class="calculator-body invisible-scrollbars">
+
+                            <div class="calc-screen">
+                                <div class="calc-expression" id="calcExpression">&nbsp;</div>
+                                <div class="calc-result" id="calcResult">0</div>
+                            </div>
+
+                            <div class="calc-memory-row">
+                                <button class="calc-mem-btn" title="Memory Clear" onclick="memoryClear()">MC</button>
+                                <button class="calc-mem-btn" title="Memory Recall" onclick="memoryRecall()">MR</button>
+                                <button class="calc-mem-btn" title="Memory Add" onclick="memoryAdd()">M+</button>
+                                <button class="calc-mem-btn" title="Memory Subtract" onclick="memorySubtract()">M-</button>
+                            </div>
+
+                            <div class="calc-grid">
+                                <button class="calc-btn calc-danger" onclick="clearAll()">C</button>
+                                <button class="calc-btn" title="Backspace" onclick="backspace()"><i class="bi bi-backspace"></i></button>
+                                <button class="calc-btn" onclick="inputPercent()">%</button>
+                                <button class="calc-btn calc-op" onclick="chooseOperator('/')">÷</button>
+
+                                <button class="calc-btn" onclick="inputDigit('7')">7</button>
+                                <button class="calc-btn" onclick="inputDigit('8')">8</button>
+                                <button class="calc-btn" onclick="inputDigit('9')">9</button>
+                                <button class="calc-btn calc-op" onclick="chooseOperator('*')">×</button>
+
+                                <button class="calc-btn" onclick="inputDigit('4')">4</button>
+                                <button class="calc-btn" onclick="inputDigit('5')">5</button>
+                                <button class="calc-btn" onclick="inputDigit('6')">6</button>
+                                <button class="calc-btn calc-op" onclick="chooseOperator('-')">−</button>
+
+                                <button class="calc-btn" onclick="inputDigit('1')">1</button>
+                                <button class="calc-btn" onclick="inputDigit('2')">2</button>
+                                <button class="calc-btn" onclick="inputDigit('3')">3</button>
+                                <button class="calc-btn calc-op" onclick="chooseOperator('+')">+</button>
+
+                                <button class="calc-btn calc-zero" onclick="inputDigit('0')">0</button>
+                                <button class="calc-btn" onclick="inputDecimal()">.</button>
+                                <button class="calc-btn calc-op calc-equals" data-shortcut="run" data-shortcut-label="Calculate the result" onclick="calculateEquals()">=</button>
+                            </div>
+
+                            <div class="calc-history-section">
+                                <div class="calc-history-header">
+                                    <span class="calc-history-title">History</span>
+                                    <button class="calc-history-clear" title="Clear history" onclick="clearHistory()"><i class="bi bi-trash"></i></button>
+                                </div>
+                                <div class="calc-history-list invisible-scrollbars" id="historyList">
+                                    <span class="calc-history-empty">No calculations yet</span>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <div class="editor-footer">
+                            <div class="status">
+                                <span>Mode <b>Standard</b></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <div id="footer-container"></div>
+
+        <!-- Common JS -->
+        <script src="js/tool-help.js"></script>
+        <script src="js/storage.js"></script>
+        <script src="js/common.js"></script>
+        <script src="js/script.js"></script>
+
+        <!-- Custom JS -->
+        <script>
+            const pageTitle = "Calculator";
+            const STORAGE_KEY = "toolstack_calculator_history";
+            const OP_SYMBOLS = { "+": "+", "-": "−", "*": "×", "/": "÷" };
+
+            const calcExpression = document.getElementById("calcExpression");
+            const calcResult = document.getElementById("calcResult");
+            const historyList = document.getElementById("historyList");
+
+            let currentInput = "0";
+            let previousValue = null;
+            let pendingOperator = null;
+            let overwrite = false;
+            let memoryValue = 0;
+
+            function downloadText(filename, content) {
+                if (isBlank(content, "Nothing to download")) return;
+                const blob = new Blob([content], { type: "text/plain" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
+
+            function copyText(text, btn) {
+                if (isBlank(text, "Nothing to copy")) return;
+                navigator.clipboard.writeText(text).then(() => {
+                    showSuccessToast("Copied to clipboard");
+                    if (btn) {
+                        const icon = btn.querySelector("i");
+                        const original = icon.className;
+                        icon.className = "bi bi-check-lg";
+                        setTimeout(() => icon.className = original, 1000);
+                    }
+                });
+            }
+
+            function getHistory() {
+                return getStorageItem(STORAGE_KEY, []);
+            }
+
+            function saveHistory(items) {
+                setStorageItem(STORAGE_KEY, items);
+            }
+
+            // Rounds away floating-point noise (e.g. 0.1 + 0.2) before rendering a number
+            function formatNumber(num) {
+                if (!isFinite(num)) return "0";
+                return parseFloat(num.toPrecision(12)).toString();
+            }
+
+            function updateDisplay() {
+                calcResult.textContent = currentInput;
+                calcExpression.textContent = previousValue !== null && pendingOperator
+                    ? `${formatNumber(previousValue)} ${OP_SYMBOLS[pendingOperator]}`
+                    : " ";
+            }
+
+            function inputDigit(digit) {
+                if (overwrite || currentInput === "0") {
+                    currentInput = digit;
+                    overwrite = false;
+                } else {
+                    currentInput += digit;
+                }
+                updateDisplay();
+            }
+
+            function inputDecimal() {
+                if (overwrite) {
+                    currentInput = "0.";
+                    overwrite = false;
+                } else if (!currentInput.includes(".")) {
+                    currentInput += ".";
+                }
+                updateDisplay();
+            }
+
+            function backspace() {
+                if (overwrite) return;
+                currentInput = currentInput.length > 1 ? currentInput.slice(0, -1) : "0";
+                updateDisplay();
+            }
+
+            function clearAll() {
+                currentInput = "0";
+                previousValue = null;
+                pendingOperator = null;
+                overwrite = false;
+                updateDisplay();
+            }
+
+            // Returns the calculator state so the toolbar Clear button can offer Undo.
+            function getPageUndoState() {
+                return { currentInput, previousValue, pendingOperator, overwrite };
+            }
+
+            // Puts back the calculator state saved before the toolbar Clear button ran.
+            function restorePageUndoState(state) {
+                ({ currentInput, previousValue, pendingOperator, overwrite } = state);
+                updateDisplay();
+            }
+
+            function inputPercent() {
+                const current = parseFloat(currentInput) || 0;
+                const result = pendingOperator !== null && previousValue !== null
+                    ? previousValue * (current / 100)
+                    : current / 100;
+
+                currentInput = formatNumber(result);
+                overwrite = true;
+                updateDisplay();
+            }
+
+            function computeResult(a, b, op) {
+                switch (op) {
+                    case "+": return a + b;
+                    case "-": return a - b;
+                    case "*": return a * b;
+                    case "/": return b === 0 ? null : a / b;
+                }
+            }
+
+            function chooseOperator(op) {
+                if (pendingOperator && !overwrite) calculateEquals(false);
+
+                previousValue = parseFloat(currentInput);
+                pendingOperator = op;
+                overwrite = true;
+                updateDisplay();
+            }
+
+            function calculateEquals(addToHistory = true) {
+                if (pendingOperator === null || previousValue === null) return;
+
+                const current = parseFloat(currentInput);
+                const result = computeResult(previousValue, current, pendingOperator);
+
+                if (result === null) {
+                    showErrorToast("Cannot divide by zero");
+                    currentInput = "0";
+                    previousValue = null;
+                    pendingOperator = null;
+                    overwrite = false;
+                    updateDisplay();
+                    return;
+                }
+
+                const formatted = formatNumber(result);
+
+                if (addToHistory) {
+                    const entry = `${formatNumber(previousValue)} ${OP_SYMBOLS[pendingOperator]} ${formatNumber(current)} = ${formatted}`;
+                    addHistoryEntry(entry, formatted);
+                }
+
+                currentInput = formatted;
+                previousValue = addToHistory ? null : result;
+                pendingOperator = addToHistory ? null : pendingOperator;
+                overwrite = true;
+                updateDisplay();
+            }
+
+            function memoryAdd() {
+                memoryValue += parseFloat(currentInput) || 0;
+                showInfoToast(`Added to memory (M = ${formatNumber(memoryValue)})`);
+            }
+
+            function memorySubtract() {
+                memoryValue -= parseFloat(currentInput) || 0;
+                showInfoToast(`Subtracted from memory (M = ${formatNumber(memoryValue)})`);
+            }
+
+            function memoryRecall() {
+                currentInput = formatNumber(memoryValue);
+                overwrite = true;
+                updateDisplay();
+            }
+
+            function memoryClear() {
+                memoryValue = 0;
+                showInfoToast("Memory cleared");
+            }
+
+            function addHistoryEntry(text, result) {
+                const items = getHistory();
+                items.unshift({ text, result });
+                saveHistory(items.slice(0, 20));
+                renderHistory();
+            }
+
+            function renderHistory() {
+                const items = getHistory();
+                historyList.innerHTML = "";
+
+                if (!items.length) {
+                    historyList.innerHTML = `<span class="calc-history-empty">No calculations yet</span>`;
+                    return;
+                }
+
+                items.forEach(item => {
+                    const row = document.createElement("div");
+                    row.className = "calc-history-item";
+                    row.textContent = item.text;
+                    row.title = "Click to load result";
+                    row.addEventListener("click", () => loadHistoryResult(item.result));
+                    historyList.appendChild(row);
+                });
+            }
+
+            function loadHistoryResult(result) {
+                currentInput = formatNumber(parseFloat(result));
+                previousValue = null;
+                pendingOperator = null;
+                overwrite = true;
+                updateDisplay();
+                showInfoToast("Loaded from history");
+            }
+
+            function clearHistory() {
+                saveHistory([]);
+                renderHistory();
+                showInfoToast("History cleared");
+            }
+
+            document.addEventListener("keydown", e => {
+                if (e.key >= "0" && e.key <= "9") { inputDigit(e.key); return; }
+
+                switch (e.key) {
+                    case ".": inputDecimal(); break;
+                    case "+": case "-": case "*": chooseOperator(e.key); break;
+                    case "/": e.preventDefault(); chooseOperator("/"); break;
+                    case "%": inputPercent(); break;
+                    case "Enter": case "=": e.preventDefault(); calculateEquals(); break;
+                    case "Backspace": backspace(); break;
+                    case "Escape": clearAll(); break;
+                }
+            });
+
+            renderHistory();
+            updateDisplay();
+        </script>
+
+    </body>
+</html>

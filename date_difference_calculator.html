@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Codexael Toolstack — Date Difference Calculator</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+        <!-- Metadata -->
+        <meta name="description" content="How long between two dates? Get years, months, weeks, days and weekdays.">
+        <meta name="author" content="Codexael">
+        <meta name="theme-color" content="#fff4e0" media="(prefers-color-scheme: light)">
+        <meta name="theme-color" content="#17140f" media="(prefers-color-scheme: dark)">
+
+        <!-- Open Graph -->
+        <meta property="og:title" content="Codexael Toolstack — Date Difference Calculator">
+        <meta property="og:description" content="How long between two dates? Get years, months, weeks, days and weekdays.">
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="https://tools.codexael.com/date_difference_calculator.html">
+        <meta property="og:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+        <meta property="og:image:width" content="1200">
+        <meta property="og:image:height" content="630">
+        <meta property="og:image:type" content="image/png">
+        <meta property="og:image:alt" content="Codexael Toolstack — Date Difference Calculator">
+        <meta property="og:site_name" content="Codexael Toolstack">
+
+        <!-- Twitter Card -->
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="Codexael Toolstack — Date Difference Calculator">
+        <meta name="twitter:description" content="How long between two dates? Get years, months, weeks, days and weekdays.">
+        <meta name="twitter:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+
+        <!-- Favicon / App Icon -->
+        <link rel="icon" type="image/svg+xml" href="assets/images/codexael_icon.svg">
+        <link rel="apple-touch-icon" href="assets/images/codexael_icon.svg">
+
+        <!-- Bootstrap 5.2.0-beta1 -->
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+
+        <!-- Bootstrap with Popper 5.2.0-beta1 -->
+        <script src="js/bootstrap.bundle.min.js"></script>
+
+        <!-- Bootstrap Icons 1.11.3 -->
+        <link rel="stylesheet" href="css/bootstrap-icons.min.css">
+
+        <!-- Google fonts -->
+        <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+        <!-- Custom CSS -->
+        <link rel="stylesheet" href="css/keycaps.css">
+
+        <style>
+            .dd-body {
+                padding: 24px 22px 28px;
+                display: flex;
+                flex-direction: column;
+                gap: 22px;
+                overflow-y: auto;
+                flex: 1;
+                min-height: 0;
+            }
+
+            .dd-section {
+                display: flex;
+                flex-direction: column;
+                gap: 14px;
+            }
+
+            /* Section titles are black label strips like the home page categories. */
+            .dd-section-title {
+                align-self: flex-start;
+                padding: 3px 10px;
+                background: var(--ink);
+                color: var(--bg);
+                font-family: var(--display-font);
+                font-size: 0.9rem;
+                line-height: 1.4;
+                text-transform: uppercase;
+            }
+
+            .dd-divider {
+                margin: 0;
+                border: 0;
+                border-top: 3px dashed var(--ink);
+                color: var(--ink);
+                opacity: 1;
+            }
+
+            .dd-dates-row {
+                display: flex;
+                align-items: flex-start;
+                gap: 18px;
+                flex-wrap: wrap;
+            }
+
+            .dd-date-col {
+                flex: 1 1 260px;
+                min-width: 240px;
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .dd-date-fields, .dd-time-fields {
+                display: flex;
+                gap: 14px;
+            }
+
+            .dd-date-field {
+                display: flex;
+                flex-direction: column;
+                flex: 1 1 0;
+                min-width: 0;
+            }
+
+            .dd-field-label {
+                margin-bottom: 4px;
+                font-size: 0.72rem;
+                font-weight: 700;
+                text-transform: uppercase;
+            }
+
+            /* The swap key spins half a turn when hovered. */
+            .dd-swap-btn {
+                flex-shrink: 0;
+                align-self: center;
+                margin-top: 28px;
+                width: 48px;
+                height: 48px;
+                display: grid;
+                place-items: center;
+                padding: 0;
+                background: var(--pink);
+                color: #111111;
+                border: 3px solid var(--ink);
+                border-radius: 12px;
+                box-shadow: 0 3px 0 var(--ink);
+                font-size: 1.2rem;
+                transition: transform 0.15s, box-shadow 0.08s;
+            }
+
+            .dd-swap-btn:hover {
+                transform: translateY(1px) rotate(180deg);
+                box-shadow: 0 2px 0 var(--ink);
+            }
+
+            .dd-swap-btn:active {
+                transform: translateY(3px) rotate(180deg);
+                box-shadow: 0 0 0 var(--ink);
+            }
+
+            /* The Today buttons are small yellow keycaps. */
+            .dd-inline-btn {
+                align-self: flex-start;
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                padding: 7px 12px;
+                background: var(--yellow);
+                color: #111111;
+                border: 3px solid var(--ink);
+                border-radius: 10px;
+                box-shadow: 0 2.5px 0 var(--ink);
+                font-size: 0.8rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                white-space: nowrap;
+                transition: transform 0.08s, box-shadow 0.08s;
+            }
+
+            .dd-inline-btn:hover {
+                transform: translateY(1px);
+                box-shadow: 0 1.5px 0 var(--ink);
+            }
+
+            .dd-inline-btn:active {
+                transform: translateY(2.5px);
+                box-shadow: 0 0 0 var(--ink);
+            }
+
+            /* The headline result sits on a big tilted yellow sticker. */
+            .dd-headline {
+                align-self: center;
+                max-width: 100%;
+                margin: 6px 0 4px;
+                padding: 10px 18px;
+                background: var(--yellow);
+                color: #111111;
+                border: 4px solid var(--ink);
+                box-shadow: 3px 3px 0 var(--ink);
+                font-family: var(--display-font);
+                font-size: clamp(1.1rem, 3.6vw, 1.7rem);
+                line-height: 1.2;
+                text-align: center;
+                text-transform: uppercase;
+                overflow-wrap: anywhere;
+                transform: rotate(-1.5deg);
+            }
+
+            /* The reversed-dates note is a small pink sticker that hides when empty. */
+            .dd-note {
+                align-self: center;
+                max-width: 100%;
+                padding: 2px 10px;
+                background: var(--pink);
+                color: #111111;
+                border: 3px solid var(--ink);
+                box-shadow: 1.5px 1.5px 0 var(--ink);
+                font-size: 0.78rem;
+                font-weight: 700;
+                text-align: center;
+                transform: rotate(1deg);
+            }
+
+            .dd-note:empty {
+                display: none;
+            }
+
+            /* The totals are a chunky cyan card with dashed rows like a receipt. */
+            .dd-info-grid {
+                display: flex;
+                flex-direction: column;
+                padding: 6px 16px;
+                background: var(--cyan);
+                color: #111111;
+                border: 4px solid var(--ink);
+                box-shadow: 4px 4px 0 var(--ink);
+            }
+
+            .dd-info-row {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 10px;
+                min-height: 44px;
+                padding: 6px 0;
+                font-size: 0.85rem;
+            }
+
+            .dd-info-row + .dd-info-row {
+                border-top: 2px dashed #111111;
+            }
+
+            .dd-info-row .dd-info-label {
+                flex-shrink: 0;
+                font-size: 0.75rem;
+                font-weight: 700;
+                text-transform: uppercase;
+            }
+
+            .dd-info-row .dd-info-value {
+                display: flex;
+                align-items: center;
+                justify-content: flex-end;
+                gap: 8px;
+                min-width: 0;
+                font-family: var(--mono-font);
+                font-weight: 700;
+                text-align: right;
+                overflow-wrap: anywhere;
+            }
+
+            /* Copy buttons are tiny white keycaps that sink when pressed. */
+            .dd-copy-btn {
+                flex-shrink: 0;
+                width: 30px;
+                height: 30px;
+                display: grid;
+                place-items: center;
+                padding: 0;
+                background: #ffffff;
+                color: #111111;
+                border: 2.5px solid #111111;
+                border-radius: 7px;
+                box-shadow: 0 1.5px 0 #111111;
+                font-size: 0.8rem;
+                transition: transform 0.08s, box-shadow 0.08s, background-color 0.12s;
+            }
+
+            .dd-copy-btn:hover {
+                background: var(--yellow);
+                transform: translateY(0.5px);
+                box-shadow: 0 1px 0 #111111;
+            }
+
+            .dd-copy-btn:active {
+                transform: translateY(1.5px);
+                box-shadow: 0 0 0 #111111;
+            }
+
+            @media (max-width: 600px) {
+                .dd-body {
+                    padding: 20px 14px 24px;
+                }
+
+                .dd-date-col {
+                    min-width: 0;
+                    flex-basis: 100%;
+                }
+
+                .dd-swap-btn {
+                    margin: 0 auto;
+                }
+
+                .dd-info-grid {
+                    box-shadow: 3px 3px 0 var(--ink);
+                }
+
+                .dd-info-row {
+                    flex-wrap: wrap;
+                    gap: 4px 10px;
+                }
+
+                .dd-info-row .dd-info-label {
+                    flex-shrink: 1;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <!-- Common layout -->
+        <div id="navbar-container"></div>
+
+        <div class="container-fluid tool-wrapper">
+            <div class="row">
+                <div class="col-md-10 offset-md-1">
+                    <div class="editor-panel">
+                        <div class="editor-header">
+                            <span class="editor-title">Date Difference Calculator</span>
+                            <div class="editor-actions">
+                                <button class="btn-danger" title="Clear" data-undo-clear onclick="clearAll()"><i class="bi bi-x-lg icon-btn"></i></button>
+                            </div>
+                        </div>
+
+                        <div class="editor-body dd-body invisible-scrollbars">
+
+                            <div class="dd-section">
+                                <div class="dd-dates-row">
+                                    <div class="dd-date-col">
+                                        <span class="dd-section-title">From</span>
+                                        <div class="dd-date-fields">
+                                            <div class="dd-date-field">
+                                                <span class="dd-field-label">Year</span>
+                                                <input type="number" class="input-cyan" id="fromYear" placeholder="YYYY">
+                                            </div>
+                                            <div class="dd-date-field">
+                                                <span class="dd-field-label">Month</span>
+                                                <input type="number" class="input-cyan" id="fromMonth" min="1" max="12" placeholder="MM">
+                                            </div>
+                                            <div class="dd-date-field">
+                                                <span class="dd-field-label">Day</span>
+                                                <input type="number" class="input-cyan" id="fromDay" min="1" max="31" placeholder="DD">
+                                            </div>
+                                        </div>
+                                        <div class="dd-time-fields d-none" id="fromTimeFields">
+                                            <div class="dd-date-field">
+                                                <span class="dd-field-label">Hour</span>
+                                                <input type="number" class="input-cyan" id="fromHour" min="0" max="23" placeholder="HH">
+                                            </div>
+                                            <div class="dd-date-field">
+                                                <span class="dd-field-label">Minute</span>
+                                                <input type="number" class="input-cyan" id="fromMinute" min="0" max="59" placeholder="mm">
+                                            </div>
+                                            <div class="dd-date-field">
+                                                <span class="dd-field-label">Second</span>
+                                                <input type="number" class="input-cyan" id="fromSecond" min="0" max="59" placeholder="ss">
+                                            </div>
+                                        </div>
+                                        <button class="dd-inline-btn" onclick="setToday('from')" title="Load today's date"><i class="bi bi-calendar-event"></i> Today</button>
+                                    </div>
+
+                                    <button class="dd-swap-btn" onclick="swapDates()" title="Swap From/To"><i class="bi bi-arrow-left-right"></i></button>
+
+                                    <div class="dd-date-col">
+                                        <span class="dd-section-title">To</span>
+                                        <div class="dd-date-fields">
+                                            <div class="dd-date-field">
+                                                <span class="dd-field-label">Year</span>
+                                                <input type="number" class="input-cyan" id="toYear" placeholder="YYYY">
+                                            </div>
+                                            <div class="dd-date-field">
+                                                <span class="dd-field-label">Month</span>
+                                                <input type="number" class="input-cyan" id="toMonth" min="1" max="12" placeholder="MM">
+                                            </div>
+                                            <div class="dd-date-field">
+                                                <span class="dd-field-label">Day</span>
+                                                <input type="number" class="input-cyan" id="toDay" min="1" max="31" placeholder="DD">
+                                            </div>
+                                        </div>
+                                        <div class="dd-time-fields d-none" id="toTimeFields">
+                                            <div class="dd-date-field">
+                                                <span class="dd-field-label">Hour</span>
+                                                <input type="number" class="input-cyan" id="toHour" min="0" max="23" placeholder="HH">
+                                            </div>
+                                            <div class="dd-date-field">
+                                                <span class="dd-field-label">Minute</span>
+                                                <input type="number" class="input-cyan" id="toMinute" min="0" max="59" placeholder="mm">
+                                            </div>
+                                            <div class="dd-date-field">
+                                                <span class="dd-field-label">Second</span>
+                                                <input type="number" class="input-cyan" id="toSecond" min="0" max="59" placeholder="ss">
+                                            </div>
+                                        </div>
+                                        <button class="dd-inline-btn" onclick="setToday('to')" title="Load today's date"><i class="bi bi-calendar-event"></i> Today</button>
+                                    </div>
+                                </div>
+
+                                <div class="chip-toggle">
+                                    <input type="checkbox" id="includeTimeToggle">
+                                    <label for="includeTimeToggle">Include time of day</label>
+                                </div>
+                            </div>
+
+                            <hr class="dd-divider">
+
+                            <div class="dd-section">
+                                <span class="dd-section-title">Difference</span>
+
+                                <div class="dd-headline" id="ddHeadline">&mdash;</div>
+                                <div class="dd-note" id="ddNote"></div>
+
+                                <div class="dd-info-grid">
+                                    <div class="dd-info-row">
+                                        <span class="dd-info-label">Total days</span>
+                                        <span class="dd-info-value">
+                                            <span id="ddTotalDays">&mdash;</span>
+                                            <button class="dd-copy-btn" title="Copy" onclick="copyFieldText('ddTotalDays', this)"><i class="bi bi-copy icon-btn"></i></button>
+                                        </span>
+                                    </div>
+                                    <div class="dd-info-row">
+                                        <span class="dd-info-label">Total weeks</span>
+                                        <span class="dd-info-value">
+                                            <span id="ddTotalWeeks">&mdash;</span>
+                                            <button class="dd-copy-btn" title="Copy" onclick="copyFieldText('ddTotalWeeks', this)"><i class="bi bi-copy icon-btn"></i></button>
+                                        </span>
+                                    </div>
+                                    <div class="dd-info-row">
+                                        <span class="dd-info-label">Total hours</span>
+                                        <span class="dd-info-value">
+                                            <span id="ddTotalHours">&mdash;</span>
+                                            <button class="dd-copy-btn" title="Copy" onclick="copyFieldText('ddTotalHours', this)"><i class="bi bi-copy icon-btn"></i></button>
+                                        </span>
+                                    </div>
+                                    <div class="dd-info-row">
+                                        <span class="dd-info-label">Total minutes</span>
+                                        <span class="dd-info-value">
+                                            <span id="ddTotalMinutes">&mdash;</span>
+                                            <button class="dd-copy-btn" title="Copy" onclick="copyFieldText('ddTotalMinutes', this)"><i class="bi bi-copy icon-btn"></i></button>
+                                        </span>
+                                    </div>
+                                    <div class="dd-info-row">
+                                        <span class="dd-info-label">Total seconds</span>
+                                        <span class="dd-info-value">
+                                            <span id="ddTotalSeconds">&mdash;</span>
+                                            <button class="dd-copy-btn" title="Copy" onclick="copyFieldText('ddTotalSeconds', this)"><i class="bi bi-copy icon-btn"></i></button>
+                                        </span>
+                                    </div>
+                                    <div class="dd-info-row">
+                                        <span class="dd-info-label">Weekdays (Mon-Fri)</span>
+                                        <span class="dd-info-value" id="ddWeekdays">&mdash;</span>
+                                    </div>
+                                    <div class="dd-info-row">
+                                        <span class="dd-info-label">Weekend days (Sat-Sun)</span>
+                                        <span class="dd-info-value" id="ddWeekends">&mdash;</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <div id="footer-container"></div>
+
+        <!-- Common JS -->
+        <script src="js/tool-help.js"></script>
+        <script src="js/storage.js"></script>
+        <script src="js/common.js"></script>
+        <script src="js/script.js"></script>
+
+        <!-- Custom JS -->
+        <script>
+
+            const DASH = "—";
+            const DATE_FIELD_NAMES = ["Year", "Month", "Day", "Hour", "Minute", "Second"];
+            const RESULT_IDS = ["ddTotalDays", "ddTotalWeeks", "ddTotalHours", "ddTotalMinutes", "ddTotalSeconds", "ddWeekdays", "ddWeekends"];
+
+            const includeTimeToggle = document.getElementById("includeTimeToggle");
+            const fromTimeFields = document.getElementById("fromTimeFields");
+            const toTimeFields = document.getElementById("toTimeFields");
+
+            function copyText(text, btn) {
+                if (isBlank(text, "Nothing to copy")) return;
+                navigator.clipboard.writeText(text).then(() => {
+                    showSuccessToast("Copied to clipboard");
+                    if (btn) {
+                        const icon = btn.querySelector("i");
+                        const original = icon.className;
+                        icon.className = "bi bi-check-lg";
+                        setTimeout(() => icon.className = original, 1000);
+                    }
+                });
+            }
+
+            function copyFieldText(elementId, btn) {
+                const value = document.getElementById(elementId).textContent;
+                if (value === DASH) { showInfoToast("Nothing to copy"); return; }
+                copyText(value, btn);
+            }
+
+            function unitLabel(n, unit) {
+                return `${n} ${unit}${n !== 1 ? "s" : ""}`;
+            }
+
+            // Reads one side's fields into a plain Date, or null while the year/month/day aren't all filled in yet.
+            function readDateFields(prefix) {
+                const y = parseInt(document.getElementById(prefix + "Year").value, 10);
+                const mo = parseInt(document.getElementById(prefix + "Month").value, 10);
+                const d = parseInt(document.getElementById(prefix + "Day").value, 10);
+                if (!y || !mo || !d) return null;
+
+                const includeTime = includeTimeToggle.checked;
+                const h = includeTime ? (parseInt(document.getElementById(prefix + "Hour").value, 10) || 0) : 0;
+                const mi = includeTime ? (parseInt(document.getElementById(prefix + "Minute").value, 10) || 0) : 0;
+                const s = includeTime ? (parseInt(document.getElementById(prefix + "Second").value, 10) || 0) : 0;
+
+                return new Date(y, mo - 1, d, h, mi, s);
+            }
+
+            // Breaks the gap between two dates into a calendar-aware years/months/days(/time) span, borrowing across units as needed.
+            function calendarDiff(fromDate, toDate) {
+                let years = toDate.getFullYear() - fromDate.getFullYear();
+                let months = toDate.getMonth() - fromDate.getMonth();
+                let days = toDate.getDate() - fromDate.getDate();
+                let hours = toDate.getHours() - fromDate.getHours();
+                let minutes = toDate.getMinutes() - fromDate.getMinutes();
+                let seconds = toDate.getSeconds() - fromDate.getSeconds();
+
+                if (seconds < 0) { seconds += 60; minutes--; }
+                if (minutes < 0) { minutes += 60; hours--; }
+                if (hours < 0) { hours += 24; days--; }
+                if (days < 0) {
+                    const daysInPrevMonth = new Date(toDate.getFullYear(), toDate.getMonth(), 0).getDate();
+                    days += daysInPrevMonth;
+                    months--;
+                }
+                if (months < 0) { months += 12; years--; }
+
+                return { years, months, days, hours, minutes, seconds };
+            }
+
+            // Counts full calendar days between two dates, split into weekdays and weekend days.
+            function countDayTypes(fromDate, toDate) {
+                const oneDay = 86400000;
+                const fromMidnight = new Date(fromDate.getFullYear(), fromDate.getMonth(), fromDate.getDate());
+                const toMidnight = new Date(toDate.getFullYear(), toDate.getMonth(), toDate.getDate());
+                const totalDays = Math.round((toMidnight - fromMidnight) / oneDay);
+
+                let weekdays = 0, weekends = 0;
+                const cursor = new Date(fromMidnight);
+                for (let i = 0; i < totalDays; i++) {
+                    const day = cursor.getDay();
+                    if (day === 0 || day === 6) weekends++; else weekdays++;
+                    cursor.setDate(cursor.getDate() + 1);
+                }
+
+                return { weekdays, weekends };
+            }
+
+            function formatCalendarBreakdown(cal, includeTime) {
+                const units = includeTime
+                    ? [["years", "year"], ["months", "month"], ["days", "day"], ["hours", "hour"], ["minutes", "minute"], ["seconds", "second"]]
+                    : [["years", "year"], ["months", "month"], ["days", "day"]];
+
+                const parts = units.filter(([key]) => cal[key] > 0).map(([key, label]) => unitLabel(cal[key], label));
+                if (parts.length === 0) parts.push(unitLabel(0, includeTime ? "second" : "day"));
+                return parts.join(", ");
+            }
+
+            function renderEmpty() {
+                document.getElementById("ddHeadline").textContent = DASH;
+                document.getElementById("ddNote").textContent = "";
+                RESULT_IDS.forEach(id => document.getElementById(id).textContent = DASH);
+            }
+
+            function calculate() {
+                const from = readDateFields("from");
+                const to = readDateFields("to");
+                if (!from || !to) { renderEmpty(); return; }
+
+                let start = from, end = to;
+                const reversed = start > end;
+                if (reversed) [start, end] = [end, start];
+
+                const diffMs = end - start;
+                const includeTime = includeTimeToggle.checked;
+                const cal = calendarDiff(start, end);
+                const dayTypes = countDayTypes(start, end);
+
+                document.getElementById("ddHeadline").textContent = formatCalendarBreakdown(cal, includeTime);
+                document.getElementById("ddNote").textContent = reversed
+                    ? "The \"To\" date is earlier than \"From\" — showing the absolute difference."
+                    : "";
+
+                const totalDays = Math.floor(diffMs / 86400000);
+                const totalWeeks = Math.floor(totalDays / 7);
+                const remainderDays = totalDays % 7;
+
+                document.getElementById("ddTotalDays").textContent = totalDays;
+                document.getElementById("ddTotalWeeks").textContent = `${unitLabel(totalWeeks, "week")}, ${unitLabel(remainderDays, "day")}`;
+                document.getElementById("ddTotalHours").textContent = Math.floor(diffMs / 3600000);
+                document.getElementById("ddTotalMinutes").textContent = Math.floor(diffMs / 60000);
+                document.getElementById("ddTotalSeconds").textContent = Math.floor(diffMs / 1000);
+                document.getElementById("ddWeekdays").textContent = dayTypes.weekdays;
+                document.getElementById("ddWeekends").textContent = dayTypes.weekends;
+            }
+
+            function setToday(prefix) {
+                const now = new Date();
+                document.getElementById(prefix + "Year").value = now.getFullYear();
+                document.getElementById(prefix + "Month").value = now.getMonth() + 1;
+                document.getElementById(prefix + "Day").value = now.getDate();
+
+                if (includeTimeToggle.checked) {
+                    document.getElementById(prefix + "Hour").value = now.getHours();
+                    document.getElementById(prefix + "Minute").value = now.getMinutes();
+                    document.getElementById(prefix + "Second").value = now.getSeconds();
+                }
+
+                calculate();
+            }
+
+            function swapDates() {
+                DATE_FIELD_NAMES.forEach(field => {
+                    const fromEl = document.getElementById("from" + field);
+                    const toEl = document.getElementById("to" + field);
+                    [fromEl.value, toEl.value] = [toEl.value, fromEl.value];
+                });
+                calculate();
+            }
+
+            function clearAll() {
+                ["from", "to"].forEach(prefix => DATE_FIELD_NAMES.forEach(field => {
+                    document.getElementById(prefix + field).value = "";
+                }));
+                renderEmpty();
+            }
+
+            ["from", "to"].forEach(prefix => DATE_FIELD_NAMES.forEach(field => {
+                document.getElementById(prefix + field).addEventListener("input", calculate);
+            }));
+
+            includeTimeToggle.addEventListener("change", () => {
+                fromTimeFields.classList.toggle("d-none", !includeTimeToggle.checked);
+                toTimeFields.classList.toggle("d-none", !includeTimeToggle.checked);
+                calculate();
+            });
+
+            const today = new Date();
+            const weekFromToday = new Date(today.getTime() + 7 * 86400000);
+            document.getElementById("fromYear").value = today.getFullYear();
+            document.getElementById("fromMonth").value = today.getMonth() + 1;
+            document.getElementById("fromDay").value = today.getDate();
+            document.getElementById("toYear").value = weekFromToday.getFullYear();
+            document.getElementById("toMonth").value = weekFromToday.getMonth() + 1;
+            document.getElementById("toDay").value = weekFromToday.getDate();
+            calculate();
+        </script>
+
+    </body>
+</html>

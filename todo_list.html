@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Codexael Toolstack — Todo List</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+        <!-- Metadata -->
+        <meta name="description" content="A clean to-do list that saves in your browser. No sign-up.">
+        <meta name="author" content="Codexael">
+        <meta name="theme-color" content="#fff4e0" media="(prefers-color-scheme: light)">
+        <meta name="theme-color" content="#17140f" media="(prefers-color-scheme: dark)">
+
+        <!-- Open Graph -->
+        <meta property="og:title" content="Codexael Toolstack — Simple To-Do List">
+        <meta property="og:description" content="A clean to-do list that saves in your browser. No sign-up.">
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="https://tools.codexael.com/todo_list.html">
+        <meta property="og:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+        <meta property="og:image:width" content="1200">
+        <meta property="og:image:height" content="630">
+        <meta property="og:image:type" content="image/png">
+        <meta property="og:image:alt" content="Codexael Toolstack — Simple To-Do List">
+        <meta property="og:site_name" content="Codexael Toolstack">
+
+        <!-- Twitter Card -->
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="Codexael Toolstack — Simple To-Do List">
+        <meta name="twitter:description" content="A clean to-do list that saves in your browser. No sign-up.">
+        <meta name="twitter:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+
+        <!-- Favicon / App Icon -->
+        <link rel="icon" type="image/svg+xml" href="assets/images/codexael_icon.svg">
+        <link rel="apple-touch-icon" href="assets/images/codexael_icon.svg">
+
+        <!-- Bootstrap 5.2.0-beta1 -->
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+
+        <!-- Bootstrap with Popper 5.2.0-beta1 -->
+        <script src="js/bootstrap.bundle.min.js"></script>
+
+        <!-- Bootstrap Icons 1.11.3 -->
+        <link rel="stylesheet" href="css/bootstrap-icons.min.css">
+
+        <!-- Google fonts -->
+        <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+        <!-- Custom CSS -->
+        <link rel="stylesheet" href="css/keycaps.css">
+
+        <style>
+            /* The panel gets a fixed height so the task list scrolls inside it. */
+            #todoPanel {
+                height: calc(100vh - 200px);
+                min-height: 520px;
+            }
+
+            .todo-body {
+                padding: 18px 18px 10px;
+                display: flex;
+                flex-direction: column;
+                gap: 16px;
+                flex: 1;
+                min-height: 0;
+                background: var(--paper);
+                color: var(--ink);
+            }
+
+            .todo-add-row input {
+                width: 100%;
+                margin-bottom: 0;
+            }
+
+            .todo-controls-row {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 14px;
+                flex-wrap: wrap;
+                flex-shrink: 0;
+            }
+
+            .todo-controls-left {
+                display: flex;
+                align-items: center;
+                gap: 14px;
+                flex-wrap: wrap;
+                min-width: 0;
+            }
+
+            .todo-status-tabs {
+                padding-bottom: 0;
+            }
+
+            .todo-controls-right button {
+                width: auto;
+                margin-bottom: 0;
+                padding: 7px 18px;
+            }
+
+            /* The items-left counter is a small tilted sticker. */
+            .todo-counter {
+                display: inline-block;
+                padding: 2px 9px;
+                background: var(--pink);
+                color: #111111;
+                border: 3px solid var(--ink);
+                box-shadow: 1.5px 1.5px 0 var(--ink);
+                font-size: 0.74rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                white-space: nowrap;
+                transform: rotate(-3deg);
+            }
+
+            /* The list scrolls on its own and keeps room so the row shadows are not clipped. */
+            .todo-list {
+                flex: 1;
+                min-height: 0;
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+                padding: 2px 2px 8px;
+            }
+
+            /* Each task is a paper keycap with a hard bottom shadow. */
+            .todo-row {
+                flex-shrink: 0;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 9px 10px;
+                background: var(--paper);
+                color: var(--ink);
+                border: 3px solid var(--ink);
+                border-radius: 10px;
+                box-shadow: 0 2px 0 var(--ink);
+                cursor: grab;
+                transition: transform 0.08s, box-shadow 0.08s, background-color 0.12s;
+            }
+
+            /* A finished task sinks a little and takes the page background colour. */
+            .todo-row:has(.todo-text.done) {
+                background: var(--bg);
+                transform: translateY(1px);
+                box-shadow: 0 1px 0 var(--ink);
+            }
+
+            .todo-row.dragging {
+                opacity: 0.4;
+            }
+
+            .todo-row.drag-over {
+                background: var(--yellow);
+                color: #111111;
+                border-style: dashed;
+                border-color: #111111;
+            }
+
+            .todo-drag-handle {
+                flex-shrink: 0;
+                opacity: 0.55;
+                cursor: grab;
+            }
+
+            /* The checkbox is a square key that fills lime with a tick when checked. */
+            .todo-row input[type="checkbox"] {
+                appearance: none;
+                -webkit-appearance: none;
+                flex-shrink: 0;
+                width: 24px;
+                height: 24px;
+                margin: 0;
+                background: var(--paper);
+                border: 3px solid var(--ink);
+                border-radius: 6px;
+                box-shadow: 0 1.5px 0 var(--ink);
+                display: grid;
+                place-content: center;
+                cursor: pointer;
+                transition: transform 0.08s, box-shadow 0.08s, background-color 0.12s;
+            }
+
+            .todo-row input[type="checkbox"]::before {
+                content: "";
+                width: 12px;
+                height: 12px;
+                transform: scale(0);
+                transition: transform 0.12s ease-in-out;
+                box-shadow: inset 1em 1em #111111;
+                clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+            }
+
+            .todo-row input[type="checkbox"]:hover {
+                background: var(--yellow);
+            }
+
+            .todo-row input[type="checkbox"]:checked {
+                background: var(--lime);
+                transform: translateY(1.5px);
+                box-shadow: 0 0 0 var(--ink);
+            }
+
+            .todo-row input[type="checkbox"]:checked::before {
+                transform: scale(1);
+            }
+
+            .todo-row input[type="checkbox"]:focus-visible {
+                outline: 4px solid var(--blue);
+                outline-offset: 3px;
+            }
+
+            .todo-text {
+                flex: 1;
+                min-width: 0;
+                font-weight: 700;
+                overflow-wrap: anywhere;
+                cursor: text;
+            }
+
+            .todo-text.done {
+                text-decoration: line-through;
+                text-decoration-color: var(--pink);
+                text-decoration-thickness: 3px;
+                opacity: 0.7;
+            }
+
+            .todo-edit-input {
+                flex: 1;
+                min-width: 0;
+                padding: 4px 8px;
+                background: var(--lime);
+                color: #111111;
+                border: 3px solid var(--ink);
+                border-radius: 0;
+                box-shadow: 1.5px 1.5px 0 var(--ink);
+                outline: none;
+                font-size: 0.9rem;
+                font-weight: 700;
+            }
+
+            .todo-delete-btn {
+                flex-shrink: 0;
+                width: 30px;
+                height: 30px;
+                display: grid;
+                place-items: center;
+                padding: 0;
+                background: var(--paper);
+                color: var(--ink);
+                border: 2.5px solid var(--ink);
+                border-radius: 7px;
+                box-shadow: 0 1.5px 0 var(--ink);
+                font-size: 0.82rem;
+                cursor: pointer;
+                transition: transform 0.08s, box-shadow 0.08s, background-color 0.12s;
+            }
+
+            .todo-delete-btn:hover {
+                transform: translateY(1px);
+                box-shadow: 0 0.5px 0 var(--ink);
+                background: var(--red);
+                color: #111111;
+            }
+
+            /* The empty state is shown as a tilted sticker. */
+            .todo-empty-hint {
+                margin: auto;
+                max-width: calc(100% - 32px);
+                padding: 6px 14px;
+                background: var(--yellow);
+                color: #111111;
+                border: 3px solid var(--ink);
+                box-shadow: 2px 2px 0 var(--ink);
+                font-size: 0.8rem;
+                font-weight: 700;
+                text-align: center;
+                text-transform: uppercase;
+                transform: rotate(-2deg);
+            }
+
+            /* Wide screens give each filter key the same width. */
+            @media (min-width: 576px) {
+                .todo-status-tabs label {
+                    min-width: 100px;
+                }
+            }
+
+            /* Phones get a shorter panel and a full-width add key. */
+            @media (max-width: 575px) {
+                #todoPanel {
+                    height: 75vh;
+                    min-height: 480px;
+                }
+
+                .todo-body {
+                    padding: 14px 12px 10px;
+                }
+
+                .todo-controls-right {
+                    width: 100%;
+                }
+
+                .todo-controls-right button {
+                    width: 100%;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <!-- Common layout -->
+        <div id="navbar-container"></div>
+
+        <div class="container-fluid tool-wrapper">
+            <div class="row g-3 g-md-0">
+                <div class="col-md-7 offset-md-2 editor-panel" id="todoPanel">
+                    <div class="editor-header">
+                        <span class="editor-title">Todo List</span>
+                        <div class="editor-actions">
+                            <button class="btn-danger" title="Clear all tasks" onclick="clearAllTodos()"><i class="bi bi-trash icon-btn"></i></button>
+                            <div class="divider"></div>
+                            <button title="Copy list" data-shortcut="copy" onclick="copyText(serializeTodos(), this)"><i class="bi bi-copy icon-btn"></i></button>
+                            <button title="Download as .txt" onclick="downloadText('todo_list.txt', serializeTodos())"><i class="bi bi-download icon-btn"></i></button>
+                            <button title="Print" onclick="printData({ title: pageTitle, value: serializeTodos() })"><i class="bi bi-printer icon-btn"></i></button>
+                            <button title="Fullscreen" onclick="toggleEditorFullScreen('todoPanel')"><i class="bi bi-arrows-fullscreen icon-btn"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="todo-body invisible-scrollbars">
+                        <div class="todo-add-row">
+                            <input type="text" id="newTodoInput" class="input-cyan" placeholder="Add a new task..." autocomplete="off">
+                        </div>
+
+                        <div class="todo-controls-row">
+                            <div class="todo-controls-left">
+                                <div class="segmented-control todo-status-tabs btn-group" role="group" aria-label="Filter tasks">
+                                    <input type="radio" name="filter" id="filterAll" value="all" checked>
+                                    <label for="filterAll">All</label>
+                                    <input type="radio" name="filter" id="filterActive" value="active">
+                                    <label for="filterActive">Active</label>
+                                    <input type="radio" name="filter" id="filterCompleted" value="completed">
+                                    <label for="filterCompleted">Completed</label>
+                                </div>
+                                <span class="todo-counter" id="itemsLeftLabel">0 items left</span>
+                            </div>
+                            <div class="todo-controls-right">
+                                <button class="btn action-btn-primary" data-shortcut="run" data-shortcut-label="Add the to-do" onclick="addTodo()"><i class="bi bi-plus-lg"></i> Add</button>
+                            </div>
+                        </div>
+
+                        <div class="todo-list invisible-scrollbars" id="todoList"></div>
+                    </div>
+
+                    <div class="editor-footer">
+                        <div class="status">
+                            <span><b id="todoTotalCount">0</b> total</span>
+                            <span><b id="todoDoneCount">0</b> done</span>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+
+        <div id="footer-container"></div>
+
+        <!-- Common JS -->
+        <script src="js/tool-help.js"></script>
+        <script src="js/storage.js"></script>
+        <script src="js/common.js"></script>
+        <script src="js/script.js"></script>
+
+        <!-- Custom JS -->
+        <script>
+            const pageTitle = "Todo List";
+            const STORAGE_KEY = "toolstack_todos";
+
+            const newTodoInput = document.getElementById("newTodoInput");
+            const todoList = document.getElementById("todoList");
+            const itemsLeftLabel = document.getElementById("itemsLeftLabel");
+            const todoTotalCount = document.getElementById("todoTotalCount");
+            const todoDoneCount = document.getElementById("todoDoneCount");
+            const filterRadios = document.querySelectorAll('input[name="filter"]');
+
+            let draggedTodoId = null;
+
+            function getTodos() { return getStorageItem(STORAGE_KEY, []); }
+            function saveTodos(todos) { setStorageItem(STORAGE_KEY, todos); }
+
+            function downloadText(filename, content) {
+                if (isBlank(content, "Nothing to download")) return;
+                const blob = new Blob([content], { type: "text/plain" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
+
+            function copyText(text, btn) {
+                if (isBlank(text, "Nothing to copy")) return;
+                navigator.clipboard.writeText(text).then(() => {
+                    showSuccessToast("Copied to clipboard");
+                    if (btn) {
+                        const icon = btn.querySelector("i");
+                        const original = icon.className;
+                        icon.className = "bi bi-check-lg";
+                        setTimeout(() => icon.className = original, 1000);
+                    }
+                });
+            }
+
+            function serializeTodos() {
+                return getTodos().map(todo => `${todo.completed ? "[x]" : "[ ]"} ${todo.text}`).join("\n");
+            }
+
+            function getCurrentFilter() {
+                return document.querySelector('input[name="filter"]:checked').value;
+            }
+
+            function addTodo() {
+                const value = newTodoInput.value;
+                if (isBlank(value, "Enter a task first")) return;
+
+                const todos = getTodos();
+                todos.push({ id: Date.now(), text: value.trim(), completed: false, createdAt: Date.now() });
+                saveTodos(todos);
+
+                newTodoInput.value = "";
+                renderTodos();
+                newTodoInput.focus();
+            }
+
+            function toggleTodo(id) {
+                const todos = getTodos();
+                const todo = todos.find(t => t.id === id);
+                if (!todo) return;
+                todo.completed = !todo.completed;
+                saveTodos(todos);
+                renderTodos();
+            }
+
+            function deleteTodo(id) {
+                const todos = getTodos().filter(t => t.id !== id);
+                saveTodos(todos);
+                renderTodos();
+            }
+
+            function updateTodoText(id, newText) {
+                const trimmed = newText.trim();
+                if (!trimmed) { renderTodos(); return; }
+
+                const todos = getTodos();
+                const todo = todos.find(t => t.id === id);
+                if (!todo) return;
+                todo.text = trimmed;
+                saveTodos(todos);
+                renderTodos();
+            }
+
+            function clearAllTodos() {
+                const todos = getTodos();
+                if (!todos.length) {
+                    showInfoToast("No tasks to clear");
+                    return;
+                }
+
+                saveTodos([]);
+                renderTodos();
+                showSuccessToast("All tasks cleared");
+            }
+
+            function reorderTodos(draggedId, targetId) {
+                if (draggedId === targetId) return;
+
+                const todos = getTodos();
+                const fromIndex = todos.findIndex(t => t.id === draggedId);
+                const toIndex = todos.findIndex(t => t.id === targetId);
+                if (fromIndex === -1 || toIndex === -1) return;
+
+                const [moved] = todos.splice(fromIndex, 1);
+                todos.splice(toIndex, 0, moved);
+                saveTodos(todos);
+                renderTodos();
+            }
+
+            function beginEditingTodo(row, todo) {
+                const textSpan = row.querySelector(".todo-text");
+                const input = document.createElement("input");
+                input.type = "text";
+                input.className = "todo-edit-input";
+                input.value = todo.text;
+
+                textSpan.replaceWith(input);
+                input.focus();
+                input.select();
+
+                let committed = false;
+                const commit = () => {
+                    if (committed) return;
+                    committed = true;
+                    updateTodoText(todo.id, input.value);
+                };
+
+                input.addEventListener("blur", commit);
+                input.addEventListener("keydown", e => {
+                    if (e.key === "Enter") { e.preventDefault(); input.blur(); }
+                    else if (e.key === "Escape") { committed = true; renderTodos(); }
+                });
+            }
+
+            function createTodoRow(todo) {
+                const row = document.createElement("div");
+                row.className = "todo-row";
+                row.draggable = true;
+
+                row.addEventListener("dragstart", e => {
+                    draggedTodoId = todo.id;
+                    row.classList.add("dragging");
+                    e.dataTransfer.effectAllowed = "move";
+                });
+                row.addEventListener("dragend", () => {
+                    row.classList.remove("dragging");
+                    todoList.querySelectorAll(".todo-row").forEach(r => r.classList.remove("drag-over"));
+                });
+                row.addEventListener("dragover", e => {
+                    e.preventDefault();
+                    if (draggedTodoId === todo.id) return;
+                    row.classList.add("drag-over");
+                });
+                row.addEventListener("dragleave", () => row.classList.remove("drag-over"));
+                row.addEventListener("drop", e => {
+                    e.preventDefault();
+                    row.classList.remove("drag-over");
+                    if (draggedTodoId === null) return;
+                    reorderTodos(draggedTodoId, todo.id);
+                    draggedTodoId = null;
+                });
+
+                const dragHandle = document.createElement("i");
+                dragHandle.className = "bi bi-grip-vertical todo-drag-handle";
+                dragHandle.title = "Drag to reorder";
+
+                const checkbox = document.createElement("input");
+                checkbox.type = "checkbox";
+                checkbox.checked = todo.completed;
+                checkbox.addEventListener("change", () => toggleTodo(todo.id));
+
+                const text = document.createElement("span");
+                text.className = `todo-text${todo.completed ? " done" : ""}`;
+                text.textContent = todo.text;
+                text.addEventListener("dblclick", () => beginEditingTodo(row, todo));
+
+                const deleteBtn = document.createElement("button");
+                deleteBtn.className = "todo-delete-btn";
+                deleteBtn.title = "Delete";
+                deleteBtn.innerHTML = `<i class="bi bi-trash"></i>`;
+                deleteBtn.addEventListener("click", () => deleteTodo(todo.id));
+
+                row.append(dragHandle, checkbox, text, deleteBtn);
+                return row;
+            }
+
+            function emptyStateMessage(filter) {
+                if (filter === "active") return "No active tasks";
+                if (filter === "completed") return "No completed tasks";
+                return "Nothing here yet";
+            }
+
+            function renderTodos() {
+                const todos = getTodos();
+                const filter = getCurrentFilter();
+
+                const filtered = todos.filter(todo => {
+                    if (filter === "active") return !todo.completed;
+                    if (filter === "completed") return todo.completed;
+                    return true;
+                });
+
+                todoList.innerHTML = "";
+
+                if (!filtered.length) {
+                    const hint = document.createElement("div");
+                    hint.className = "todo-empty-hint";
+                    hint.textContent = emptyStateMessage(filter);
+                    todoList.appendChild(hint);
+                } else {
+                    filtered.forEach(todo => todoList.appendChild(createTodoRow(todo)));
+                }
+
+                const activeCount = todos.filter(t => !t.completed).length;
+                const completedCount = todos.length - activeCount;
+
+                itemsLeftLabel.textContent = `${activeCount} item${activeCount === 1 ? "" : "s"} left`;
+                todoTotalCount.textContent = todos.length;
+                todoDoneCount.textContent = completedCount;
+            }
+
+            newTodoInput.addEventListener("keydown", e => { if (e.key === "Enter") addTodo(); });
+            filterRadios.forEach(radio => radio.addEventListener("change", renderTodos));
+
+            renderTodos();
+        </script>
+    </body>
+</html>

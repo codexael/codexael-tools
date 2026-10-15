@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Codexael Toolstack — Gold &amp; Silver Price Today</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta http-equiv="Content-Security-Policy" content="connect-src https://api.gold-api.com https://open.er-api.com; object-src 'none'; base-uri 'none'; form-action 'none'">
+
+        <!-- Metadata -->
+        <meta name="description" content="Live gold, silver and platinum prices with 24K, 22K and 18K rates.">
+        <meta name="author" content="Codexael">
+        <meta name="theme-color" content="#fff4e0" media="(prefers-color-scheme: light)">
+        <meta name="theme-color" content="#17140f" media="(prefers-color-scheme: dark)">
+
+        <!-- Open Graph -->
+        <meta property="og:title" content="Codexael Toolstack — Gold & Silver Price Today">
+        <meta property="og:description" content="Live gold, silver and platinum prices with 24K, 22K and 18K rates.">
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="https://tools.codexael.com/gold_silver_price.html">
+        <meta property="og:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+        <meta property="og:image:width" content="1200">
+        <meta property="og:image:height" content="630">
+        <meta property="og:image:type" content="image/png">
+        <meta property="og:image:alt" content="Codexael Toolstack — Gold & Silver Price Today">
+        <meta property="og:site_name" content="Codexael Toolstack">
+
+        <!-- Twitter Card -->
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="Codexael Toolstack — Gold & Silver Price Today">
+        <meta name="twitter:description" content="Live gold, silver and platinum prices with 24K, 22K and 18K rates.">
+        <meta name="twitter:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+
+        <!-- Favicon / App Icon -->
+        <link rel="icon" type="image/svg+xml" href="assets/images/codexael_icon.svg">
+        <link rel="apple-touch-icon" href="assets/images/codexael_icon.svg">
+
+        <!-- Bootstrap 5.2.0-beta1 -->
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+
+        <!-- Bootstrap with Popper 5.2.0-beta1 -->
+        <script src="js/bootstrap.bundle.min.js"></script>
+
+        <!-- Bootstrap Icons 1.11.3 -->
+        <link rel="stylesheet" href="css/bootstrap-icons.min.css">
+
+        <!-- Google fonts -->
+        <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+        <!-- Custom CSS -->
+        <link rel="stylesheet" href="css/keycaps.css">
+
+        <style>
+            /* The body grows with its content and does not clip, so the open option lists can extend below it. */
+            .metal-body {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                gap: 18px;
+                padding: 24px 22px 28px;
+            }
+
+            .metal-options {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 14px;
+            }
+
+            .metal-options label,
+            .metal-meta {
+                display: block;
+                font-size: 0.75rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.04em;
+            }
+
+            .metal-options label { margin-bottom: 6px; }
+            .metal-options .cdrop,
+            .metal-options select { margin-bottom: 0; }
+
+            .metal-body.loading .metal-grid { opacity: 0.6; }
+
+            .metal-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 16px;
+            }
+
+            /* Each metal is a card in its own colour that keeps dark text in both themes. */
+            .metal-card {
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+                min-width: 0;
+                padding: 18px 20px;
+                color: #111111;
+                border: 3px solid var(--ink);
+                border-radius: 12px;
+                box-shadow: 4px 4px 0 var(--ink);
+            }
+
+            .metal-card[data-metal="XAU"] { background: var(--yellow); grid-column: 1 / -1; }
+            .metal-card[data-metal="XAG"] { background: #d9dde3; }
+            .metal-card[data-metal="XPT"] { background: var(--cyan); }
+            .metal-card[data-metal="XPD"] { background: var(--lilac); grid-column: 1 / -1; }
+
+            .metal-name {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                font-family: var(--display-font);
+                font-size: 0.95rem;
+                text-transform: uppercase;
+            }
+
+            .metal-name small {
+                font-family: var(--mono-font, inherit);
+                font-size: 0.7rem;
+                padding: 0 6px;
+                border: 2px solid #111111;
+            }
+
+            .metal-price {
+                font-family: var(--display-font);
+                font-size: 1.7rem;
+                line-height: 1.2;
+                font-variant-numeric: tabular-nums;
+                overflow-wrap: anywhere;
+            }
+
+            .metal-unit {
+                font-size: 0.8rem;
+                font-weight: 700;
+            }
+
+            .metal-card.unavailable .metal-price { font-size: 1rem; }
+
+            /* The karat table shows gold prices by purity in matching columns. */
+            .karat-table {
+                width: 100%;
+                margin-top: 8px;
+                border-collapse: collapse;
+                font-size: 0.85rem;
+                font-variant-numeric: tabular-nums;
+            }
+
+            .karat-table th,
+            .karat-table td {
+                padding: 6px 8px;
+                border-top: 2px solid #111111;
+                text-align: left;
+            }
+
+            .karat-table td:last-child,
+            .karat-table th:last-child { text-align: right; }
+
+            .metal-actions {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 12px;
+            }
+
+            /* Bootstrap btn hover and active states would hide the ink border without these values. */
+            .metal-actions .btn {
+                --bs-btn-hover-border-color: var(--ink);
+                --bs-btn-active-border-color: var(--ink);
+                width: auto;
+                flex: 0 1 auto;
+                margin-bottom: 0;
+            }
+
+            .metal-actions #refreshBtn { flex: 1 1 200px; }
+
+            .metal-status {
+                margin: 0;
+                font-size: 0.8rem;
+                font-weight: 700;
+            }
+
+            .privacy-note {
+                padding: 10px 12px;
+                border: 2px dashed var(--ink);
+                font-size: 0.75rem;
+                font-weight: 700;
+                line-height: 1.5;
+            }
+
+            @media (max-width: 576px) {
+                .metal-body {
+                    padding: 20px 16px 24px;
+                }
+
+                .metal-options,
+                .metal-grid {
+                    grid-template-columns: 1fr;
+                }
+
+                .metal-actions .btn,
+                .metal-actions #refreshBtn {
+                    flex: 1 1 100%;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <!-- Common layout -->
+        <div id="navbar-container"></div>
+
+        <div class="container-fluid tool-wrapper">
+            <div class="row">
+                <div class="col-md-8 offset-md-2">
+                    <div class="editor-panel">
+                        <div class="editor-header">
+                            <span class="editor-title">Gold &amp; Silver Price Today</span>
+                            <div class="editor-actions">
+                                <button title="Refresh prices" id="headerRefreshBtn" onclick="loadPrices({ manual: true })"><i class="bi bi-arrow-clockwise icon-btn"></i></button>
+                                <div class="divider"></div>
+                                <button title="Copy prices" data-shortcut="copy" onclick="copyPrices(this)"><i class="bi bi-copy icon-btn"></i></button>
+                            </div>
+                        </div>
+
+                        <div class="editor-body metal-body loading" id="metalBody">
+
+                            <div class="metal-options">
+                                <div>
+                                    <label for="currencySelect">Currency</label>
+                                    <select class="form-control" id="currencySelect"></select>
+                                </div>
+                                <div>
+                                    <label for="unitSelect">Weight</label>
+                                    <select class="form-control" id="unitSelect">
+                                        <option value="g">Per gram</option>
+                                        <option value="10g">Per 10 grams</option>
+                                        <option value="kg">Per kilogram</option>
+                                        <option value="oz">Per troy ounce</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="metal-grid" id="metalGrid" aria-live="polite"></div>
+
+                            <div class="metal-actions">
+                                <button class="btn action-btn-primary" id="refreshBtn" data-shortcut="run" onclick="loadPrices({ manual: true })"><i class="bi bi-arrow-clockwise"></i> Refresh prices</button>
+                                <button class="btn action-btn-ghost" onclick="sharePrices()"><i class="bi bi-share"></i> Share</button>
+                            </div>
+
+                            <p class="metal-status" id="metalStatus" role="status">Loading live prices...</p>
+
+                            <div class="privacy-note">
+                                <i class="bi bi-info-circle"></i> These are international spot prices from <a href="https://gold-api.com" target="_blank" rel="noopener noreferrer">Gold API</a>, converted with daily exchange rates from <a href="https://www.exchangerate-api.com" target="_blank" rel="noopener noreferrer">ExchangeRate-API</a>. They do not include import duty, GST, VAT or making charges, so prices at your local jeweller will be higher. Prices refresh every minute while this page is open.
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <div id="footer-container"></div>
+
+        <!-- Common JS -->
+        <script src="js/tool-help.js"></script>
+        <script src="js/storage.js"></script>
+        <script src="js/common.js"></script>
+        <script src="js/custom-dropdown.js"></script>
+        <script src="js/script.js"></script>
+        <script src="js/api-client.js"></script>
+
+        <!-- Custom JS -->
+        <script>
+
+            const pageTitle = "Gold & Silver Price Today";
+
+            const PRICE_URL = "https://api.gold-api.com/price/";
+            const RATES_URL = "https://open.er-api.com/v6/latest/USD";
+            const PRICE_MAX_BYTES = 2048;
+            const RATES_MAX_BYTES = 32768;
+            const OPTIONS_KEY = "toolstack_metal_options";
+            const REFRESH_MS = 60 * 1000;
+            const RATES_MAX_AGE_MS = 60 * 60 * 1000;
+            const GRAMS_PER_TROY_OUNCE = 31.1034768;
+
+            const METALS = [
+                { symbol: "XAU", name: "Gold", icon: "🟡" },
+                { symbol: "XAG", name: "Silver", icon: "⚪" },
+                { symbol: "XPT", name: "Platinum", icon: "🔷" },
+                { symbol: "XPD", name: "Palladium", icon: "🟣" }
+            ];
+
+            // Gold purity by karat, as a share of pure gold.
+            const KARATS = [["24K", "99.9% pure", 0.999], ["22K", "91.6% pure", 0.916], ["18K", "75% pure", 0.75], ["14K", "58.5% pure", 0.585]];
+
+            const UNITS = {
+                g: { grams: 1, label: "per gram" },
+                "10g": { grams: 10, label: "per 10 grams" },
+                kg: { grams: 1000, label: "per kilogram" },
+                oz: { grams: GRAMS_PER_TROY_OUNCE, label: "per troy ounce" }
+            };
+
+            // Currencies people most often check metal prices in, with Gulf currencies for families abroad.
+            const CURRENCIES = ["INR", "USD", "EUR", "GBP", "AED", "SAR", "QAR", "KWD", "OMR", "BHD", "SGD", "MYR", "AUD", "CAD", "NZD", "JPY", "CNY", "HKD", "CHF", "ZAR", "PKR", "BDT", "LKR", "NPR", "THB"];
+
+            const metalBody = document.getElementById("metalBody");
+            const metalGrid = document.getElementById("metalGrid");
+            const metalStatus = document.getElementById("metalStatus");
+            const currencySelect = document.getElementById("currencySelect");
+            const unitSelect = document.getElementById("unitSelect");
+            const refreshButtons = [document.getElementById("refreshBtn"), document.getElementById("headerRefreshBtn")];
+
+            let prices = {};
+            let rates = null;
+            let pricesController = null;
+            let refreshTimer = null;
+            let retryWhenOnline = false;
+            let lastLoadAt = 0;
+
+            const currencyNames = (() => {
+                try {
+                    return new Intl.DisplayNames([navigator.language || "en"], { type: "currency" });
+                } catch {
+                    return null;
+                }
+            })();
+
+            function currencyName(code) {
+                try {
+                    return currencyNames?.of(code) || code;
+                } catch {
+                    return code;
+                }
+            }
+
+            // Picks saved options, or rupees per 10 grams for India and dollars per ounce elsewhere.
+            function setupOptions() {
+                currencySelect.innerHTML = CURRENCIES.map(code => `<option value="${code}">${code} · ${currencyName(code)}</option>`).join("");
+
+                const saved = getStorageItem(OPTIONS_KEY, null);
+                const inIndia = /-IN$/i.test(navigator.language || "");
+                currencySelect.value = CURRENCIES.includes(saved?.currency) ? saved.currency : (inIndia ? "INR" : "USD");
+                unitSelect.value = UNITS[saved?.unit] ? saved.unit : (currencySelect.value === "INR" ? "10g" : "oz");
+
+                CustomDropdown.enhance(currencySelect, { search: true });
+                CustomDropdown.enhance(unitSelect);
+                [currencySelect, unitSelect].forEach(select => select.addEventListener("change", () => {
+                    try { setStorageItem(OPTIONS_KEY, { currency: currencySelect.value, unit: unitSelect.value }); } catch { /* The choice still works for this visit. */ }
+                    render();
+                }));
+            }
+
+            // Fetches one metal's spot price in US dollars per troy ounce.
+            async function fetchPrice(symbol, signal) {
+                const reply = await fetchPublicJson(PRICE_URL + symbol, { serviceName: "The metal price service", maxBytes: PRICE_MAX_BYTES, signal });
+                if (!reply || !Number.isFinite(reply.price) || reply.price <= 0) throw new ApiError("The metal price service sent no price", "invalid");
+                return { usdPerOunce: reply.price, updatedAt: Date.parse(reply.updatedAt) || Date.now() };
+            }
+
+            // Fetches the daily exchange rates from US dollars and keeps only the currencies the page offers.
+            async function fetchRates(signal) {
+                const reply = await fetchPublicJson(RATES_URL, { serviceName: "The exchange rate service", maxBytes: RATES_MAX_BYTES, signal });
+                if (reply?.result !== "success" || !reply.rates) throw new ApiError("The exchange rate service sent no rates", "invalid");
+                const picked = { USD: 1 };
+                CURRENCIES.forEach(code => {
+                    if (Number.isFinite(reply.rates[code]) && reply.rates[code] > 0) picked[code] = reply.rates[code];
+                });
+                return { values: picked, fetchedAt: Date.now() };
+            }
+
+            function setLoading(isLoading) {
+                metalBody.classList.toggle("loading", isLoading);
+                refreshButtons.forEach(button => button.disabled = isLoading);
+            }
+
+            // Returns the currency to show, falling back to US dollars when there is no rate for the chosen one.
+            function displayCurrency() {
+                const wanted = currencySelect.value;
+                return rates?.values[wanted] ? wanted : "USD";
+            }
+
+            // Converts a dollars-per-ounce price into the chosen currency and weight.
+            function convert(usdPerOunce, purity = 1) {
+                const currency = displayCurrency();
+                const grams = UNITS[unitSelect.value].grams;
+                return usdPerOunce / GRAMS_PER_TROY_OUNCE * grams * (rates?.values[currency] || 1) * purity;
+            }
+
+            function formatMoney(amount) {
+                const currency = displayCurrency();
+                const digits = amount >= 1000 ? 0 : 2;
+                try {
+                    return new Intl.NumberFormat(currency === "INR" ? "en-IN" : undefined, { style: "currency", currency, maximumFractionDigits: digits, minimumFractionDigits: digits }).format(amount);
+                } catch {
+                    return `${currency} ${amount.toFixed(digits)}`;
+                }
+            }
+
+            function timeAgo(timestamp) {
+                const seconds = Math.max(0, Math.round((Date.now() - timestamp) / 1000));
+                if (seconds < 60) return "just now";
+                const minutes = Math.round(seconds / 60);
+                return minutes < 60 ? `${minutes} min ago` : `${Math.round(minutes / 60)} h ago`;
+            }
+
+            // Draws one card for each metal, with a karat table for gold, from the last good prices.
+            function render() {
+                const unitLabel = UNITS[unitSelect.value].label;
+                metalGrid.replaceChildren(...METALS.map(metal => {
+                    const card = document.createElement("div");
+                    card.className = "metal-card";
+                    card.dataset.metal = metal.symbol;
+                    const price = prices[metal.symbol];
+
+                    const name = document.createElement("div");
+                    name.className = "metal-name";
+                    name.textContent = `${metal.icon} ${metal.name}`;
+                    const symbol = document.createElement("small");
+                    symbol.textContent = metal.symbol;
+                    name.append(symbol);
+
+                    const value = document.createElement("div");
+                    value.className = "metal-price";
+                    const unit = document.createElement("div");
+                    unit.className = "metal-unit";
+
+                    if (price) {
+                        value.textContent = formatMoney(convert(price.usdPerOunce));
+                        unit.textContent = `${metal.symbol === "XAU" ? "24K " : ""}${unitLabel} · updated ${timeAgo(price.updatedAt)}`;
+                    } else {
+                        card.classList.add("unavailable");
+                        value.textContent = metalBody.classList.contains("loading") ? "Loading..." : "Price unavailable right now";
+                    }
+                    card.append(name, value, unit);
+
+                    if (metal.symbol === "XAU" && price) {
+                        const table = document.createElement("table");
+                        table.className = "karat-table";
+                        table.innerHTML = `<thead><tr><th>Purity</th><th></th><th>Price ${unitLabel}</th></tr></thead>`;
+                        const body = document.createElement("tbody");
+                        KARATS.forEach(([karat, note, purity]) => {
+                            const row = document.createElement("tr");
+                            [karat, note, formatMoney(convert(price.usdPerOunce, purity))].forEach(text => {
+                                const cell = document.createElement("td");
+                                cell.textContent = text;
+                                row.append(cell);
+                            });
+                            body.append(row);
+                        });
+                        table.append(body);
+                        card.append(table);
+                    }
+                    return card;
+                }));
+            }
+
+            // Loads all metal prices together, and the exchange rates when they are older than an hour.
+            async function loadPrices({ manual = false } = {}) {
+                if (pricesController) pricesController.abort();
+                const controller = new AbortController();
+                pricesController = controller;
+                retryWhenOnline = false;
+                lastLoadAt = Date.now();
+                setLoading(true);
+                if (!Object.keys(prices).length) render();
+
+                const needRates = !rates || Date.now() - rates.fetchedAt > RATES_MAX_AGE_MS;
+                const results = await Promise.allSettled([
+                    ...METALS.map(metal => fetchPrice(metal.symbol, controller.signal)),
+                    needRates ? fetchRates(controller.signal) : Promise.resolve(rates)
+                ]);
+
+                // A request replaced by a newer one ends quietly.
+                if (pricesController !== controller) return;
+                pricesController = null;
+                setLoading(false);
+
+                METALS.forEach((metal, index) => {
+                    if (results[index].status === "fulfilled") prices[metal.symbol] = results[index].value;
+                });
+                const ratesResult = results[METALS.length];
+                if (ratesResult.status === "fulfilled") rates = ratesResult.value;
+
+                const errors = results.filter(result => result.status === "rejected" && result.reason.kind !== "aborted").map(result => result.reason);
+                render();
+
+                const notes = [];
+                if (errors.length) {
+                    const error = errors[0];
+                    if (error.kind === "offline") {
+                        retryWhenOnline = true;
+                        notes.push("You are offline. Prices will refresh when your connection comes back.");
+                    } else {
+                        notes.push(`${error.message}. The last prices that loaded are shown.`);
+                    }
+                    if (manual || !Object.keys(prices).length) showErrorToast(error.message);
+                } else if (manual) {
+                    showSuccessToast("Prices updated");
+                }
+                if (currencySelect.value !== displayCurrency()) notes.push(`Exchange rates are not available right now, so prices are shown in US dollars.`);
+                if (!notes.length) notes.push(`Live prices · checked at ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`);
+                metalStatus.textContent = notes.join(" ");
+            }
+
+            // Refreshes every minute only while the page is visible, so hidden tabs do not use the free service.
+            function scheduleRefresh() {
+                clearInterval(refreshTimer);
+                refreshTimer = setInterval(() => {
+                    if (document.visibilityState === "visible" && !pricesController) loadPrices();
+                }, REFRESH_MS);
+            }
+
+            // Builds a plain-text price list for copying and sharing.
+            function describePrices() {
+                const unitLabel = UNITS[unitSelect.value].label;
+                const lines = METALS.filter(metal => prices[metal.symbol]).map(metal => `${metal.name}: ${formatMoney(convert(prices[metal.symbol].usdPerOunce))} ${unitLabel}`);
+                if (prices.XAU) lines.splice(1, 0, `Gold 22K: ${formatMoney(convert(prices.XAU.usdPerOunce, 0.916))} ${unitLabel}`);
+                return `Metal prices today (spot, before taxes):\n${lines.join("\n")}`;
+            }
+
+            function copyText(text, btn) {
+                navigator.clipboard.writeText(text).then(() => {
+                    showSuccessToast("Copied to clipboard");
+                    if (btn) {
+                        const icon = btn.querySelector("i");
+                        const original = icon.className;
+                        icon.className = "bi bi-check-lg";
+                        setTimeout(() => icon.className = original, 1000);
+                    }
+                }).catch(() => showErrorToast("Could not copy, your browser blocked the clipboard"));
+            }
+
+            function copyPrices(btn) {
+                if (!Object.keys(prices).length) return showInfoToast("No prices to copy yet");
+                copyText(describePrices(), btn);
+            }
+
+            function sharePrices() {
+                if (!Object.keys(prices).length) return showInfoToast("No prices to share yet");
+                const shareText = `🪙 ${describePrices()}`;
+                if (navigator.share) {
+                    navigator.share({ title: "Gold & Silver Price Today", text: shareText, url: location.href }).catch(() => {});
+                } else {
+                    copyText(`${shareText}\n${location.href}`);
+                }
+            }
+
+            setupOptions();
+            loadPrices();
+            scheduleRefresh();
+
+            // Prices refresh when the user comes back to a tab that has been hidden for a while, or the connection returns.
+            document.addEventListener("visibilitychange", () => {
+                if (document.visibilityState === "visible" && !pricesController && Date.now() - lastLoadAt > REFRESH_MS / 2) loadPrices();
+            });
+            window.addEventListener("online", () => {
+                if (retryWhenOnline && !pricesController) loadPrices();
+            });
+        </script>
+
+    </body>
+</html>

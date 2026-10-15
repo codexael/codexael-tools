@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Codexael Toolstack — Keycaps</title>
+    <link rel="icon" href="../assets/images/favicon.png">
+    <link rel="stylesheet" href="../css/bootstrap-icons.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #fff4e0;
+            --ink: #111111;
+            --paper: #ffffff;
+            --yellow: #ffd23f;
+            --pink: #ff6fb5;
+            --cyan: #3bceac;
+            --blue: #4d7cfe;
+            --orange: #ff8a3d;
+            --lilac: #b69cff;
+            --lime: #c6f432;
+            --red: #ff5a4e;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            background-color: var(--bg);
+            background-image: radial-gradient(var(--ink) 1px, transparent 1px);
+            background-size: 22px 22px;
+            color: var(--ink);
+            font-family: "Space Mono", monospace;
+        }
+        a { color: inherit; text-decoration: none; }
+        .wrap { max-width: 1160px; margin: 0 auto; padding: 24px 16px 80px; }
+
+        .top { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+        .logo { font-family: "Archivo Black", sans-serif; font-size: 1.4rem; background: var(--yellow); border: 3px solid var(--ink); box-shadow: 4px 4px 0 var(--ink); padding: 4px 12px; transform: rotate(-2deg); }
+        .badge { border: 3px solid var(--ink); background: var(--lime); padding: 6px 12px; font-weight: 700; box-shadow: 4px 4px 0 var(--ink); }
+
+        .hero { margin: 48px 0 40px; display: grid; grid-template-columns: 1.4fr 1fr; gap: 28px; align-items: center; }
+        .hero h1 { font-family: "Archivo Black", sans-serif; font-size: clamp(2.6rem, 7vw, 5.6rem); line-height: .92; margin: 0; letter-spacing: -.02em; text-transform: uppercase; }
+        .hero h1 .hl { background: var(--pink); padding: 0 10px; border: 3px solid var(--ink); display: inline-block; transform: rotate(1.5deg); box-shadow: 6px 6px 0 var(--ink); }
+        .hero p { font-size: 1.05rem; margin: 22px 0 0; max-width: 46ch; }
+        .sticker { background: var(--paper); border: 3px solid var(--ink); box-shadow: 8px 8px 0 var(--ink); padding: 22px; transform: rotate(2deg); }
+        .sticker h3 { font-family: "Archivo Black", sans-serif; margin: 0 0 10px; font-size: 1.3rem; }
+        .sticker ul { margin: 0; padding-left: 20px; line-height: 1.8; }
+
+        .search { display: flex; border: 3px solid var(--ink); box-shadow: 6px 6px 0 var(--ink); background: var(--paper); margin-bottom: 34px; }
+        .search i { padding: 14px 16px; border-right: 3px solid var(--ink); background: var(--yellow); font-size: 1.2rem; }
+        .search input { flex: 1; border: 0; outline: 0; font: 700 1.1rem "Space Mono", monospace; padding: 0 16px; background: none; min-width: 0; }
+
+        .cat { margin: 34px 0 14px; display: flex; align-items: center; gap: 12px; }
+        .cat span { font-family: "Archivo Black", sans-serif; text-transform: uppercase; background: var(--ink); color: var(--bg); padding: 4px 12px; font-size: 1rem; }
+        .cat hr { flex: 1; border: 0; border-top: 3px dashed var(--ink); margin: 0; }
+
+        .keys { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 18px; }
+        /* A keycap that sinks into its shadow when pressed. */
+        .key {
+            position: relative;
+            display: block;
+            background: var(--c, var(--paper));
+            border: 3px solid var(--ink);
+            border-radius: 14px;
+            padding: 16px 16px 14px;
+            box-shadow: 0 7px 0 var(--ink);
+            transition: transform .08s, box-shadow .08s;
+            min-height: 140px;
+        }
+        .key::before { content: ""; position: absolute; inset: 6px 6px 10px; border: 2px solid rgba(0, 0, 0, .12); border-radius: 9px; pointer-events: none; }
+        .key:hover { transform: translateY(2px); box-shadow: 0 5px 0 var(--ink); }
+        .key:active, .key.pressed { transform: translateY(7px); box-shadow: 0 0 0 var(--ink); }
+        .key .letter { position: absolute; top: 10px; right: 12px; font-family: "Archivo Black", sans-serif; font-size: 1.6rem; line-height: 1; background: var(--paper); border: 2.5px solid var(--ink); border-radius: 8px; width: 40px; height: 40px; display: grid; place-items: center; }
+        .key .ic { font-size: 1.8rem; }
+        .key b { display: block; font-family: "Archivo Black", sans-serif; font-weight: 400; font-size: 1.05rem; margin-top: 8px; text-transform: uppercase; }
+        .key small { display: block; font-size: .78rem; margin-top: 4px; line-height: 1.35; }
+
+        .toast { position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 140%); background: var(--ink); color: var(--yellow); padding: 12px 20px; font-weight: 700; border: 3px solid var(--ink); transition: transform .2s; z-index: 9; }
+        .toast.show { transform: translate(-50%, 0); }
+
+        @media (max-width: 760px) { .hero { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <div class="top">
+            <div class="logo">TOOLSTACK!</div>
+            <div class="badge"><i class="bi bi-lightning-charge-fill"></i> 100% IN-BROWSER</div>
+        </div>
+
+        <section class="hero">
+            <div>
+                <h1>Every tool<br>is <span class="hl">one key</span><br>away.</h1>
+                <p>Press <b>J</b> for JSON. <b>R</b> for Regex. <b>Q</b> for QR. No mouse, no menus, no waiting. Your hands never leave the keyboard.</p>
+            </div>
+            <div class="sticker">
+                <h3>HOUSE RULES ✌</h3>
+                <ul>
+                    <li>No sign-up. Ever.</li>
+                    <li>No uploads. Data stays local.*</li>
+                    <li>No ads yelling at you.</li>
+                    <li>Just tools that work.</li>
+                </ul>
+                <p style="font-size:.72rem;margin:10px 0 0">* IP lookup asks a public service for location data.</p>
+            </div>
+        </section>
+
+        <label class="search"><i class="bi bi-search"></i><input id="search" placeholder="FIND A TOOL… (press / to focus)"></label>
+
+        <div id="board"></div>
+    </div>
+    <div class="toast" id="toast"></div>
+
+    <script src="tools.js"></script>
+    <script>
+        const board = document.getElementById("board");
+        const search = document.getElementById("search");
+        const toast = document.getElementById("toast");
+        const colours = { Format: "var(--yellow)", Text: "var(--pink)", Encode: "var(--lilac)", Generate: "var(--cyan)", Convert: "var(--blue)", Calculate: "var(--orange)", Productivity: "var(--lime)", DevOps: "var(--red)" };
+
+        // Draws the keycap board grouped by category.
+        function draw() {
+            const q = search.value.trim().toLowerCase();
+            board.innerHTML = TOOL_CATEGORIES.map(cat => {
+                const list = TOOLS.filter(t => t.cat === cat && (!q || (t.name + t.desc).toLowerCase().includes(q)));
+                if (!list.length) return "";
+                return `<div class="cat"><span>${cat}</span><hr></div><div class="keys">${list.map(t => `
+                    <a class="key" href="${TOOL_ROOT + t.href}" data-key="${t.key}" style="--c:${colours[cat]}">
+                        <span class="letter">${t.key}</span>
+                        <i class="bi ${t.icon} ic"></i>
+                        <b>${t.name}</b><small>${t.desc}</small>
+                    </a>`).join("")}</div>`;
+            }).join("") || `<p style="font-weight:700">NOTHING HERE. TRY ANOTHER WORD.</p>`;
+        }
+
+        // Presses the matching keycap visually and opens its tool.
+        document.addEventListener("keydown", e => {
+            if (e.key === "/" && document.activeElement !== search) { e.preventDefault(); search.focus(); return; }
+            if (document.activeElement === search || e.ctrlKey || e.metaKey || e.altKey) return;
+            const t = TOOLS.find(x => x.key === e.key.toUpperCase());
+            if (!t) return;
+            const key = board.querySelector(`[data-key="${t.key}"]`);
+            key?.classList.add("pressed");
+            toast.textContent = `→ OPENING ${t.name.toUpperCase()}`;
+            toast.classList.add("show");
+            setTimeout(() => location.href = TOOL_ROOT + t.href, 350);
+        });
+
+        search.addEventListener("input", draw);
+        search.addEventListener("keydown", e => {
+            if (e.key === "Escape") { search.value = ""; draw(); search.blur(); }
+            if (e.key === "Enter") { const first = board.querySelector(".key"); if (first) location.href = first.href; }
+        });
+        draw();
+    </script>
+</body>
+</html>

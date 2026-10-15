@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Codexael Toolstack — Riddle of the Day</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta http-equiv="Content-Security-Policy" content="connect-src https://riddles-api.vercel.app; object-src 'none'; base-uri 'none'; form-action 'none'">
+
+        <!-- Metadata -->
+        <meta name="description" content="A new riddle every day. Can you solve it before you reveal the answer?">
+        <meta name="author" content="Codexael">
+        <meta name="theme-color" content="#fff4e0" media="(prefers-color-scheme: light)">
+        <meta name="theme-color" content="#17140f" media="(prefers-color-scheme: dark)">
+
+        <!-- Open Graph -->
+        <meta property="og:title" content="Codexael Toolstack — Riddle of the Day">
+        <meta property="og:description" content="A new riddle every day. Can you solve it before you reveal the answer?">
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="https://tools.codexael.com/riddle_of_the_day.html">
+        <meta property="og:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+        <meta property="og:image:width" content="1200">
+        <meta property="og:image:height" content="630">
+        <meta property="og:image:type" content="image/png">
+        <meta property="og:image:alt" content="Codexael Toolstack — Riddle of the Day">
+        <meta property="og:site_name" content="Codexael Toolstack">
+
+        <!-- Twitter Card -->
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="Codexael Toolstack — Riddle of the Day">
+        <meta name="twitter:description" content="A new riddle every day. Can you solve it before you reveal the answer?">
+        <meta name="twitter:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+
+        <!-- Favicon / App Icon -->
+        <link rel="icon" type="image/svg+xml" href="assets/images/codexael_icon.svg">
+        <link rel="apple-touch-icon" href="assets/images/codexael_icon.svg">
+
+        <!-- Bootstrap 5.2.0-beta1 -->
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+
+        <!-- Bootstrap with Popper 5.2.0-beta1 -->
+        <script src="js/bootstrap.bundle.min.js"></script>
+
+        <!-- Bootstrap Icons 1.11.3 -->
+        <link rel="stylesheet" href="css/bootstrap-icons.min.css">
+
+        <!-- Google fonts -->
+        <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+        <!-- Custom CSS -->
+        <link rel="stylesheet" href="css/keycaps.css">
+
+        <style>
+            .riddle-body {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                gap: 18px;
+                padding: 24px 22px 28px;
+            }
+
+            .riddle-body.loading .riddle-card { opacity: 0.55; }
+
+            /* The riddle sits on an orange card that keeps dark text in both themes. */
+            .riddle-card {
+                display: flex;
+                flex-direction: column;
+                gap: 14px;
+                padding: 24px 24px 22px;
+                background: var(--orange);
+                color: #111111;
+                border: 3px solid var(--ink);
+                border-radius: 12px;
+                box-shadow: 4px 4px 0 var(--ink);
+            }
+
+            .riddle-kind {
+                align-self: flex-start;
+                padding: 2px 10px;
+                background: #111111;
+                color: #ffffff;
+                font-family: var(--display-font);
+                font-size: 0.75rem;
+                letter-spacing: 0.06em;
+                text-transform: uppercase;
+            }
+
+            .riddle-text {
+                margin: 0;
+                font-size: 1.25rem;
+                font-weight: 700;
+                line-height: 1.5;
+                overflow-wrap: anywhere;
+            }
+
+            /* The answer hides behind a dashed panel until the user reveals it. */
+            .answer-box {
+                padding: 14px 16px;
+                background: var(--paper);
+                color: var(--ink);
+                border: 3px dashed var(--ink);
+                border-radius: 10px;
+                font-weight: 700;
+                line-height: 1.5;
+                overflow-wrap: anywhere;
+            }
+
+            .answer-box.revealed {
+                background: var(--lime);
+                color: #111111;
+                border-style: solid;
+            }
+
+            .riddle-actions {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 12px;
+            }
+
+            /* Bootstrap btn hover and active states would hide the ink border without these values. */
+            .riddle-actions .btn {
+                --bs-btn-hover-border-color: var(--ink);
+                --bs-btn-active-border-color: var(--ink);
+                width: auto;
+                flex: 0 1 auto;
+                margin-bottom: 0;
+            }
+
+            .riddle-actions #revealBtn { flex: 1 1 200px; }
+
+            .fact-meta {
+                font-size: 0.75rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.04em;
+            }
+
+            .privacy-note {
+                padding: 10px 12px;
+                border: 2px dashed var(--ink);
+                font-size: 0.75rem;
+                font-weight: 700;
+                line-height: 1.5;
+            }
+
+            @media (max-width: 480px) {
+                .riddle-body {
+                    padding: 20px 16px 24px;
+                }
+
+                .riddle-text {
+                    font-size: 1.1rem;
+                }
+
+                .riddle-actions .btn,
+                .riddle-actions #revealBtn {
+                    flex: 1 1 100%;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <!-- Common layout -->
+        <div id="navbar-container"></div>
+
+        <div class="container-fluid tool-wrapper">
+            <div class="row">
+                <div class="col-md-8 offset-md-2">
+                    <div class="editor-panel">
+                        <div class="editor-header">
+                            <span class="editor-title">Riddle of the Day</span>
+                            <div class="editor-actions">
+                                <button title="Another riddle" id="headerNewBtn" onclick="loadBonusRiddle()"><i class="bi bi-arrow-clockwise icon-btn"></i></button>
+                                <div class="divider"></div>
+                                <button title="Copy riddle" data-shortcut="copy" onclick="copyRiddle(this)"><i class="bi bi-copy icon-btn"></i></button>
+                            </div>
+                        </div>
+
+                        <div class="editor-body riddle-body loading" id="riddleBody">
+
+                            <div class="riddle-card" aria-live="polite">
+                                <span class="riddle-kind" id="riddleKind">TODAY'S RIDDLE</span>
+                                <p class="riddle-text" id="riddleText">Fetching today's riddle...</p>
+                                <div class="answer-box" id="answerBox" role="status">Think it over, then reveal the answer.</div>
+                            </div>
+
+                            <div class="riddle-actions">
+                                <button class="btn action-btn-primary" id="revealBtn" data-shortcut="run" onclick="revealAnswer()"><i class="bi bi-eye"></i> Reveal answer</button>
+                                <button class="btn action-btn-ghost" id="newRiddleBtn" onclick="loadBonusRiddle()"><i class="bi bi-shuffle"></i> Another riddle</button>
+                                <button class="btn action-btn-ghost" id="todayBtn" onclick="showToday()" hidden><i class="bi bi-calendar-day"></i> Today's riddle</button>
+                                <button class="btn action-btn-ghost" onclick="shareRiddle()"><i class="bi bi-share"></i> Challenge a friend</button>
+                            </div>
+
+                            <div class="fact-meta" id="riddleMeta">Riddles seen this visit: 0</div>
+
+                            <div class="privacy-note">
+                                <i class="bi bi-info-circle"></i> Riddles come from the free <a href="https://riddles-api.vercel.app" target="_blank" rel="noopener noreferrer">Riddles API</a>. Today's riddle is kept in your browser so it stays the same all day. No data about you is sent with the request.
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <div id="footer-container"></div>
+
+        <!-- Common JS -->
+        <script src="js/tool-help.js"></script>
+        <script src="js/storage.js"></script>
+        <script src="js/common.js"></script>
+        <script src="js/script.js"></script>
+        <script src="js/api-client.js"></script>
+
+        <!-- Custom JS -->
+        <script>
+
+            const pageTitle = "Riddle of the Day";
+
+            const RIDDLE_URL = "https://riddles-api.vercel.app/random";
+            const RIDDLE_MAX_BYTES = 4096;
+            const TODAY_KEY = "toolstack_riddle_today";
+            const MAX_ATTEMPTS = 3;
+
+            const riddleBody = document.getElementById("riddleBody");
+            const riddleKind = document.getElementById("riddleKind");
+            const riddleText = document.getElementById("riddleText");
+            const answerBox = document.getElementById("answerBox");
+            const riddleMeta = document.getElementById("riddleMeta");
+            const revealBtn = document.getElementById("revealBtn");
+            const todayBtn = document.getElementById("todayBtn");
+            const fetchButtons = [document.getElementById("newRiddleBtn"), document.getElementById("headerNewBtn")];
+
+            let todayRiddle = null;
+            let currentRiddle = null;
+            let isRevealed = false;
+            let riddleCount = 0;
+            let riddleController = null;
+            let retryWhenOnline = false;
+
+            // Returns today's date in the visitor's own time zone, such as 2026-10-15.
+            function todayKey() {
+                const now = new Date();
+                return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+            }
+
+            // Returns the riddle saved for today, or null when it is from another day or broken.
+            function loadSavedToday() {
+                const saved = getStorageItem(TODAY_KEY, null);
+                if (saved?.date !== todayKey() || typeof saved.riddle !== "string" || typeof saved.answer !== "string") return null;
+                return { riddle: saved.riddle, answer: saved.answer };
+            }
+
+            function saveToday(riddle) {
+                try { setStorageItem(TODAY_KEY, { date: todayKey(), ...riddle }); } catch { /* Today's riddle still shows for this visit. */ }
+            }
+
+            // Fetches one riddle and checks that it has both a question and an answer.
+            async function fetchRiddle(signal) {
+                const reply = await fetchPublicJson(RIDDLE_URL, { serviceName: "The riddle service", maxBytes: RIDDLE_MAX_BYTES, signal });
+                const riddle = typeof reply?.riddle === "string" ? reply.riddle.trim() : "";
+                const answer = typeof reply?.answer === "string" ? reply.answer.trim() : "";
+                if (!riddle || !answer) throw new ApiError("The riddle service sent no riddle", "invalid");
+                return { riddle, answer };
+            }
+
+            // Fetches a riddle that differs from the one on screen and from today's riddle.
+            async function fetchNewRiddle(signal) {
+                let riddle = await fetchRiddle(signal);
+                for (let attempt = 1; attempt < MAX_ATTEMPTS && (riddle.riddle === currentRiddle?.riddle || riddle.riddle === todayRiddle?.riddle); attempt++) {
+                    riddle = await fetchRiddle(signal);
+                }
+                return riddle;
+            }
+
+            function setLoading(isLoading) {
+                riddleBody.classList.toggle("loading", isLoading);
+                fetchButtons.forEach(button => button.disabled = isLoading);
+            }
+
+            // Shows a riddle with its answer hidden, labelled as today's riddle or a bonus one.
+            function showRiddle(riddle, isToday) {
+                currentRiddle = riddle;
+                isRevealed = false;
+                riddleCount++;
+                riddleKind.textContent = isToday ? "TODAY'S RIDDLE" : "BONUS RIDDLE";
+                riddleText.textContent = riddle.riddle;
+                answerBox.textContent = "Think it over, then reveal the answer.";
+                answerBox.classList.remove("revealed");
+                revealBtn.disabled = false;
+                revealBtn.innerHTML = '<i class="bi bi-eye"></i> Reveal answer';
+                todayBtn.hidden = isToday || !todayRiddle;
+                riddleMeta.textContent = `Riddles seen this visit: ${riddleCount}`;
+            }
+
+            // Reports a failed request and shows how to recover when no riddle is on screen yet.
+            function handleError(error, retry) {
+                if (error.kind === "aborted") return;
+                showErrorToast(error.message);
+                if (error.kind === "offline") retryWhenOnline = retry;
+                if (!currentRiddle) {
+                    riddleText.textContent = error.kind === "offline"
+                        ? "You are offline. Today's riddle will load when your connection comes back."
+                        : `${error.message}. Click Another riddle to try again.`;
+                    revealBtn.disabled = true;
+                }
+            }
+
+            // Runs one riddle request with the shared busy state and cancel handling.
+            async function runRequest(task) {
+                if (riddleController) riddleController.abort();
+                const controller = new AbortController();
+                riddleController = controller;
+                retryWhenOnline = false;
+                setLoading(true);
+                try {
+                    await task(controller.signal);
+                } finally {
+                    if (riddleController === controller) {
+                        riddleController = null;
+                        setLoading(false);
+                    }
+                }
+            }
+
+            // Shows today's saved riddle, or fetches and saves one when there is none for today yet.
+            async function loadToday() {
+                todayRiddle = loadSavedToday();
+                if (todayRiddle) {
+                    setLoading(false);
+                    showRiddle(todayRiddle, true);
+                    return;
+                }
+                await runRequest(async signal => {
+                    try {
+                        todayRiddle = await fetchRiddle(signal);
+                        saveToday(todayRiddle);
+                        showRiddle(todayRiddle, true);
+                    } catch (error) {
+                        handleError(error, "today");
+                    }
+                });
+            }
+
+            async function loadBonusRiddle() {
+                await runRequest(async signal => {
+                    try {
+                        showRiddle(await fetchNewRiddle(signal), false);
+                    } catch (error) {
+                        handleError(error, "bonus");
+                    }
+                });
+            }
+
+            function showToday() {
+                if (todayRiddle) showRiddle(todayRiddle, true);
+            }
+
+            function revealAnswer() {
+                if (!currentRiddle || isRevealed) return;
+                isRevealed = true;
+                answerBox.textContent = currentRiddle.answer;
+                answerBox.classList.add("revealed");
+                revealBtn.disabled = true;
+                revealBtn.innerHTML = '<i class="bi bi-check2"></i> Answer shown';
+            }
+
+            function copyText(text, btn) {
+                if (isBlank(text, "Nothing to copy")) return;
+                navigator.clipboard.writeText(text).then(() => {
+                    showSuccessToast("Copied to clipboard");
+                    if (btn) {
+                        const icon = btn.querySelector("i");
+                        const original = icon.className;
+                        icon.className = "bi bi-check-lg";
+                        setTimeout(() => icon.className = original, 1000);
+                    }
+                }).catch(() => showErrorToast("Could not copy, your browser blocked the clipboard"));
+            }
+
+            // Copies the riddle with its answer only when the answer has been revealed.
+            function copyRiddle(btn) {
+                if (!currentRiddle) return showInfoToast("No riddle to copy yet");
+                copyText(isRevealed ? `${currentRiddle.riddle}\nAnswer: ${currentRiddle.answer}` : currentRiddle.riddle, btn);
+            }
+
+            // Shares the riddle without its answer so friends can try to solve it.
+            function shareRiddle() {
+                if (!currentRiddle) return showInfoToast("No riddle to share yet");
+                const shareText = `🧩 Can you solve this riddle?\n${currentRiddle.riddle}\nCheck your answer here:`;
+                if (navigator.share) {
+                    navigator.share({ title: "Riddle of the Day", text: shareText, url: location.href }).catch(() => {});
+                } else {
+                    copyText(`${shareText} ${location.href}`);
+                }
+            }
+
+            loadToday();
+
+            // The riddle that failed while offline loads when the connection comes back.
+            window.addEventListener("online", () => {
+                if (riddleController) return;
+                if (retryWhenOnline === "today") loadToday();
+                else if (retryWhenOnline === "bonus" && !currentRiddle) loadBonusRiddle();
+            });
+        </script>
+
+    </body>
+</html>

@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Codexael Toolstack — Unit Converter</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+        <!-- Metadata -->
+        <meta name="description" content="Convert length, weight, temperature and more in a single click.">
+        <meta name="author" content="Codexael">
+        <meta name="theme-color" content="#fff4e0" media="(prefers-color-scheme: light)">
+        <meta name="theme-color" content="#17140f" media="(prefers-color-scheme: dark)">
+
+        <!-- Open Graph -->
+        <meta property="og:title" content="Codexael Toolstack — Unit Converter">
+        <meta property="og:description" content="Convert length, weight, temperature and more in a single click.">
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="https://tools.codexael.com/unit_converter.html">
+        <meta property="og:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+        <meta property="og:image:width" content="1200">
+        <meta property="og:image:height" content="630">
+        <meta property="og:image:type" content="image/png">
+        <meta property="og:image:alt" content="Codexael Toolstack — Unit Converter">
+        <meta property="og:site_name" content="Codexael Toolstack">
+
+        <!-- Twitter Card -->
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="Codexael Toolstack — Unit Converter">
+        <meta name="twitter:description" content="Convert length, weight, temperature and more in a single click.">
+        <meta name="twitter:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+
+        <!-- Favicon / App Icon -->
+        <link rel="icon" type="image/svg+xml" href="assets/images/codexael_icon.svg">
+        <link rel="apple-touch-icon" href="assets/images/codexael_icon.svg">
+
+        <!-- Bootstrap 5.2.0-beta1 -->
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+
+        <!-- Bootstrap with Popper 5.2.0-beta1 -->
+        <script src="js/bootstrap.bundle.min.js"></script>
+
+        <!-- Bootstrap Icons 1.11.3 -->
+        <link rel="stylesheet" href="css/bootstrap-icons.min.css">
+
+        <!-- Google fonts -->
+        <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+        <!-- Custom CSS -->
+        <link rel="stylesheet" href="css/keycaps.css">
+
+        <style>
+            .converter-body {
+                padding: 24px 22px 28px;
+                display: flex;
+                flex-direction: column;
+                gap: 18px;
+                overflow-y: auto;
+                flex: 1;
+            }
+
+            .converter-row {
+                display: flex;
+                align-items: flex-start;
+                gap: 14px;
+            }
+
+            .converter-row .converter-value {
+                flex: 1 1 55%;
+                min-width: 0;
+            }
+
+            .converter-row .converter-unit {
+                flex: 1 1 45%;
+                min-width: 0;
+            }
+
+            .converter-swap-row {
+                display: flex;
+                justify-content: center;
+            }
+
+            /* The swap key spins half a turn when hovered. */
+            .converter-swap-btn {
+                width: 54px;
+                height: 54px;
+                display: grid;
+                place-items: center;
+                padding: 0;
+                background: var(--pink);
+                color: #111111;
+                border: 3px solid var(--ink);
+                border-radius: 12px;
+                box-shadow: 0 3px 0 var(--ink);
+                font-size: 1.3rem;
+                transition: transform 0.15s, box-shadow 0.08s;
+            }
+
+            .converter-swap-btn:hover {
+                transform: translateY(1px) rotate(180deg);
+                box-shadow: 0 2px 0 var(--ink);
+            }
+
+            .converter-swap-btn:active {
+                transform: translateY(3px) rotate(180deg);
+                box-shadow: 0 0 0 var(--ink);
+            }
+
+            /* The equation sits on a tilted sticker under the inputs. */
+            .converter-equation {
+                align-self: center;
+                max-width: 100%;
+                padding: 4px 12px;
+                background: var(--yellow);
+                color: #111111;
+                border: 3px solid var(--ink);
+                box-shadow: 2px 2px 0 var(--ink);
+                font-size: 0.82rem;
+                font-weight: 700;
+                text-align: center;
+                overflow-wrap: anywhere;
+                transform: rotate(-2deg);
+            }
+
+            .converter-equation:empty {
+                display: none;
+            }
+
+            @media (max-width: 480px) {
+                .converter-row {
+                    flex-direction: column;
+                    gap: 0;
+                }
+
+                .converter-row .converter-value,
+                .converter-row .converter-unit {
+                    flex: none;
+                    width: 100%;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <!-- Common layout -->
+        <div id="navbar-container"></div>
+
+        <div class="container-fluid tool-wrapper">
+            <div class="row">
+                <div class="col-md-8 offset-md-2">
+                    <div class="editor-panel">
+                        <div class="editor-header">
+                            <span class="editor-title">Unit Converter</span>
+                            <div class="editor-actions">
+                                <button title="Swap From/To units" onclick="swapUnits()"><i class="bi bi-arrow-down-up icon-btn"></i></button>
+                                <div class="divider"></div>
+                                <button class="btn-danger" title="Clear" data-undo-clear onclick="clearAll()"><i class="bi bi-x-lg icon-btn"></i></button>
+                                <button title="Copy result" data-shortcut="copy" onclick="copyText(toInput.value, this)"><i class="bi bi-copy icon-btn"></i></button>
+                            </div>
+                        </div>
+
+                        <div class="converter-body">
+                            <select id="categorySelect" class="form-control"></select>
+
+                            <div class="converter-row">
+                                <div class="input-stepper converter-value">
+                                    <button type="button" data-step="dec" title="Decrease"><i class="bi bi-dash"></i></button>
+                                    <div class="stepper-divider"></div>
+                                    <input type="number" id="fromInput" placeholder="Enter value">
+                                    <div class="stepper-divider"></div>
+                                    <button type="button" data-step="inc" title="Increase"><i class="bi bi-plus"></i></button>
+                                </div>
+                                <select class="form-control converter-unit" id="fromUnit"></select>
+                            </div>
+
+                            <div class="converter-swap-row">
+                                <button class="converter-swap-btn" title="Swap From/To units" onclick="swapUnits()"><i class="bi bi-arrow-down-up"></i></button>
+                            </div>
+
+                            <div class="converter-row">
+                                <div class="input-stepper converter-value">
+                                    <button type="button" data-step="dec" title="Decrease"><i class="bi bi-dash"></i></button>
+                                    <div class="stepper-divider"></div>
+                                    <input type="number" id="toInput" placeholder="Converted value">
+                                    <div class="stepper-divider"></div>
+                                    <button type="button" data-step="inc" title="Increase"><i class="bi bi-plus"></i></button>
+                                </div>
+                                <select class="form-control converter-unit" id="toUnit"></select>
+                            </div>
+
+                            <div class="converter-equation" id="equationText"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <div id="footer-container"></div>
+
+        <!-- Common JS -->
+        <script src="js/tool-help.js"></script>
+        <script src="js/storage.js"></script>
+        <script src="js/common.js"></script>
+        <script src="js/custom-dropdown.js"></script>
+        <script src="js/custom-input.js"></script>
+        <script src="js/script.js"></script>
+
+        <!-- Custom JS -->
+        <script>
+            const pageTitle = "Unit Converter";
+            const CATEGORY_STORAGE_KEY = "toolstack_unit_converter_category";
+
+            const categoryDefs = {
+                "Length": { units: { "Millimeter": 0.001, "Centimeter": 0.01, "Meter": 1, "Kilometer": 1000, "Inch": 0.0254, "Foot": 0.3048, "Yard": 0.9144, "Mile": 1609.344 } },
+                "Weight & Mass": { units: { "Milligram": 0.001, "Gram": 1, "Kilogram": 1000, "Metric Ton": 1000000, "Ounce": 28.3495, "Pound": 453.592, "Stone": 6350.29 } },
+                "Temperature": { special: true, units: ["Celsius", "Fahrenheit", "Kelvin"] },
+                "Volume": { units: { "Milliliter": 0.001, "Liter": 1, "Cubic Meter": 1000, "US Gallon": 3.78541, "US Quart": 0.946353, "US Pint": 0.473176, "Cup": 0.24, "Fluid Ounce": 0.0295735 } },
+                "Area": { units: { "Square Meter": 1, "Square Kilometer": 1000000, "Square Foot": 0.092903, "Square Yard": 0.836127, "Acre": 4046.86, "Hectare": 10000, "Square Mile": 2589988.11 } },
+                "Speed": { units: { "Meters/Second": 1, "Kilometers/Hour": 0.277778, "Miles/Hour": 0.44704, "Knot": 0.514444, "Feet/Second": 0.3048 } },
+                "Time": { units: { "Millisecond": 0.001, "Second": 1, "Minute": 60, "Hour": 3600, "Day": 86400, "Week": 604800, "Month": 2629800, "Year": 31557600 } },
+                "Digital Storage": { units: { "Bit": 0.125, "Byte": 1, "Kilobyte": 1024, "Megabyte": 1048576, "Gigabyte": 1073741824, "Terabyte": 1099511627776 } }
+            };
+
+            const categorySelect = document.getElementById("categorySelect");
+            const fromInput = document.getElementById("fromInput");
+            const toInput = document.getElementById("toInput");
+            const fromUnit = document.getElementById("fromUnit");
+            const toUnit = document.getElementById("toUnit");
+            const equationText = document.getElementById("equationText");
+
+            function copyText(text, btn) {
+                if (isBlank(text, "Nothing to copy")) return;
+                navigator.clipboard.writeText(text).then(() => {
+                    showSuccessToast("Copied to clipboard");
+                    if (btn) {
+                        const icon = btn.querySelector("i");
+                        const original = icon.className;
+                        icon.className = "bi bi-check-lg";
+                        setTimeout(() => icon.className = original, 1000);
+                    }
+                });
+            }
+
+            function getUnitList(category) {
+                const def = categoryDefs[category];
+                return def.special ? def.units : Object.keys(def.units);
+            }
+
+            // Celsius is the pivot for temperature since it's neither the "from" nor "to" unit in most conversions
+            function convertTemperature(from, to, value) {
+                let celsius;
+                if (from === "Celsius") celsius = value;
+                else if (from === "Fahrenheit") celsius = (value - 32) * 5 / 9;
+                else celsius = value - 273.15;
+
+                if (to === "Celsius") return celsius;
+                if (to === "Fahrenheit") return celsius * 9 / 5 + 32;
+                return celsius + 273.15;
+            }
+
+            function convertValue(category, from, to, value) {
+                const def = categoryDefs[category];
+                if (def.special) return convertTemperature(from, to, value);
+                return (value * def.units[from]) / def.units[to];
+            }
+
+            function formatNumber(num) {
+                if (!isFinite(num)) return "0";
+                if (num === 0) return "0";
+                return parseFloat(num.toPrecision(6)).toString();
+            }
+
+            function populateCategorySelect() {
+                categorySelect.innerHTML = Object.keys(categoryDefs)
+                    .map(category => `<option value="${category}">${category}</option>`)
+                    .join("");
+            }
+
+            function loadCategory(category) {
+                const units = getUnitList(category);
+                const options = units.map(unit => `<option value="${unit}">${unit}</option>`).join("");
+                fromUnit.innerHTML = options;
+                toUnit.innerHTML = options;
+                fromUnit.selectedIndex = 0;
+                toUnit.selectedIndex = units.length > 1 ? 1 : 0;
+                CustomDropdown.refresh(fromUnit);
+                CustomDropdown.refresh(toUnit);
+            }
+
+            function updateEquation() {
+                const category = categorySelect.value;
+                const result = convertValue(category, fromUnit.value, toUnit.value, 1);
+                equationText.textContent = `1 ${fromUnit.value} = ${formatNumber(result)} ${toUnit.value}`;
+            }
+
+            function updateTo() {
+                const value = parseFloat(fromInput.value);
+                if (isNaN(value)) {
+                    toInput.value = "";
+                } else {
+                    toInput.value = formatNumber(convertValue(categorySelect.value, fromUnit.value, toUnit.value, value));
+                }
+                updateEquation();
+            }
+
+            function updateFrom() {
+                const value = parseFloat(toInput.value);
+                if (isNaN(value)) {
+                    fromInput.value = "";
+                } else {
+                    fromInput.value = formatNumber(convertValue(categorySelect.value, toUnit.value, fromUnit.value, value));
+                }
+                updateEquation();
+            }
+
+            function swapUnits() {
+                [fromUnit.value, toUnit.value] = [toUnit.value, fromUnit.value];
+                [fromInput.value, toInput.value] = [toInput.value, fromInput.value];
+                CustomDropdown.refresh(fromUnit);
+                CustomDropdown.refresh(toUnit);
+                updateEquation();
+            }
+
+            function clearAll() {
+                fromInput.value = "";
+                toInput.value = "";
+                updateEquation();
+            }
+
+            fromInput.addEventListener("input", updateTo);
+            toInput.addEventListener("input", updateFrom);
+            fromUnit.addEventListener("change", updateTo);
+            toUnit.addEventListener("change", updateTo);
+
+            categorySelect.addEventListener("change", () => {
+                const category = categorySelect.value;
+                setStorageString(CATEGORY_STORAGE_KEY, category);
+                loadCategory(category);
+                fromInput.value = 1;
+                updateTo();
+            });
+
+            populateCategorySelect();
+
+            const savedCategory = getStorageString(CATEGORY_STORAGE_KEY);
+            const initialCategory = savedCategory && categoryDefs[savedCategory] ? savedCategory : "Length";
+            categorySelect.value = initialCategory;
+            loadCategory(initialCategory);
+            CustomDropdown.enhance(categorySelect);
+            CustomDropdown.enhance(fromUnit);
+            CustomDropdown.enhance(toUnit);
+            fromInput.value = 1;
+            updateTo();
+        </script>
+    </body>
+</html>

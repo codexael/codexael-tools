@@ -1,0 +1,11 @@
+# Packaged copies of the site.
+*.zip
+
+# OS and editor files.
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Local Claude Code settings.
+.claude/settings.local.json

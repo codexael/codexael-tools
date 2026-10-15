@@ -1,0 +1,345 @@
+/* This page has a mode strip above the panels, so the shared panel height leaves extra room for it. */
+body {
+    --panel-h: max(480px, calc(100vh - 260px));
+    --panel-half-h: calc((var(--panel-h) - 42px) / 2);
+}
+
+/* The mode strip sits centred above the editors with room for its keycap shadows. */
+.text-editor-type-row {
+    padding: 4px 10px 14px;
+}
+
+.text-editor-type-row .segmented-control {
+    justify-content: center;
+    gap: 10px;
+    padding-bottom: 8px;
+}
+
+/* Each panel wears its own header colour so the three keys read apart. */
+#inputEditor { --panel-c: var(--lime); }
+#outputEditor { --panel-c: var(--cyan); }
+#differenceEditor { --panel-c: var(--lilac); }
+
+/* The centre column keeps clear of the left panel shadow. */
+#textActionPanel {
+    padding: 6px 16px 14px 20px;
+}
+
+/* Action keys in the narrow column use tighter padding so short labels stay on one line. */
+#textActionPanel .action-btn-ghost,
+#textActionPanel .action-btn-primary {
+    padding: 9px 8px;
+    font-size: 0.85rem;
+}
+
+/* Case keys keep their own letter case so each label shows the style it applies. */
+#action_case_converter .action-btn-ghost {
+    font-family: var(--mono-font);
+    font-weight: 700;
+    text-transform: none;
+}
+
+/* Switch labels read left to right even though the column centres its keys. */
+#textActionPanel .chk-switch-row {
+    text-align: left;
+}
+
+/* The find field only reserves room for the match badge while the badge shows. */
+.input-badge-wrap:has(.input-badge:not(.show)) input {
+    padding-right: 12px;
+}
+
+/* The difference panel sits below the half panels with a gap wide enough for their shadows. */
+#differenceEditorContainer {
+    margin-top: 12px;
+}
+
+/* The difference table runs edge to edge inside the panel. */
+.difference-body {
+    padding: 0 !important;
+    background: var(--paper) !important;
+}
+
+/* Empty and identical messages sit in the middle of the panel. */
+.difference-body:has(> .empty-difference),
+.difference-body:has(> .identical-content) {
+    display: grid;
+    place-items: center;
+    padding: 20px !important;
+}
+
+/* Status messages are drawn as tilted stickers. */
+.empty-difference,
+.identical-content {
+    max-width: 100%;
+    padding: 10px 18px;
+    background: var(--paper);
+    color: var(--ink);
+    border: 3px solid var(--ink);
+    box-shadow: 2px 2px 0 var(--ink);
+    font: 400 0.95rem/1.4 var(--display-font);
+    text-align: center;
+    text-transform: uppercase;
+    transform: rotate(-2deg);
+}
+
+.identical-content {
+    background: var(--lime);
+    color: var(--on-color);
+}
+
+/* Difference counts in the panel header are small coloured stickers. */
+.difference-stats {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.stat-insert,
+.stat-delete,
+.stat-equal {
+    display: inline-flex;
+    align-items: center;
+    padding: 1px 7px;
+    border: 2px solid var(--ink);
+    box-shadow: 1px 1px 0 var(--ink);
+    white-space: nowrap;
+}
+
+.stat-insert {
+    background: var(--lime);
+    color: var(--on-color);
+    transform: rotate(-2deg);
+}
+
+.stat-delete {
+    background: var(--red);
+    color: var(--on-color);
+    transform: rotate(2deg);
+}
+
+.stat-equal {
+    background: var(--paper);
+    color: var(--ink);
+}
+
+/* Changed characters get a solid marker fill with dark text. */
+.char-insert,
+.char-delete {
+    padding: 0 1px;
+    color: var(--on-color);
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+}
+
+.char-insert {
+    background: var(--lime);
+}
+
+.char-delete {
+    background: var(--red);
+}
+
+/* Both difference tables share the same fixed grid. */
+.side-table,
+.unified-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+.side-table colgroup col:nth-child(1),
+.side-table colgroup col:nth-child(3) { width: 46px; }
+.side-table colgroup col:nth-child(2),
+.side-table colgroup col:nth-child(4) { width: calc(50% - 46px); }
+
+.unified-table colgroup col:nth-child(1),
+.unified-table colgroup col:nth-child(2) { width: 46px; }
+.unified-table colgroup col:nth-child(3) { width: 24px; }
+.unified-table colgroup col:nth-child(4) { width: calc(100% - 116px); }
+
+/* Table headings are an ink strip that stays on top while the rows scroll. */
+.side-table thead th,
+.unified-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    padding: 6px 12px;
+    background: var(--ink);
+    color: var(--bg);
+    font-family: var(--display-font);
+    font-size: 0.72rem;
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: 0;
+}
+
+.unified-table thead th {
+    padding: 6px 8px;
+}
+
+/* The right half heading gets a divider that replaces the old inline border. */
+.side-table thead th:nth-child(2) {
+    border-left: 3px solid var(--bg) !important;
+}
+
+.side-table td,
+.unified-table td {
+    padding: 0;
+    vertical-align: top;
+    color: var(--ink);
+}
+
+/* Line numbers sit in a gutter that matches the CodeMirror one. */
+.ln,
+.u-ln {
+    width: 46px;
+    min-width: 46px;
+    padding: 0 8px 0 4px !important;
+    background: var(--bg);
+    border-right: 3px dashed var(--ink);
+    font-family: var(--mono-font);
+    font-size: 0.75rem;
+    font-weight: 700;
+    line-height: 1.9;
+    text-align: right;
+    white-space: nowrap;
+    user-select: none;
+}
+
+.ln {
+    vertical-align: middle !important;
+}
+
+.lc,
+.u-content {
+    padding: 0 12px 0 10px !important;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+/* The right half of the split view starts with a solid divider. */
+.side-table td.ln-right {
+    border-left: 3px solid var(--ink);
+}
+
+/* Removed rows get a soft red tint that follows the theme paper. */
+.row-del td,
+.u-row-del td {
+    background: color-mix(in srgb, var(--red) 22%, var(--paper));
+}
+
+/* Added rows get a soft lime tint that follows the theme paper. */
+.row-ins td,
+.u-row-ins td {
+    background: color-mix(in srgb, var(--lime) 30%, var(--paper));
+}
+
+.row-eq td {
+    background: transparent;
+}
+
+.row-del .lc,
+.u-row-del .u-content {
+    border-left: 4px solid var(--red);
+}
+
+.row-ins .lc,
+.u-row-ins .u-content {
+    border-left: 4px solid var(--lime);
+}
+
+/* Changed rows show the new text on a lime tint in place of the old inline colours. */
+.side-table .row-del .row-ins-num + .lc {
+    background: color-mix(in srgb, var(--lime) 30%, var(--paper)) !important;
+    border-left: 4px solid var(--lime) !important;
+}
+
+/* Missing lines on one side are hatched in place of the old inline grey. */
+.side-table .row-del .ln-right:empty + .lc,
+.side-table .row-ins .ln:empty + .lc,
+.row-empty td {
+    background: repeating-linear-gradient(-45deg, transparent 0 6px, color-mix(in srgb, var(--ink) 14%, transparent) 6px 8px) var(--bg) !important;
+    border-left: 0 !important;
+}
+
+/* Empty line number cells keep the plain gutter colour. */
+.side-table td.ln:empty,
+.unified-table td.u-ln:empty {
+    background: var(--bg);
+}
+
+/* Line number cells of changed lines take the solid colour of their side. */
+.row-del .ln:not(.ln-right):not(:empty),
+.u-row-del .u-ln:not(:empty) {
+    background: var(--red);
+    color: var(--on-color);
+}
+
+.row-ins .ln-right:not(:empty),
+.side-table .row-ins-num,
+.u-row-ins .u-ln:not(:empty) {
+    background: var(--lime);
+    color: var(--on-color);
+}
+
+/* The plus and minus column is a solid key in the colour of the change. */
+.u-sign {
+    width: 24px;
+    font-weight: 700;
+    font-size: 0.85rem;
+    text-align: center;
+    user-select: none;
+}
+
+.u-row-del .u-sign {
+    background: var(--red) !important;
+    color: var(--on-color) !important;
+}
+
+.u-row-ins .u-sign {
+    background: var(--lime) !important;
+    color: var(--on-color) !important;
+}
+
+/* Hidden unchanged lines collapse into a dashed strip. */
+.hunk-sep td,
+.u-hunk td {
+    padding: 4px 12px !important;
+    background: var(--bg);
+    color: var(--ink);
+    border-top: 2px dashed var(--ink);
+    border-bottom: 2px dashed var(--ink);
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-align: center;
+    text-transform: uppercase;
+    user-select: none;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+    /* The narrow centre column trims its side padding so the keys keep their width. */
+    #textActionPanel {
+        padding: 6px 12px 14px 16px;
+    }
+}
+
+@media (max-width: 767px) {
+    /* Stacked half panels get a taller fixed height so the editors stay usable. */
+    body {
+        --panel-half-h: 380px;
+    }
+
+    /* Stacked columns keep a small gutter on each side for the panel shadows. */
+    #textActionPanel {
+        padding: 6px 4px 14px;
+    }
+
+    .text-editor-type-row .segmented-control .fit-segmented-label {
+        flex: 1 1 140px;
+    }
+}

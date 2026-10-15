@@ -1,0 +1,2241 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Codexael Toolstack — Scrum Poker</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+        <!-- Metadata -->
+        <meta name="description" content="Estimate stories with your team in a live planning poker room. Free.">
+        <meta name="author" content="Codexael">
+        <meta name="theme-color" content="#fff4e0" media="(prefers-color-scheme: light)">
+        <meta name="theme-color" content="#17140f" media="(prefers-color-scheme: dark)">
+
+        <!-- Open Graph -->
+        <meta property="og:title" content="Codexael Toolstack — Scrum Poker: Planning Poker Rooms">
+        <meta property="og:description" content="Estimate stories with your team in a live planning poker room. Free.">
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="https://tools.codexael.com/scrum_poker.html">
+        <meta property="og:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+        <meta property="og:image:width" content="1200">
+        <meta property="og:image:height" content="630">
+        <meta property="og:image:type" content="image/png">
+        <meta property="og:image:alt" content="Codexael Toolstack — Scrum Poker: Planning Poker Rooms">
+        <meta property="og:site_name" content="Codexael Toolstack">
+
+        <!-- Twitter Card -->
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="Codexael Toolstack — Scrum Poker: Planning Poker Rooms">
+        <meta name="twitter:description" content="Estimate stories with your team in a live planning poker room. Free.">
+        <meta name="twitter:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+
+        <!-- Favicon / App Icon -->
+        <link rel="icon" type="image/svg+xml" href="assets/images/codexael_icon.svg">
+        <link rel="apple-touch-icon" href="assets/images/codexael_icon.svg">
+
+        <!-- Bootstrap 5.2.0-beta1 -->
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+
+        <!-- Bootstrap with Popper 5.2.0-beta1 -->
+        <script src="js/bootstrap.bundle.min.js"></script>
+
+        <!-- Bootstrap Icons 1.11.3 -->
+        <link rel="stylesheet" href="css/bootstrap-icons.min.css">
+
+        <!-- PeerJS 1.5.4 -->
+        <script src="js/peerjs.min.js"></script>
+
+        <!-- Google fonts -->
+        <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+        <!-- Custom CSS -->
+        <link rel="stylesheet" href="css/keycaps.css">
+
+        <style>
+            /* The editor panel removes the column gutter, so this sizes the two room panels with a real gap. */
+            @media (min-width: 768px) {
+                #tablePanel {
+                    flex: 0 0 calc(66.6667% - 8px);
+                    max-width: calc(66.6667% - 8px);
+                    margin-right: 16px;
+                }
+
+                #roomPanel {
+                    flex: 0 0 calc(33.3333% - 8px);
+                    max-width: calc(33.3333% - 8px);
+                }
+
+                /* The room panels share one fixed height and scroll inside on wide screens. */
+                #tablePanel,
+                #roomPanel {
+                    height: calc(100vh - 150px);
+                    min-height: 560px;
+                }
+            }
+
+            /* The room view keeps the same width as the navbar so panel shadows stay off the screen edge. */
+            #roomView {
+                max-width: 1160px;
+                margin: 0 auto;
+            }
+
+            #roomPanel {
+                --panel-c: var(--cyan);
+            }
+
+            .poker-body {
+                padding: 20px 18px 24px;
+                flex: 1 1 auto;
+                min-height: 0;
+                overflow-y: auto;
+                display: flex;
+                flex-direction: column;
+                gap: 18px;
+            }
+
+            .poker-label {
+                display: block;
+                margin-bottom: 8px;
+                font-family: var(--display-font);
+                font-size: 0.8rem;
+                text-transform: uppercase;
+            }
+
+            .poker-field .input-cyan,
+            .poker-field .chk-switch-row,
+            .poker-field .cdrop {
+                margin-bottom: 0;
+            }
+
+            .poker-hint {
+                font-size: 0.78rem;
+                font-weight: 700;
+            }
+
+            /* Empty hints sit in a dashed box so they read as a placeholder. */
+            .poker-empty-hint {
+                margin: auto 0;
+                padding: 12px;
+                border: 3px dashed var(--ink);
+                font-size: 0.8rem;
+                font-weight: 700;
+                text-align: center;
+                text-transform: uppercase;
+            }
+
+            /* Setup view */
+
+            .poker-setup {
+                width: 100%;
+                max-width: 460px;
+                margin: 0 auto;
+                display: flex;
+                flex-direction: column;
+                gap: 18px;
+            }
+
+            .poker-setup-intro {
+                display: grid;
+                justify-items: center;
+                gap: 16px;
+                text-align: center;
+            }
+
+            /* The spade sits in a tilted round sticker like the template empty state. */
+            .poker-setup-intro i {
+                width: 84px;
+                height: 84px;
+                display: grid;
+                place-items: center;
+                background: var(--pink);
+                color: #111111;
+                border: 4px solid var(--ink);
+                border-radius: 50%;
+                box-shadow: 3px 3px 0 var(--ink);
+                font-size: 2.4rem;
+                transform: rotate(-8deg);
+            }
+
+            .poker-setup-intro p {
+                margin: 0;
+                max-width: 38ch;
+                font-size: 0.85rem;
+            }
+
+            .poker-divider {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                font-family: var(--display-font);
+                font-size: 0.8rem;
+                text-transform: uppercase;
+            }
+
+            .poker-divider::before,
+            .poker-divider::after {
+                content: "";
+                flex: 1;
+                border-top: 3px dashed var(--ink);
+            }
+
+            .poker-code-input {
+                font-size: 1.15rem;
+                letter-spacing: 0.4em;
+                text-align: center;
+            }
+
+            .poker-setup .action-btn-primary,
+            .poker-setup .action-btn-ghost {
+                margin-bottom: 0;
+            }
+
+            .poker-status {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                font-size: 0.78rem;
+                font-weight: 700;
+                text-transform: uppercase;
+            }
+
+            /* The status light is a small square key whose fill shows the connection state. */
+            .poker-status-dot {
+                width: 14px;
+                height: 14px;
+                flex-shrink: 0;
+                background: #bdbdbd;
+                border: 2.5px solid var(--ink);
+                border-radius: 4px;
+            }
+
+            .poker-status.is-online .poker-status-dot {
+                background: var(--lime);
+            }
+
+            .poker-status.is-pending .poker-status-dot {
+                background: var(--yellow);
+                animation: poker-pulse 1s ease-in-out infinite;
+            }
+
+            .poker-status.is-error .poker-status-dot {
+                background: var(--red);
+            }
+
+            @keyframes poker-pulse {
+                50% { transform: scale(0.6) rotate(45deg); }
+            }
+
+            /* Table panel */
+
+            .poker-table {
+                display: flex;
+                flex-direction: column;
+                gap: 18px;
+                padding: 18px 16px 16px;
+                background: var(--bg);
+                border: 3px solid var(--ink);
+                box-shadow: 2.5px 2.5px 0 var(--ink);
+            }
+
+            .poker-seat-row {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 18px 20px;
+            }
+
+            .poker-seat {
+                width: 76px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 8px;
+            }
+
+            .seat-card {
+                width: 52px;
+                height: 74px;
+                margin-bottom: 4px;
+                perspective: 600px;
+            }
+
+            .seat-card-inner {
+                position: relative;
+                width: 100%;
+                height: 100%;
+                transform-style: preserve-3d;
+                transition: transform 0.55s ease;
+            }
+
+            .seat-card.is-flipped .seat-card-inner {
+                transform: rotateY(180deg);
+            }
+
+            .seat-card-back,
+            .seat-card-face {
+                position: absolute;
+                inset: 0;
+                border-radius: 9px;
+                backface-visibility: hidden;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            /* An empty seat is a dashed outline that waits for a card. */
+            .seat-card-back {
+                border: 3px dashed var(--ink);
+                background: transparent;
+                transition: background-color 0.15s, box-shadow 0.15s;
+            }
+
+            /* A voted seat shows a striped card back in the role colour. */
+            .seat-card.is-voted .seat-card-back {
+                border: 3px solid var(--ink);
+                background-color: var(--role, var(--yellow));
+                background-image: repeating-linear-gradient(45deg, rgba(17, 17, 17, 0.28) 0 4px, transparent 4px 10px);
+                box-shadow: 0 2px 0 var(--ink);
+            }
+
+            .seat-card-face {
+                transform: rotateY(180deg);
+                background: var(--paper);
+                color: var(--ink);
+                border: 3px solid var(--ink);
+                box-shadow: 0 2px 0 var(--ink);
+                font-family: var(--display-font);
+                font-size: 1.35rem;
+            }
+
+            .seat-name {
+                max-width: 100%;
+                font-size: 0.75rem;
+                font-weight: 700;
+                text-align: center;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+            .poker-seat.is-self .seat-name {
+                padding: 0 3px;
+                background: var(--yellow);
+                color: #111111;
+            }
+
+            .seat-role {
+                margin-top: -4px;
+            }
+
+            /* Each role class sets one palette colour that its tag, group and member row all share. */
+            .role-dev {
+                --role: var(--blue);
+            }
+
+            .role-qa {
+                --role: var(--lilac);
+            }
+
+            .role-ba {
+                --role: var(--pink);
+            }
+
+            .role-observer {
+                --role: #c9c9c9;
+            }
+
+            .poker-role-tag {
+                flex-shrink: 0;
+                padding: 0 6px;
+                background: var(--role, var(--paper));
+                color: #111111;
+                border: 2px solid var(--ink);
+                border-radius: 5px;
+                font-size: 0.66rem;
+                font-weight: 700;
+                text-transform: uppercase;
+            }
+
+            .poker-seat-groups {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 16px;
+            }
+
+            .poker-seat-group {
+                flex: 1 1 220px;
+                min-width: 0;
+                display: flex;
+                flex-direction: column;
+                gap: 14px;
+                padding: 10px 12px 16px;
+                background: var(--paper);
+                border: 3px solid var(--ink);
+                border-top: 10px solid var(--role, var(--ink));
+                box-shadow: 2px 2px 0 var(--ink);
+            }
+
+            /* Group labels are small tilted stickers in the role colour. */
+            .poker-group-label {
+                align-self: flex-start;
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                padding: 1px 8px;
+                background: var(--role, var(--yellow));
+                color: #111111;
+                border: 2px solid var(--ink);
+                box-shadow: 1px 1px 0 var(--ink);
+                font-family: var(--display-font);
+                font-size: 0.72rem;
+                text-transform: uppercase;
+                transform: rotate(-2deg);
+            }
+
+            .poker-group-count {
+                font-family: var(--mono-font);
+                font-weight: 700;
+            }
+
+            .poker-member-group {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .poker-member-group + .poker-member-group {
+                margin-top: 8px;
+            }
+
+            .poker-member-group .poker-member {
+                border-left: 8px solid var(--role);
+            }
+
+            .poker-member-group .poker-avatar {
+                background: var(--role);
+            }
+
+            .poker-observers .poker-role-tag {
+                margin-left: 4px;
+            }
+
+            .poker-host-icon {
+                flex-shrink: 0;
+                color: var(--yellow);
+                -webkit-text-stroke: 1px #111111;
+                font-size: 0.85rem;
+            }
+
+            .poker-observers {
+                text-align: center;
+                font-size: 0.78rem;
+                font-weight: 700;
+            }
+
+            .poker-table-bar {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                flex-wrap: wrap;
+                gap: 14px;
+                padding-top: 14px;
+                border-top: 3px dashed var(--ink);
+            }
+
+            .poker-table-status {
+                flex: 1;
+                min-width: 180px;
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .poker-table-status-text {
+                font-size: 0.85rem;
+                font-weight: 700;
+            }
+
+            .poker-table-status-text b {
+                padding: 0 4px;
+                background: var(--yellow);
+                color: #111111;
+            }
+
+            /* The vote progress is a thick bar that fills with lime. */
+            .poker-progress {
+                height: 18px;
+                background: var(--paper);
+                border: 3px solid var(--ink);
+                overflow: hidden;
+            }
+
+            .poker-progress-fill {
+                height: 100%;
+                width: 0;
+                background: var(--lime);
+                box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.2);
+                transition: width 0.3s ease;
+            }
+
+            .poker-table-actions {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+
+            .poker-table-actions button {
+                width: auto;
+                margin-bottom: 0;
+                padding: 8px 14px;
+            }
+
+            .poker-stats {
+                display: grid;
+                grid-template-columns: repeat(4, 1fr);
+                gap: 12px;
+            }
+
+            /* Each stat is a coloured keycap tile. */
+            .poker-stat {
+                min-width: 0;
+                padding: 10px 6px;
+                background: var(--c, var(--yellow));
+                color: #111111;
+                border: 3px solid var(--ink);
+                border-radius: 12px;
+                box-shadow: 0 2.5px 0 var(--ink);
+                text-align: center;
+            }
+
+            .poker-stat:nth-child(2) { --c: var(--lilac); }
+            .poker-stat:nth-child(3) { --c: var(--pink); }
+            .poker-stat:nth-child(4) { --c: var(--cyan); }
+
+            .poker-stat-value {
+                font-family: var(--display-font);
+                font-size: 1.5rem;
+                line-height: 1.2;
+                overflow-wrap: anywhere;
+            }
+
+            .poker-stat-label {
+                font-size: 0.68rem;
+                font-weight: 700;
+                text-transform: uppercase;
+            }
+
+            .poker-dist {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+                margin-top: 18px;
+            }
+
+            .poker-dist-row {
+                display: grid;
+                grid-template-columns: 46px 1fr 70px;
+                align-items: center;
+                gap: 10px;
+                font-size: 0.78rem;
+                font-weight: 700;
+            }
+
+            .poker-dist-card {
+                padding: 1px 0;
+                background: var(--paper);
+                border: 2.5px solid var(--ink);
+                border-radius: 6px;
+                box-shadow: 0 1.5px 0 var(--ink);
+                font-family: var(--display-font);
+                text-align: center;
+            }
+
+            .poker-dist-row.is-top .poker-dist-card {
+                background: var(--yellow);
+                color: #111111;
+            }
+
+            .poker-dist-track {
+                height: 16px;
+                background: var(--paper);
+                border: 2.5px solid var(--ink);
+                overflow: hidden;
+            }
+
+            .poker-dist-fill {
+                height: 100%;
+                background: var(--pink);
+            }
+
+            .poker-dist-row.is-top .poker-dist-fill {
+                background: var(--yellow);
+            }
+
+            /* Deck of keycap cards where the chosen card sinks into its shadow. */
+            .poker-deck {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 14px 12px;
+                padding: 6px 0 8px;
+            }
+
+            .poker-card {
+                position: relative;
+                width: 56px;
+                height: 80px;
+                padding: 0;
+                background: var(--paper);
+                color: var(--ink);
+                border: 3px solid var(--ink);
+                border-radius: 10px;
+                box-shadow: 0 3px 0 var(--ink);
+                font-family: var(--display-font);
+                font-size: 1.3rem;
+                transition: transform 0.08s, box-shadow 0.08s, background-color 0.12s;
+            }
+
+            .poker-card::before {
+                content: "";
+                position: absolute;
+                inset: 4px 4px 4px;
+                border: 2px solid currentColor;
+                border-radius: 6px;
+                opacity: 0.15;
+                pointer-events: none;
+            }
+
+            .poker-card:nth-child(5n + 1) { --c: var(--yellow); }
+            .poker-card:nth-child(5n + 2) { --c: var(--pink); }
+            .poker-card:nth-child(5n + 3) { --c: var(--cyan); }
+            .poker-card:nth-child(5n + 4) { --c: var(--lilac); }
+            .poker-card:nth-child(5n + 5) { --c: var(--lime); }
+
+            .poker-card:hover:not(:disabled) {
+                background: var(--c);
+                color: #111111;
+                transform: translateY(1px);
+                box-shadow: 0 2px 0 var(--ink);
+            }
+
+            .poker-card:active:not(:disabled),
+            .poker-card.is-selected,
+            .poker-card.is-selected:hover:not(:disabled) {
+                background: var(--c);
+                color: #111111;
+                transform: translateY(3px);
+                box-shadow: 0 0 0 var(--ink), inset 0 2px 0 rgba(0, 0, 0, 0.25);
+            }
+
+            .poker-card:disabled {
+                cursor: not-allowed;
+                opacity: 0.4;
+            }
+
+            .poker-card.is-selected:disabled {
+                opacity: 1;
+            }
+
+            /* Room panel */
+
+            /* The room code sits on a yellow sticker so it is easy to read out. */
+            .poker-code-box {
+                padding: 12px 12px 14px;
+                background: var(--yellow);
+                color: #111111;
+                border: 3px solid var(--ink);
+                box-shadow: 2.5px 2.5px 0 var(--ink);
+                text-align: center;
+            }
+
+            .poker-code {
+                padding-left: 0.25em;
+                font-family: var(--display-font);
+                font-size: clamp(1.4rem, 3vw, 1.9rem);
+                letter-spacing: 0.25em;
+                line-height: 1.2;
+                overflow-wrap: anywhere;
+            }
+
+            .poker-code-actions {
+                display: flex;
+                gap: 10px;
+                margin-top: 12px;
+            }
+
+            .poker-code-actions .action-btn-ghost {
+                min-width: 0;
+                margin-bottom: 0;
+                padding: 6px 8px;
+                font-size: 0.75rem;
+            }
+
+            .poker-section-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 8px;
+            }
+
+            .poker-section-header .poker-label {
+                margin-bottom: 0;
+            }
+
+            .poker-icon-btn {
+                width: 32px;
+                height: 32px;
+                display: grid;
+                place-items: center;
+                padding: 0;
+                background: var(--paper);
+                color: var(--ink);
+                border: 2.5px solid var(--ink);
+                border-radius: 8px;
+                box-shadow: 0 2px 0 var(--ink);
+                font-size: 0.85rem;
+                transition: transform 0.08s, box-shadow 0.08s, background-color 0.12s;
+            }
+
+            .poker-icon-btn:hover {
+                background: var(--red);
+                color: #111111;
+                transform: translateY(1px);
+                box-shadow: 0 1px 0 var(--ink);
+            }
+
+            .poker-icon-btn:active {
+                transform: translateY(2px);
+                box-shadow: 0 0 0 var(--ink);
+            }
+
+            .poker-members {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .poker-member {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                padding: 6px 8px;
+                background: var(--paper);
+                border: 3px solid var(--ink);
+                box-shadow: 1.5px 1.5px 0 var(--ink);
+            }
+
+            .poker-avatar {
+                width: 28px;
+                height: 28px;
+                flex-shrink: 0;
+                display: grid;
+                place-items: center;
+                background: var(--yellow);
+                color: #111111;
+                border: 2.5px solid var(--ink);
+                border-radius: 50%;
+                font-family: var(--display-font);
+                font-size: 0.8rem;
+            }
+
+            .poker-member-name {
+                flex: 1;
+                min-width: 0;
+                font-size: 0.82rem;
+                font-weight: 700;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+            .poker-member-tag {
+                font-size: 0.72rem;
+                font-weight: 400;
+            }
+
+            .poker-member-icon {
+                flex-shrink: 0;
+                opacity: 0.55;
+            }
+
+            .poker-member-icon.is-voted {
+                opacity: 1;
+            }
+
+            .poker-member-none {
+                flex-shrink: 0;
+                font-size: 0.68rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                opacity: 0.6;
+            }
+
+            .poker-vote-chip {
+                flex-shrink: 0;
+                min-width: 30px;
+                padding: 0 6px;
+                background: var(--yellow);
+                color: #111111;
+                border: 2px solid var(--ink);
+                box-shadow: 1px 1px 0 var(--ink);
+                font-family: var(--display-font);
+                font-size: 0.78rem;
+                text-align: center;
+                transform: rotate(-3deg);
+            }
+
+            .poker-history {
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .poker-history-item {
+                display: flex;
+                flex-direction: column;
+                gap: 4px;
+                padding: 8px 10px;
+                background: var(--paper);
+                border: 3px solid var(--ink);
+                box-shadow: 1.5px 1.5px 0 var(--ink);
+            }
+
+            .poker-history-top {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                font-size: 0.82rem;
+                font-weight: 700;
+            }
+
+            .poker-history-round {
+                flex-shrink: 0;
+                padding: 0 5px;
+                background: var(--ink);
+                color: var(--bg);
+                font-size: 0.72rem;
+                font-weight: 700;
+            }
+
+            .poker-history-story {
+                flex: 1;
+                min-width: 0;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+            .poker-history-votes {
+                font-size: 0.72rem;
+                word-break: break-word;
+            }
+
+            .poker-history-votes + .poker-history-votes {
+                padding-top: 4px;
+                border-top: 2px dashed var(--ink);
+            }
+
+            @media (max-width: 575px) {
+                .poker-body {
+                    padding: 16px 14px 20px;
+                }
+
+                .poker-table {
+                    padding: 14px 10px;
+                }
+
+                .poker-stats {
+                    grid-template-columns: repeat(2, 1fr);
+                }
+
+                .poker-table-actions {
+                    width: 100%;
+                }
+
+                .poker-table-actions button {
+                    flex: 1 1 130px;
+                }
+
+                .poker-deck {
+                    gap: 14px 10px;
+                }
+            }
+
+            @media (prefers-reduced-motion: reduce) {
+                .seat-card-inner,
+                .poker-card,
+                .poker-progress-fill {
+                    transition: none;
+                }
+
+                .poker-status.is-pending .poker-status-dot {
+                    animation: none;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <!-- Common layout -->
+        <div id="navbar-container"></div>
+
+        <div class="container-fluid tool-wrapper">
+
+            <!-- Setup view -->
+            <div class="row" id="setupView">
+                <div class="col-md-6 offset-md-3">
+                    <div class="editor-panel">
+                        <div class="editor-header">
+                            <span class="editor-title">Scrum Poker</span>
+                        </div>
+
+                        <div class="poker-body invisible-scrollbars">
+                            <div class="poker-setup">
+                                <div class="poker-setup-intro">
+                                    <i class="bi bi-suit-spade-fill"></i>
+                                    <p>Estimate stories together in real time. Create a room and share the 6-digit code with your team.</p>
+                                </div>
+
+                                <div class="poker-field">
+                                    <label class="poker-label" for="nameInput">Your name</label>
+                                    <input type="text" id="nameInput" class="input-cyan" maxlength="20" placeholder="Enter your name (max 20 characters)" autocomplete="off">
+                                </div>
+
+                                <div class="poker-field" id="roleField">
+                                    <label class="poker-label" for="setupRoleSelect">Your role</label>
+                                    <select id="setupRoleSelect" class="form-control">
+                                        <option value="DEV">DEV (votes)</option>
+                                        <option value="QA">QA (votes)</option>
+                                        <option value="BA">BA (watches without voting)</option>
+                                    </select>
+                                </div>
+
+                                <div class="poker-field">
+                                    <div class="chk-switch-row">
+                                        <label for="observerInput">Join as observer (watch without voting)</label>
+                                        <label class="chk-switch">
+                                            <input type="checkbox" id="observerInput">
+                                            <span class="track"></span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="poker-divider">Create a room</div>
+
+                                <div class="poker-field">
+                                    <label class="poker-label" for="setupDeckSelect">Card deck</label>
+                                    <select id="setupDeckSelect" class="form-control"></select>
+                                </div>
+
+                                <button type="button" class="btn action-btn-primary" id="createRoomBtn"><i class="bi bi-plus-lg"></i> Create Room</button>
+
+                                <div class="poker-divider">Or join a room</div>
+
+                                <div class="poker-field">
+                                    <label class="poker-label" for="codeInput">Room code</label>
+                                    <input type="text" id="codeInput" class="input-cyan poker-code-input" inputmode="numeric" maxlength="6" placeholder="000000" autocomplete="off">
+                                </div>
+
+                                <button type="button" class="btn action-btn-ghost" id="joinRoomBtn"><i class="bi bi-box-arrow-in-right"></i> Join Room</button>
+
+                                <div class="poker-status is-offline" id="setupStatus"><i class="poker-status-dot"></i><span>Not connected</span></div>
+                            </div>
+                        </div>
+
+                        <div class="editor-footer">
+                            <div class="status">
+                                <span>Peer-to-peer, no votes are stored on a server</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Room view -->
+            <div class="row g-3 g-md-0 gx-md-3 gx-0 d-none" id="roomView">
+
+                <div class="col-md-8 editor-panel" id="tablePanel">
+                    <div class="editor-header">
+                        <span class="editor-title">Planning Table</span>
+                        <div class="editor-actions">
+                            <button title="Fullscreen" onclick="toggleEditorFullScreen('tablePanel')"><i class="bi bi-arrows-fullscreen icon-btn"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="poker-body invisible-scrollbars">
+                        <div class="poker-field">
+                            <label class="poker-label" for="storyInput">Story</label>
+                            <input type="text" id="storyInput" class="input-cyan" maxlength="120" placeholder="What are we estimating? (optional)" autocomplete="off">
+                        </div>
+
+                        <div class="poker-table">
+                            <div class="poker-seat-groups" id="seats"></div>
+                            <div class="poker-empty-hint d-none" id="seatsEmpty">Waiting for voters to join</div>
+                            <div class="poker-observers d-none" id="observers"></div>
+
+                            <div class="poker-table-bar">
+                                <div class="poker-table-status">
+                                    <span class="poker-table-status-text" id="tableStatus"></span>
+                                    <div class="poker-progress"><div class="poker-progress-fill" id="voteProgress"></div></div>
+                                </div>
+                                <div class="poker-table-actions">
+                                    <button type="button" class="btn action-btn-primary" id="revealBtn"><i class="bi bi-eye"></i> Reveal cards</button>
+                                    <button type="button" class="btn action-btn-ghost" id="newRoundBtn"><i class="bi bi-arrow-repeat"></i> New round</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-none" id="results">
+                            <span class="poker-label">Results</span>
+                            <div class="poker-stats">
+                                <div class="poker-stat">
+                                    <div class="poker-stat-value" id="statDevAverage">-</div>
+                                    <div class="poker-stat-label">DEV average</div>
+                                </div>
+                                <div class="poker-stat">
+                                    <div class="poker-stat-value" id="statQaAverage">-</div>
+                                    <div class="poker-stat-label">QA average</div>
+                                </div>
+                                <div class="poker-stat">
+                                    <div class="poker-stat-value" id="statAverage">-</div>
+                                    <div class="poker-stat-label">Total average</div>
+                                </div>
+                                <div class="poker-stat">
+                                    <div class="poker-stat-value" id="statVotes">-</div>
+                                    <div class="poker-stat-label">Votes</div>
+                                </div>
+                            </div>
+                            <div class="poker-dist" id="distribution"></div>
+                        </div>
+
+                        <div id="deckSection">
+                            <span class="poker-label">Your card</span>
+                            <div class="poker-deck" id="deck"></div>
+                            <div class="poker-hint text-center mt-2" id="deckHint"></div>
+                        </div>
+
+                        <div class="poker-empty-hint d-none" id="observerNote"><i class="bi bi-eye"></i> <span id="observerNoteText"></span></div>
+                    </div>
+
+                    <div class="editor-footer">
+                        <div class="status">
+                            <span>Round <b id="footerRound">1</b></span>
+                            <span><b id="footerVotes">0/0</b> voted</span>
+                            <span>Deck <b id="footerDeck">-</b></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4 editor-panel" id="roomPanel">
+                    <div class="editor-header">
+                        <span class="editor-title">Room</span>
+                        <div class="editor-actions">
+                            <button title="Copy results" data-shortcut="copy" onclick="copyText(serializeResults(), this)"><i class="bi bi-copy icon-btn"></i></button>
+                            <button title="Download results as .txt" onclick="downloadText(`scrum_poker_${roomCode}.txt`, serializeResults())"><i class="bi bi-download icon-btn"></i></button>
+                            <div class="divider"></div>
+                            <button class="btn-danger" title="Leave room" onclick="leaveRoom()"><i class="bi bi-box-arrow-right icon-btn"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="poker-body invisible-scrollbars">
+                        <div class="poker-code-box">
+                            <span class="poker-label">Room code</span>
+                            <div class="poker-code" id="roomCodeText">------</div>
+                            <div class="poker-code-actions">
+                                <button type="button" class="btn action-btn-ghost" onclick="copyText(roomCode, this)"><i class="bi bi-copy"></i> Code</button>
+                                <button type="button" class="btn action-btn-ghost" onclick="copyText(getInviteLink(), this)"><i class="bi bi-link-45deg"></i> Invite link</button>
+                            </div>
+                        </div>
+
+                        <div class="poker-status is-offline" id="roomStatus"><i class="poker-status-dot"></i><span>Not connected</span></div>
+
+                        <div class="poker-field">
+                            <label class="poker-label" for="roomDeckSelect">Card deck</label>
+                            <select id="roomDeckSelect" class="form-control"></select>
+                        </div>
+
+                        <div>
+                            <div class="poker-section-header">
+                                <span class="poker-label">Participants (<span id="memberCount">0</span>)</span>
+                            </div>
+                            <div class="poker-members" id="members"></div>
+                        </div>
+
+                        <div>
+                            <div class="poker-section-header">
+                                <span class="poker-label">History</span>
+                                <button type="button" class="poker-icon-btn" title="Clear history" onclick="clearHistory()"><i class="bi bi-trash"></i></button>
+                            </div>
+                            <div class="poker-history" id="history"></div>
+                        </div>
+                    </div>
+
+                    <div class="editor-footer">
+                        <div class="status">
+                            <span><b id="footerVoters">0</b> voters</span>
+                            <span><b id="footerObservers">0</b> observers</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+
+        <div id="footer-container"></div>
+
+        <!-- Common JS -->
+        <script src="js/tool-help.js"></script>
+        <script src="js/storage.js"></script>
+        <script src="js/common.js"></script>
+        <script src="js/script.js"></script>
+        <script src="js/custom-dropdown.js"></script>
+
+        <!-- Custom JS -->
+        <script>
+            const pageTitle = "Scrum Poker";
+
+            // This prefix keeps our room codes apart from other apps on the public PeerJS server.
+            const CODE_PREFIX = "codexael-toolstack-poker-";
+            const MAX_NAME_LENGTH = 20;
+            const MAX_STORY_LENGTH = 120;
+            const MAX_VOTE_LENGTH = 4;
+            const NAME_HOLD_MS = 15000;
+            const DOOR_CLOSE_DELAY_MS = 1000;
+            const STORY_SEND_DELAY_MS = 400;
+            const NAME_STORAGE_KEY = "toolstack_poker_name";
+            const ROLE_STORAGE_KEY = "toolstack_poker_role";
+            const DEFAULT_DECK = "fibonacci";
+            const DEFAULT_ROLE = "DEV";
+            const ROLES = ["DEV", "BA", "QA"];
+
+            // This sets the order of the role groups, where null stands for observers.
+            const ROLE_ORDER = ["DEV", "QA", "BA", null];
+
+            // These roles vote, and every other member only watches.
+            const VOTER_ROLES = ["DEV", "QA"];
+
+            // These packets change the round, so only the room creator may send them.
+            const HOST_PACKETS = ["newRound", "story", "reveal"];
+
+            const DECKS = {
+                fibonacci: { label: "Fibonacci", cards: ["0", "1", "2", "3", "5", "8", "13", "21", "34", "?", "☕"] },
+                modified: { label: "Modified Fibonacci", cards: ["0", "½", "1", "2", "3", "5", "8", "13", "20", "40", "100", "?", "☕"] },
+                tshirt: { label: "T-Shirt", cards: ["XS", "S", "M", "L", "XL", "XXL", "?", "☕"] },
+                powers: { label: "Powers of 2", cards: ["0", "1", "2", "4", "8", "16", "32", "64", "?", "☕"] }
+            };
+
+            // This peer is our own identity in the room and carries all links to other members.
+            let memberPeer = null;
+
+            // This peer owns the room code, and only the room creator holds it.
+            let doorPeer = null;
+
+            let roomCode = "";
+            let myName = "";
+
+            // This holds our role, or null when we joined as an observer.
+            let myRole = DEFAULT_ROLE;
+
+            let myHost = false;
+            let mySeq = 0;
+            let myVote = null;
+            let joined = false;
+            let lastIssuedSeq = 0;
+            let storySendTimer = null;
+
+            // This object holds the shared round state that every member keeps in sync.
+            const round = { number: 0, story: "", deck: DEFAULT_DECK, revealed: false };
+
+            // This list holds finished rounds, newest first.
+            let history = [];
+
+            // This map holds each connected member by peer id with its link, name, join order, role, creator flag and vote.
+            const members = new Map();
+
+            // This map holds names that the door approved but that have not connected to us yet.
+            const pendingNames = new Map();
+
+            // This map holds each seat element by participant id, so a card can flip in place.
+            const seatElements = new Map();
+
+            // This map holds the seat group element of each voting role.
+            const seatGroups = new Map();
+
+            const setupView = document.getElementById("setupView");
+            const roomView = document.getElementById("roomView");
+            const nameInput = document.getElementById("nameInput");
+            const observerInput = document.getElementById("observerInput");
+            const roleField = document.getElementById("roleField");
+            const setupRoleSelect = document.getElementById("setupRoleSelect");
+            const setupDeckSelect = document.getElementById("setupDeckSelect");
+            const codeInput = document.getElementById("codeInput");
+            const createRoomBtn = document.getElementById("createRoomBtn");
+            const joinRoomBtn = document.getElementById("joinRoomBtn");
+            const storyInput = document.getElementById("storyInput");
+            const seatsEl = document.getElementById("seats");
+            const seatsEmpty = document.getElementById("seatsEmpty");
+            const observersEl = document.getElementById("observers");
+            const tableStatus = document.getElementById("tableStatus");
+            const voteProgress = document.getElementById("voteProgress");
+            const revealBtn = document.getElementById("revealBtn");
+            const newRoundBtn = document.getElementById("newRoundBtn");
+            const resultsEl = document.getElementById("results");
+            const distributionEl = document.getElementById("distribution");
+            const deckSection = document.getElementById("deckSection");
+            const deckEl = document.getElementById("deck");
+            const deckHint = document.getElementById("deckHint");
+            const observerNote = document.getElementById("observerNote");
+            const roomCodeText = document.getElementById("roomCodeText");
+            const roomDeckSelect = document.getElementById("roomDeckSelect");
+            const membersEl = document.getElementById("members");
+            const historyEl = document.getElementById("history");
+
+            // ---------- Helpers ----------
+
+            function escapeHtml(value) {
+                const div = document.createElement("div");
+                div.textContent = String(value);
+                return div.innerHTML;
+            }
+
+            function randomCode() {
+                const value = crypto.getRandomValues(new Uint32Array(1))[0];
+                return String(value % 1000000).padStart(6, "0");
+            }
+
+            function cleanName(name) {
+                return String(name ?? "").trim();
+            }
+
+            function cleanStory(story) {
+                return String(story ?? "").slice(0, MAX_STORY_LENGTH);
+            }
+
+            function cleanDeck(deck) {
+                return Object.hasOwn(DECKS, deck) ? deck : DEFAULT_DECK;
+            }
+
+            // This returns a known role, or null for an observer or a bad role.
+            function cleanRole(role) {
+                return ROLES.includes(role) ? role : null;
+            }
+
+            function isVoterRole(role) {
+                return VOTER_ROLES.includes(role);
+            }
+
+            function roleLabel(role) {
+                return role ?? "Observer";
+            }
+
+            function roleClass(role) {
+                return `role-${roleLabel(role).toLowerCase()}`;
+            }
+
+            function roleTagHtml(role) {
+                return `<span class="poker-role-tag ${roleClass(role)}">${escapeHtml(roleLabel(role))}</span>`;
+            }
+
+            // This splits participants into role groups in display order, and skips empty groups.
+            function groupByRole(participants, roles) {
+                return roles
+                    .map(role => ({ role, list: participants.filter(p => p.role === role) }))
+                    .filter(group => group.list.length);
+            }
+
+            // This returns a short vote text, or null for a missing or bad vote.
+            function cleanVote(vote) {
+                return typeof vote === "string" && vote.length > 0 && vote.length <= MAX_VOTE_LENGTH ? vote : null;
+            }
+
+            // This returns an error text for a bad name, or null for a good name.
+            function validateName(name) {
+                if (!name) return "Enter your name first";
+                if (name.length > MAX_NAME_LENGTH) return `The name must be ${MAX_NAME_LENGTH} characters or less`;
+                return null;
+            }
+
+            // This checks a trimmed name against us, all members and all pending names, ignoring letter case.
+            function isNameTaken(name) {
+                const key = name.toLowerCase();
+
+                if (key === myName.toLowerCase() || pendingNames.has(key)) return true;
+
+                for (const member of members.values()) {
+                    if (member.name.toLowerCase() === key) return true;
+                }
+
+                return false;
+            }
+
+            function reserveName(name) {
+                const key = name.toLowerCase();
+                clearTimeout(pendingNames.get(key));
+                pendingNames.set(key, setTimeout(() => pendingNames.delete(key), NAME_HOLD_MS));
+            }
+
+            function releaseName(name) {
+                const key = name.toLowerCase();
+                clearTimeout(pendingNames.get(key));
+                pendingNames.delete(key);
+            }
+
+            function getInviteLink() {
+                return `${location.href.split(/[?#]/)[0]}?room=${roomCode}`;
+            }
+
+            function copyText(text, btn) {
+                if (isBlank(text, "Nothing to copy")) return;
+                navigator.clipboard.writeText(text).then(() => {
+                    showSuccessToast("Copied to clipboard");
+                    if (btn) {
+                        const icon = btn.querySelector("i");
+                        const original = icon.className;
+                        icon.className = "bi bi-check-lg";
+                        setTimeout(() => icon.className = original, 1000);
+                    }
+                });
+            }
+
+            function downloadText(filename, content) {
+                if (isBlank(content, "Nothing to download")) return;
+                const blob = new Blob([content], { type: "text/plain" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
+
+            function fillDeckSelect(select) {
+                select.innerHTML = Object.entries(DECKS)
+                    .map(([id, deck]) => `<option value="${id}">${deck.label} (${deck.cards.slice(0, 5).join(", ")}...)</option>`)
+                    .join("");
+            }
+
+            function setStatus(state, text) {
+                for (const el of [document.getElementById("setupStatus"), document.getElementById("roomStatus")]) {
+                    el.className = `poker-status is-${state}`;
+                    el.querySelector("span").textContent = text;
+                }
+            }
+
+            // ---------- Scoring ----------
+
+            // This returns the number on a card, or null for a card like "?" or "M".
+            function cardValue(card) {
+                if (card === "½") return 0.5;
+                return /^\d+$/.test(card) ? Number(card) : null;
+            }
+
+            // This returns the average of the numeric votes, or null when there is none.
+            function averageOf(votes) {
+                const numbers = votes.map(v => cardValue(v.vote)).filter(number => number !== null);
+                return numbers.length ? numbers.reduce((sum, number) => sum + number, 0) / numbers.length : null;
+            }
+
+            // This summarizes a list of votes, where each vote has a role and a card.
+            function summarize(votes) {
+                const counts = new Map();
+                for (const v of votes) counts.set(v.vote, (counts.get(v.vote) || 0) + 1);
+
+                return {
+                    counts,
+                    topCount: Math.max(0, ...counts.values()),
+                    total: votes.length,
+                    average: averageOf(votes),
+                    devAverage: averageOf(votes.filter(v => v.role === "DEV")),
+                    qaAverage: averageOf(votes.filter(v => v.role === "QA"))
+                };
+            }
+
+            function formatAverage(average) {
+                return average === null ? "-" : String(Math.round(average * 10) / 10);
+            }
+
+            // ---------- Round state ----------
+
+            // This returns everyone in the room, including us, in join order.
+            function getParticipants() {
+                const list = [{ id: "self", name: myName, seq: mySeq, role: myRole, host: myHost, vote: myVote, self: true }];
+
+                for (const [id, member] of members) {
+                    list.push({ id, name: member.name, seq: member.seq, role: member.role, host: member.host, vote: member.vote, self: false });
+                }
+
+                return list.sort((a, b) => a.seq - b.seq || a.id.localeCompare(b.id));
+            }
+
+            function countVotes(participants) {
+                const voters = participants.filter(p => isVoterRole(p.role));
+                return { voters: voters.length, voted: voters.filter(p => p.vote !== null).length };
+            }
+
+            function getRevealedVotes() {
+                return getParticipants()
+                    .filter(p => isVoterRole(p.role) && p.vote !== null)
+                    .map(p => ({ name: p.name, role: p.role, vote: p.vote }));
+            }
+
+            // This adds or updates the history entry of the current round once its cards are shown.
+            function recordRound() {
+                if (!round.revealed) return;
+
+                const current = getRevealedVotes();
+                let entry = history.find(item => item.number === round.number);
+
+                if (!entry) {
+                    if (!current.length) return;
+                    entry = { number: round.number, votes: [] };
+                    history.unshift(entry);
+                }
+
+                // This merges votes by name, so a vote stays in history after its member leaves.
+                const votes = new Map(entry.votes.map(v => [v.name, v]));
+                for (const v of current) votes.set(v.name, v);
+
+                entry.story = round.story.trim();
+                entry.deck = round.deck;
+                entry.votes = [...votes.values()];
+                entry.summary = summarize(entry.votes);
+            }
+
+            // This starts a fresh round and clears every vote.
+            function startRound(number, story, deck) {
+                recordRound();
+
+                round.number = number;
+                round.story = story;
+                round.deck = deck;
+                round.revealed = false;
+
+                myVote = null;
+                for (const member of members.values()) member.vote = null;
+            }
+
+            function getStatePacket() {
+                return {
+                    type: "state",
+                    round: round.number,
+                    story: round.story,
+                    deck: round.deck,
+                    revealed: round.revealed,
+                    vote: isVoterRole(myRole) ? myVote : null
+                };
+            }
+
+            // ---------- Local actions ----------
+
+            function castVote(card) {
+                if (!joined || !isVoterRole(myRole) || round.revealed) return;
+
+                myVote = myVote === card ? null : card;
+                broadcast({ type: "vote", round: round.number, vote: myVote });
+                renderRoom();
+            }
+
+            function revealCards() {
+                if (!myHost || round.revealed) return;
+
+                if (!countVotes(getParticipants()).voted) {
+                    showInfoToast("No one has voted yet");
+                    return;
+                }
+
+                round.revealed = true;
+                broadcast({ type: "reveal", round: round.number });
+                recordRound();
+                renderRoom();
+            }
+
+            function startNewRound(deck = round.deck) {
+                if (!myHost) return;
+
+                startRound(round.number + 1, "", deck);
+                broadcast({ type: "newRound", round: round.number, story: "", deck });
+                syncControls(true);
+                renderRoom();
+            }
+
+            function clearHistory() {
+                if (!history.length) {
+                    showInfoToast("No history to clear");
+                    return;
+                }
+
+                history = [];
+                renderRoom();
+                showSuccessToast("History cleared");
+            }
+
+            function serializeResults() {
+                const rounds = history;
+
+                if (!rounds.length) return "";
+
+                const lines = [`Scrum Poker - Room ${roomCode}`, ""];
+
+                for (const item of [...rounds].reverse()) {
+                    lines.push(`Round ${item.number}: ${item.story || "Untitled story"}`);
+                    lines.push(`  DEV average: ${formatAverage(item.summary.devAverage)} | QA average: ${formatAverage(item.summary.qaAverage)} | Total average: ${formatAverage(item.summary.average)}`);
+                    lines.push(`  Votes: ${item.votes.map(v => `${v.name} (${v.role}) ${v.vote}`).join(", ")}`);
+                    lines.push("");
+                }
+
+                return lines.join("\n").trim();
+            }
+
+            // ---------- Incoming packets ----------
+
+            // This applies one packet from a member, and ignores packets from an older round.
+            function handlePacket(member, packet) {
+                if (!packet || typeof packet.type !== "string" || !Number.isInteger(packet.round) || packet.round < round.number) return;
+                if (HOST_PACKETS.includes(packet.type) && !member.host) return;
+
+                const isNewer = packet.round > round.number;
+                const story = cleanStory(packet.story);
+
+                switch (packet.type) {
+                    case "state":
+                        if (isNewer) startRound(packet.round, story, cleanDeck(packet.deck));
+                        else if (!round.story) round.story = story;
+                        if (packet.revealed === true) round.revealed = true;
+                        member.vote = isVoterRole(member.role) ? cleanVote(packet.vote) : null;
+                        syncControls(isNewer);
+                        break;
+
+                    case "newRound":
+                        if (isNewer) {
+                            startRound(packet.round, story, cleanDeck(packet.deck));
+                        } else {
+                            round.story = story;
+                            round.deck = cleanDeck(packet.deck);
+                        }
+                        syncControls(true);
+                        break;
+
+                    case "vote":
+                        if (isNewer) startRound(packet.round, round.story, round.deck);
+                        member.vote = isVoterRole(member.role) ? cleanVote(packet.vote) : null;
+                        break;
+
+                    case "story":
+                        if (isNewer) startRound(packet.round, story, round.deck);
+                        round.story = story;
+                        syncControls(false);
+                        break;
+
+                    case "reveal":
+                        if (isNewer) startRound(packet.round, round.story, round.deck);
+                        round.revealed = true;
+                        break;
+
+                    default:
+                        return;
+                }
+
+                recordRound();
+                renderRoom();
+            }
+
+            // This copies the round story and deck into the inputs, and skips a story box the user is typing in unless forced.
+            function syncControls(force) {
+                if (force || document.activeElement !== storyInput) storyInput.value = round.story;
+
+                if (roomDeckSelect.value !== round.deck) {
+                    roomDeckSelect.value = round.deck;
+                    CustomDropdown.refresh(roomDeckSelect);
+                }
+            }
+
+            // ---------- Rendering ----------
+
+            function createSeat(id) {
+                const seat = document.createElement("div");
+                seat.className = "poker-seat";
+                seat.innerHTML = `
+                    <div class="seat-card">
+                        <div class="seat-card-inner">
+                            <div class="seat-card-back"></div>
+                            <div class="seat-card-face"></div>
+                        </div>
+                    </div>
+                    <div class="seat-name"></div>
+                    <span class="poker-role-tag seat-role"></span>`;
+                seatElements.set(id, seat);
+                return seat;
+            }
+
+            function getSeatGroup(role) {
+                if (seatGroups.has(role)) return seatGroups.get(role);
+
+                const group = document.createElement("div");
+                group.className = `poker-seat-group ${roleClass(role)}`;
+                group.innerHTML = `
+                    <div class="poker-group-label">${escapeHtml(role)} <span class="poker-group-count"></span></div>
+                    <div class="poker-seat-row"></div>`;
+                seatGroups.set(role, group);
+                return group;
+            }
+
+            // This updates the seats in place inside their role group, so a card flips with an animation when the cards are shown.
+            function renderSeats(participants) {
+                const voters = participants.filter(p => isVoterRole(p.role));
+                const seen = new Set();
+
+                VOTER_ROLES.forEach((role, groupIndex) => {
+                    const group = getSeatGroup(role);
+                    const row = group.querySelector(".poker-seat-row");
+                    const list = voters.filter(p => p.role === role);
+
+                    group.classList.toggle("d-none", !list.length);
+                    group.querySelector(".poker-group-count").textContent = `· ${list.length}`;
+                    if (seatsEl.children[groupIndex] !== group) seatsEl.insertBefore(group, seatsEl.children[groupIndex] || null);
+
+                    list.forEach((p, index) => {
+                        const seat = seatElements.get(p.id) || createSeat(p.id);
+                        const card = seat.querySelector(".seat-card");
+                        const hasVote = p.vote !== null;
+
+                        card.classList.toggle("is-voted", hasVote);
+                        card.classList.toggle("is-flipped", hasVote && (round.revealed || p.self));
+                        seat.querySelector(".seat-card-face").textContent = hasVote ? p.vote : "";
+                        seat.classList.toggle("is-self", p.self);
+
+                        const nameEl = seat.querySelector(".seat-name");
+                        nameEl.textContent = p.self ? `${p.name} (you)` : p.name;
+                        nameEl.title = p.name;
+
+                        const roleEl = seat.querySelector(".seat-role");
+                        roleEl.className = `poker-role-tag seat-role ${roleClass(p.role)}`;
+                        roleEl.textContent = p.role;
+
+                        if (row.children[index] !== seat) row.insertBefore(seat, row.children[index] || null);
+
+                        seen.add(p.id);
+                    });
+                });
+
+                for (const [id, seat] of seatElements) {
+                    if (!seen.has(id)) {
+                        seat.remove();
+                        seatElements.delete(id);
+                    }
+                }
+
+                seatsEmpty.classList.toggle("d-none", voters.length > 0);
+
+                const observers = groupByRole(participants, ROLE_ORDER.filter(role => !isVoterRole(role)))
+                    .flatMap(group => group.list)
+                    .map(p => `${escapeHtml(p.self ? `${p.name} (you)` : p.name)}${roleTagHtml(p.role)}`);
+                observersEl.classList.toggle("d-none", !observers.length);
+                observersEl.innerHTML = `<i class="bi bi-eye"></i> Observing: ${observers.join(", ")}`;
+            }
+
+            function renderTableBar(participants) {
+                const { voters, voted } = countVotes(participants);
+                const summary = round.revealed ? summarize(getRevealedVotes()) : null;
+
+                let status;
+                if (!voters) status = "Waiting for DEV or QA voters to join";
+                else if (summary && summary.total > 1 && summary.counts.size === 1) status = `<i class="bi bi-stars"></i> Consensus on <b>${escapeHtml([...summary.counts.keys()][0])}</b>`;
+                else if (round.revealed) status = "Cards revealed";
+                else if (voted === voters) status = myHost ? "Everyone has voted, reveal the cards" : "Everyone has voted, waiting for the room creator to reveal";
+                else status = `<b>${voted}</b> of <b>${voters}</b> voted`;
+
+                tableStatus.innerHTML = status;
+                voteProgress.style.width = voters ? `${voted * 100 / voters}%` : "0";
+                revealBtn.disabled = round.revealed || voted === 0;
+            }
+
+            function renderResults() {
+                resultsEl.classList.toggle("d-none", !round.revealed);
+                if (!round.revealed) return;
+
+                const summary = summarize(getRevealedVotes());
+
+                document.getElementById("statDevAverage").textContent = formatAverage(summary.devAverage);
+                document.getElementById("statQaAverage").textContent = formatAverage(summary.qaAverage);
+                document.getElementById("statAverage").textContent = formatAverage(summary.average);
+                document.getElementById("statVotes").textContent = summary.total;
+
+                // This lists values in deck order, then any value that is not in the current deck.
+                const deckCards = DECKS[round.deck].cards;
+                const values = [...summary.counts.keys()].sort((a, b) => {
+                    const indexA = deckCards.includes(a) ? deckCards.indexOf(a) : Infinity;
+                    const indexB = deckCards.includes(b) ? deckCards.indexOf(b) : Infinity;
+                    return indexA - indexB;
+                });
+
+                distributionEl.innerHTML = values.map(value => {
+                    const count = summary.counts.get(value);
+                    return `
+                        <div class="poker-dist-row${count === summary.topCount ? " is-top" : ""}">
+                            <span class="poker-dist-card">${escapeHtml(value)}</span>
+                            <div class="poker-dist-track"><div class="poker-dist-fill" style="width: ${count * 100 / summary.topCount}%"></div></div>
+                            <span class="poker-dist-count">${count} vote${count === 1 ? "" : "s"}</span>
+                        </div>`;
+                }).join("");
+            }
+
+            function renderDeck() {
+                const canVote = isVoterRole(myRole);
+
+                deckSection.classList.toggle("d-none", !canVote);
+                observerNote.classList.toggle("d-none", canVote);
+
+                if (!canVote) {
+                    document.getElementById("observerNoteText").textContent = myRole === "BA"
+                        ? "You joined as BA, so you watch without voting."
+                        : "You are observing, so you do not vote.";
+                    return;
+                }
+
+                // This rebuilds the card buttons only when the deck changes.
+                if (deckEl.dataset.deck !== round.deck) {
+                    deckEl.dataset.deck = round.deck;
+                    deckEl.innerHTML = "";
+
+                    for (const card of DECKS[round.deck].cards) {
+                        const button = document.createElement("button");
+                        button.type = "button";
+                        button.className = "poker-card";
+                        button.textContent = card;
+                        button.dataset.card = card;
+                        button.title = card === "?" ? "Not sure" : card === "☕" ? "I need a break" : `Vote ${card}`;
+                        button.addEventListener("click", () => castVote(card));
+                        deckEl.appendChild(button);
+                    }
+                }
+
+                for (const button of deckEl.children) {
+                    button.classList.toggle("is-selected", button.dataset.card === myVote);
+                    button.disabled = round.revealed;
+                }
+
+                if (round.revealed) {
+                    deckHint.textContent = myHost
+                        ? "The cards are shown. Start a new round to vote again."
+                        : "The cards are shown. Wait for the room creator to start a new round.";
+                }
+                else if (myVote !== null) deckHint.textContent = "Click your card again to take back your vote.";
+                else deckHint.textContent = "Pick a card to vote.";
+            }
+
+            function memberStatusHtml(p) {
+                if (!isVoterRole(p.role)) return `<i class="bi bi-eye poker-member-icon" title="Watches without voting"></i>`;
+                if (p.vote === null) {
+                    return round.revealed
+                        ? `<span class="poker-member-none">No vote</span>`
+                        : `<i class="bi bi-hourglass-split poker-member-icon" title="Thinking"></i>`;
+                }
+                if (round.revealed || p.self) return `<span class="poker-vote-chip">${escapeHtml(p.vote)}</span>`;
+                return `<i class="bi bi-check-circle-fill poker-member-icon is-voted" title="Voted"></i>`;
+            }
+
+            function renderMembers(participants) {
+                membersEl.innerHTML = groupByRole(participants, ROLE_ORDER).map(group => `
+                    <div class="poker-member-group ${roleClass(group.role)}">
+                        <div class="poker-group-label">${escapeHtml(roleLabel(group.role))} <span class="poker-group-count">· ${group.list.length}</span></div>
+                        ${group.list.map(p => `
+                            <div class="poker-member">
+                                <span class="poker-avatar">${escapeHtml(p.name.charAt(0).toUpperCase())}</span>
+                                <span class="poker-member-name" title="${escapeHtml(p.name)}">${escapeHtml(p.name)}${p.self ? ` <span class="poker-member-tag">(you)</span>` : ""}</span>
+                                ${p.host ? `<i class="bi bi-star-fill poker-host-icon" title="Room creator"></i>` : ""}
+                                ${roleTagHtml(p.role)}
+                                ${memberStatusHtml(p)}
+                            </div>`).join("")}
+                    </div>`).join("");
+
+                document.getElementById("memberCount").textContent = participants.length;
+            }
+
+            function renderHistory() {
+                if (!history.length) {
+                    historyEl.innerHTML = `<div class="poker-empty-hint">Finished rounds show up here</div>`;
+                    return;
+                }
+
+                historyEl.innerHTML = history.map(item => `
+                    <div class="poker-history-item">
+                        <div class="poker-history-top">
+                            <span class="poker-history-round">#${item.number}</span>
+                            <span class="poker-history-story" title="${escapeHtml(item.story || "Untitled story")}">${escapeHtml(item.story || "Untitled story")}</span>
+                            <span class="poker-vote-chip" title="Total average">${escapeHtml(formatAverage(item.summary.average))}</span>
+                        </div>
+                        <div class="poker-history-votes">DEV ${escapeHtml(formatAverage(item.summary.devAverage))} · QA ${escapeHtml(formatAverage(item.summary.qaAverage))}</div>
+                        <div class="poker-history-votes">${escapeHtml(item.votes.map(v => `${v.name} ${v.vote}`).join(" · "))}</div>
+                    </div>`).join("");
+            }
+
+            function renderFooters(participants) {
+                const { voters, voted } = countVotes(participants);
+
+                document.getElementById("footerRound").textContent = round.number;
+                document.getElementById("footerVotes").textContent = `${voted}/${voters}`;
+                document.getElementById("footerDeck").textContent = DECKS[round.deck].label;
+                document.getElementById("footerVoters").textContent = voters;
+                document.getElementById("footerObservers").textContent = participants.length - voters;
+            }
+
+            function renderRoom() {
+                if (!joined) return;
+
+                const participants = getParticipants();
+
+                renderSeats(participants);
+                renderTableBar(participants);
+                renderResults();
+                renderDeck();
+                renderMembers(participants);
+                renderHistory();
+                renderFooters(participants);
+
+                setStatus("online", `Connected as ${myName} · ${participants.length} in room`);
+            }
+
+            // ---------- Views ----------
+
+            function setSetupEnabled(enabled) {
+                for (const element of [nameInput, setupRoleSelect, observerInput, setupDeckSelect, codeInput, createRoomBtn, joinRoomBtn]) {
+                    element.disabled = !enabled;
+                }
+                CustomDropdown.refresh(setupRoleSelect);
+                CustomDropdown.refresh(setupDeckSelect);
+            }
+
+            // This hides the round controls from everyone except the room creator.
+            function applyHostControls() {
+                revealBtn.classList.toggle("d-none", !myHost);
+                newRoundBtn.classList.toggle("d-none", !myHost);
+
+                storyInput.readOnly = !myHost;
+                storyInput.placeholder = myHost ? "What are we estimating? (optional)" : "The room creator sets the story";
+
+                roomDeckSelect.disabled = !myHost;
+                CustomDropdown.refresh(roomDeckSelect);
+            }
+
+            function showRoom() {
+                setupView.classList.add("d-none");
+                roomView.classList.remove("d-none");
+                roomCodeText.textContent = roomCode;
+
+                setStorageString(NAME_STORAGE_KEY, myName);
+                if (myRole) setStorageString(ROLE_STORAGE_KEY, myRole);
+
+                applyHostControls();
+                syncControls(true);
+                renderRoom();
+            }
+
+            function resetToSetup() {
+                joined = false;
+                myHost = false;
+                mySeq = 0;
+                myVote = null;
+                roomCode = "";
+                lastIssuedSeq = 0;
+                history = [];
+                Object.assign(round, { number: 0, story: "", deck: DEFAULT_DECK, revealed: false });
+
+                clearTimeout(storySendTimer);
+
+                for (const timer of pendingNames.values()) clearTimeout(timer);
+                pendingNames.clear();
+                members.clear();
+
+                for (const seat of seatElements.values()) seat.remove();
+                seatElements.clear();
+                deckEl.dataset.deck = "";
+
+                for (const peer of [doorPeer, memberPeer]) {
+                    if (peer) peer.destroy();
+                }
+
+                doorPeer = null;
+                memberPeer = null;
+
+                roomView.classList.add("d-none");
+                setupView.classList.remove("d-none");
+                setSetupEnabled(true);
+            }
+
+            function fail(reason) {
+                setStatus("error", reason);
+                showErrorToast(reason);
+                resetToSetup();
+            }
+
+            function leaveRoom() {
+                const wasHost = myHost;
+
+                resetToSetup();
+                setStatus("offline", "Not connected");
+                showInfoToast(wasHost ? "You left, so the room is closed for everyone" : "You left the room");
+            }
+
+            // ---------- Member links ----------
+
+            // This sends a packet straight to every connected member.
+            function broadcast(packet) {
+                for (const member of members.values()) {
+                    if (member.conn.open) member.conn.send(packet);
+                }
+            }
+
+            function addMember(conn, info, announce) {
+                conn.on("open", () => {
+                    members.set(conn.peer, { conn, name: info.name, seq: info.seq, role: info.role, host: info.host, vote: null });
+
+                    releaseName(info.name);
+                    lastIssuedSeq = Math.max(lastIssuedSeq, info.seq);
+
+                    conn.send(getStatePacket());
+
+                    if (announce) showInfoToast(`${info.name} joined as ${roleLabel(info.role)}`);
+
+                    renderRoom();
+                });
+
+                conn.on("data", packet => {
+                    const member = members.get(conn.peer);
+
+                    // This uses the member bound to the link, so nobody can vote under another name.
+                    if (member && member.conn === conn) handlePacket(member, packet);
+                });
+
+                conn.on("close", () => {
+                    const member = members.get(conn.peer);
+
+                    if (!member || member.conn !== conn) return;
+
+                    // This closes the room for us, because only the room creator can run the rounds.
+                    if (member.host) {
+                        fail(`${member.name} (the room creator) left, so the room is closed`);
+                        return;
+                    }
+
+                    members.delete(conn.peer);
+                    showInfoToast(`${member.name} left`);
+
+                    renderRoom();
+                });
+
+                conn.on("error", error => {
+                    console.error(`Connection error with ${info.name}:`, error);
+                });
+            }
+
+            // This accepts a direct link from a new member who got our peer id from the door.
+            function handleIncomingMember(conn) {
+                const meta = conn.metadata || {};
+                const name = cleanName(meta.name);
+                const seq = Number(meta.seq);
+
+                if (!joined || validateName(name) || !Number.isFinite(seq)) {
+                    conn.close();
+                    return;
+                }
+
+                // This marks a newcomer as a plain member, because the room creator never joins through us.
+                addMember(conn, { name, seq, role: cleanRole(meta.role), host: false }, true);
+            }
+
+            function startMemberPeer(onOpen) {
+                memberPeer = new Peer();
+
+                memberPeer.once("open", onOpen);
+                memberPeer.on("connection", handleIncomingMember);
+
+                // This reconnects to PeerJS so that new members can still reach us.
+                memberPeer.on("disconnected", () => {
+                    if (memberPeer && !memberPeer.destroyed) memberPeer.reconnect();
+                });
+
+                memberPeer.on("error", error => {
+                    console.error("Member peer error:", error);
+
+                    // This ignores PeerJS errors once we are in the room, because member links are direct.
+                    if (joined) return;
+
+                    fail(error.type === "peer-unavailable"
+                        ? "Wrong code or the room is closed"
+                        : `Connection problem: ${error.type}`);
+                });
+            }
+
+            // ---------- Door ----------
+
+            // This lets a visitor ask to join and replies with the member list or a rejection.
+            function handleDoorVisitor(conn) {
+                const meta = conn.metadata || {};
+                const name = cleanName(meta.name);
+
+                conn.on("open", () => {
+                    const error = validateName(name)
+                        || (isNameTaken(name) ? `The name "${name}" is already in use` : null);
+
+                    if (error) {
+                        conn.send({ type: "rejected", reason: error });
+                    } else {
+                        lastIssuedSeq += 1;
+                        reserveName(name);
+
+                        const list = [{ peerId: memberPeer.id, name: myName, seq: mySeq, role: myRole, host: myHost }];
+
+                        for (const [peerId, member] of members) {
+                            list.push({ peerId, name: member.name, seq: member.seq, role: member.role, host: member.host });
+                        }
+
+                        conn.send({ type: "welcome", seq: lastIssuedSeq, members: list });
+                    }
+
+                    // This short delay lets the reply reach the visitor before the door link closes.
+                    setTimeout(() => conn.close(), DOOR_CLOSE_DELAY_MS);
+                });
+            }
+
+            // This claims the room code, then calls onOpen on success or onFail if the claim does not work.
+            function openDoor(onOpen, onFail) {
+                for (const member of members.values()) lastIssuedSeq = Math.max(lastIssuedSeq, member.seq);
+                lastIssuedSeq = Math.max(lastIssuedSeq, mySeq);
+
+                const door = new Peer(CODE_PREFIX + roomCode);
+                let isOpen = false;
+
+                doorPeer = door;
+
+                door.on("open", () => {
+                    isOpen = true;
+                    if (onOpen) onOpen();
+                });
+
+                door.on("connection", handleDoorVisitor);
+
+                door.on("disconnected", () => {
+                    if (doorPeer === door && !door.destroyed) door.reconnect();
+                });
+
+                door.on("error", error => {
+                    console.error("Door error:", error);
+
+                    if (isOpen) return;
+
+                    door.destroy();
+                    if (doorPeer === door) doorPeer = null;
+
+                    onFail(error);
+                });
+            }
+
+            // ---------- Create and join ----------
+
+            function claimNewCode() {
+                roomCode = randomCode();
+
+                openDoor(
+                    () => {
+                        joined = true;
+                        showRoom();
+                        showSuccessToast(`Room ${roomCode} created`);
+                    },
+                    error => {
+                        // This picks a new code when the random one is already in use.
+                        if (error.type === "unavailable-id") {
+                            claimNewCode();
+                            return;
+                        }
+
+                        fail(`Could not create the room: ${error.type}`);
+                    }
+                );
+            }
+
+            function startRoom(name) {
+                myName = name;
+                myRole = readRole();
+                myHost = true;
+                mySeq = 1;
+                Object.assign(round, { number: 1, story: "", deck: cleanDeck(setupDeckSelect.value), revealed: false });
+
+                setSetupEnabled(false);
+                setStatus("pending", "Creating room...");
+
+                startMemberPeer(claimNewCode);
+            }
+
+            function handleDoorReply(doorConn, packet) {
+                if (!packet) return;
+
+                if (packet.type === "rejected") {
+                    fail(String(packet.reason));
+                    return;
+                }
+
+                if (packet.type !== "welcome" || !Array.isArray(packet.members)) return;
+
+                joined = true;
+                mySeq = Number(packet.seq);
+                lastIssuedSeq = mySeq;
+
+                doorConn.close();
+
+                for (const member of packet.members) {
+                    if (member.peerId === memberPeer.id) continue;
+
+                    const conn = memberPeer.connect(member.peerId, {
+                        reliable: true,
+                        metadata: { name: myName, seq: mySeq, role: myRole }
+                    });
+
+                    addMember(conn, { name: cleanName(member.name), seq: Number(member.seq), role: cleanRole(member.role), host: member.host === true }, false);
+                }
+
+                showRoom();
+                showSuccessToast(`Joined room ${roomCode}`);
+            }
+
+            function startJoin(name, code) {
+                myName = name;
+                myRole = readRole();
+                myHost = false;
+                roomCode = code;
+
+                // This starts at round zero, so the room's round always replaces ours.
+                Object.assign(round, { number: 0, story: "", deck: DEFAULT_DECK, revealed: false });
+
+                setSetupEnabled(false);
+                setStatus("pending", "Joining room...");
+
+                startMemberPeer(() => {
+                    const doorConn = memberPeer.connect(CODE_PREFIX + code, {
+                        reliable: true,
+                        metadata: { name }
+                    });
+
+                    doorConn.on("data", packet => handleDoorReply(doorConn, packet));
+
+                    doorConn.on("close", () => {
+                        // This handles a door that closed before it sent any reply.
+                        if (!joined && memberPeer) fail("The room did not answer, so try again");
+                    });
+                });
+            }
+
+            // ---------- UI events ----------
+
+            function readName() {
+                const name = cleanName(nameInput.value);
+                const error = validateName(name);
+
+                if (error) {
+                    showInfoToast(error);
+                    nameInput.focus();
+                    return null;
+                }
+
+                return name;
+            }
+
+            // This returns the chosen role, or null when the user joins as an observer.
+            function readRole() {
+                return observerInput.checked ? null : (cleanRole(setupRoleSelect.value) ?? DEFAULT_ROLE);
+            }
+
+            createRoomBtn.addEventListener("click", () => {
+                const name = readName();
+                if (name) startRoom(name);
+            });
+
+            joinRoomBtn.addEventListener("click", () => {
+                const name = readName();
+                if (!name) return;
+
+                const code = codeInput.value.trim();
+
+                if (!/^\d{6}$/.test(code)) {
+                    showInfoToast("Enter the 6-digit room code");
+                    codeInput.focus();
+                    return;
+                }
+
+                startJoin(name, code);
+            });
+
+            codeInput.addEventListener("input", () => {
+                codeInput.value = codeInput.value.replace(/\D/g, "").slice(0, 6);
+            });
+
+            codeInput.addEventListener("keydown", e => { if (e.key === "Enter") joinRoomBtn.click(); });
+
+            nameInput.addEventListener("keydown", e => {
+                if (e.key === "Enter") (codeInput.value.trim() ? joinRoomBtn : createRoomBtn).click();
+            });
+
+            observerInput.addEventListener("change", () => {
+                roleField.classList.toggle("d-none", observerInput.checked);
+            });
+
+            storyInput.addEventListener("input", () => {
+                if (!myHost) return;
+
+                round.story = cleanStory(storyInput.value);
+
+                // This keeps the story of a revealed round up to date in history.
+                if (round.revealed && history.some(item => item.number === round.number)) {
+                    recordRound();
+                    renderHistory();
+                }
+
+                clearTimeout(storySendTimer);
+                storySendTimer = setTimeout(() => {
+                    broadcast({ type: "story", round: round.number, story: round.story });
+                }, STORY_SEND_DELAY_MS);
+            });
+
+            roomDeckSelect.addEventListener("change", () => {
+                const deck = cleanDeck(roomDeckSelect.value);
+                if (deck === round.deck) return;
+
+                startNewRound(deck);
+                showInfoToast(`Switched to ${DECKS[deck].label} cards, new round started`);
+            });
+
+            revealBtn.addEventListener("click", revealCards);
+            newRoundBtn.addEventListener("click", () => startNewRound());
+
+            // This closes our links at once, so the others see us leave without waiting for a timeout.
+            window.addEventListener("beforeunload", () => {
+                for (const peer of [doorPeer, memberPeer]) {
+                    if (peer) peer.destroy();
+                }
+            });
+
+            fillDeckSelect(setupDeckSelect);
+            fillDeckSelect(roomDeckSelect);
+
+            nameInput.value = getStorageString(NAME_STORAGE_KEY, "");
+            setupRoleSelect.value = cleanRole(getStorageString(ROLE_STORAGE_KEY, DEFAULT_ROLE)) ?? DEFAULT_ROLE;
+            roleField.classList.toggle("d-none", observerInput.checked);
+
+            CustomDropdown.enhance(setupRoleSelect);
+            CustomDropdown.enhance(setupDeckSelect);
+            CustomDropdown.enhance(roomDeckSelect);
+
+            // This fills the room code from an invite link.
+            const invitedCode = new URLSearchParams(location.search).get("room");
+            if (/^\d{6}$/.test(invitedCode || "")) codeInput.value = invitedCode;
+
+            if (typeof Peer === "undefined") {
+                setSetupEnabled(false);
+                setStatus("error", "The PeerJS library did not load");
+            }
+        </script>
+    </body>
+</html>

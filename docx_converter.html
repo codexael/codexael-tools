@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Codexael Toolstack — Doc/PDF to MD</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+        <!-- Metadata -->
+        <meta name="description" content="Turn Word documents and PDFs into clean Markdown in seconds.">
+        <meta name="author" content="Codexael">
+        <meta name="theme-color" content="#fff4e0" media="(prefers-color-scheme: light)">
+        <meta name="theme-color" content="#17140f" media="(prefers-color-scheme: dark)">
+
+        <!-- Open Graph -->
+        <meta property="og:title" content="Codexael Toolstack — Word & PDF to Markdown Converter">
+        <meta property="og:description" content="Turn Word documents and PDFs into clean Markdown in seconds.">
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="https://tools.codexael.com/docx_converter.html">
+        <meta property="og:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+        <meta property="og:image:width" content="1200">
+        <meta property="og:image:height" content="630">
+        <meta property="og:image:type" content="image/png">
+        <meta property="og:image:alt" content="Codexael Toolstack — Word & PDF to Markdown Converter">
+        <meta property="og:site_name" content="Codexael Toolstack">
+
+        <!-- Twitter Card -->
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="Codexael Toolstack — Word & PDF to Markdown Converter">
+        <meta name="twitter:description" content="Turn Word documents and PDFs into clean Markdown in seconds.">
+        <meta name="twitter:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+
+        <!-- Favicon / App Icon -->
+        <link rel="icon" type="image/svg+xml" href="assets/images/codexael_icon.svg">
+        <link rel="apple-touch-icon" href="assets/images/codexael_icon.svg">
+
+        <!-- Bootstrap 5.2.0-beta1 -->
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+
+        <!-- Bootstrap with Popper 5.2.0-beta1 -->
+        <script src="js/bootstrap.bundle.min.js"></script>
+
+        <!-- Bootstrap Icons 1.11.3 -->
+        <link rel="stylesheet" href="css/bootstrap-icons.min.css">
+
+        <!-- CodeMirror 5.65.21 -->
+        <link rel="stylesheet" href="css/codemirror/codemirror.css">
+
+        <!-- Google fonts -->
+        <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+        <!-- Custom CSS -->
+        <link rel="stylesheet" href="css/find-replace.css">
+        <link rel="stylesheet" href="css/keycaps.css">
+    </head>
+    <body>
+        <!-- Common layout -->
+        <div id="navbar-container"></div>
+
+        <div class="container-fluid tool-wrapper">
+            <div class="row g-3 g-md-0 gx-md-3 gx-0">
+
+                <!-- Left: Document -->
+                <div id="inputEditor" class="col-md-5 editor-panel">
+                    <div class="editor-header">
+                        <span class="editor-title">Document</span>
+                        <div class="editor-actions">
+                            <button class="btn-danger" title="Clear" data-undo-clear onclick="clearFileInput()"><i class="bi bi-x-lg icon-btn"></i></button>
+                        </div>
+                    </div>
+
+                    <div
+                        class="editor-body image-body image-background center-xy flex-column"
+                        id="uploadZone"
+                        onclick="openDocFilePicker()"
+                        ondragover="handleDragOver(event)"
+                        ondragleave="handleDragLeave(event)"
+                        ondrop="handleDrop(event)"
+                    >
+                        <div class="image-drop-hint center-xy flex-column" id="uploadHint">
+                            <i class="bi bi-file-earmark-arrow-up"></i>
+                            <span>Drag &amp; drop your file, or <u>browse</u></span>
+                            <span class="hint-sub">DOCX, PDF &middot; up to <span id="maxFileSizeLabel"></span> MB</span>
+                        </div>
+                        <div class="image-drop-hint center-xy flex-column d-none" id="fileLoadedInfo">
+                            <i class="bi bi-file-earmark-check-fill" id="fileLoadedIcon"></i>
+                            <span id="fileLoadedName"></span>
+                            <span class="hint-sub" id="fileLoadedMeta"></span>
+                        </div>
+                    </div>
+
+                    <input type="file" id="docFileInput" accept=".docx,.pdf" hidden onchange="handleDocFileSelect(event)">
+
+                    <div class="editor-footer">
+                        <div class="status">
+                            <span id="fileInfoStatus">No file selected</span>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Center Actions -->
+                <div class="col-md-2 center-col action-panel text-center invisible-scrollbars">
+                    <div class="center-actions-wrapper">
+                        <button class="btn action-btn-primary" data-shortcut="run" onclick="convertFile()"><i class="bi bi-arrow-repeat"></i> Convert</button>
+                        <button class="btn action-btn-pill" onclick="downloadData('docx_converter.md', false)"><i class="bi bi-download"></i> Download</button>
+                    </div>
+                </div>
+
+                <!-- Right: Markdown -->
+                <div id="outputEditor" class="col-md-5 editor-panel">
+                    <div class="editor-header">
+                        <span class="editor-title">Markdown</span>
+                        <div class="editor-actions">
+                            <button title="Download" onclick="downloadData('docx_converter.md', false)"><i class="bi bi-download icon-btn"></i></button>
+                            <button title="Print" onclick="printMarkdown()"><i class="bi bi-printer icon-btn"></i></button>
+                            <div class="divider"></div>
+                            <button class="btn-danger" title="Clear" data-undo-clear="Output cleared" onclick="clearInput(codeMirrorOutput)"><i class="bi bi-x-lg icon-btn"></i></button>
+                            <button title="Copy" data-shortcut="copy" onclick="copyToClipboard(codeMirrorOutput, 'copyOutputEditor')"><i class="bi bi-copy icon-btn" id="copyOutputEditor"></i></button>
+                            <button title="Fullscreen" onclick="toggleEditorFullScreen('outputEditor')"><i class="bi bi-arrows-fullscreen icon-btn"></i></button>
+                        </div>
+                    </div>
+
+                    <textarea class="editor-body" id="output" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"></textarea>
+
+                    <div class="editor-footer">
+                        <div class="status">
+                            <span>Ln <b id="outputCurrentLine">1</b></span>
+                            <span>Col <b id="outputCurrentColumn">1</b></span>
+                            <span>Lines <b id="outputTotalLines">1</b></span>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+
+
+        <!-- CodeMirror 5.65.21 -->
+        <script src="js/codemirror/codemirror.js"></script>
+        <script src="js/codemirror/active-line.js"></script>
+
+        <!-- Vendor libraries -->
+        <script src="js/mammoth.browser.min.js"></script>
+        <script src="js/turndown.min.js"></script>
+        <script src="js/pdf.min.js"></script>
+
+        <div id="footer-container"></div>
+
+        <!-- Common JS -->
+        <script src="js/tool-help.js"></script>
+        <script src="js/storage.js"></script>
+        <script src="js/common.js"></script>
+        <script src="js/script.js"></script>
+        <script src="js/find-replace.js"></script>
+
+        <!-- Page JS -->
+        <script>
+            const pageTitle = "Doc/PDF to MD";
+
+            let selectedFile = null;
+
+            const docFileInput = document.getElementById('docFileInput');
+            const uploadZone = document.getElementById('uploadZone');
+            const uploadHint = document.getElementById('uploadHint');
+            const fileLoadedInfo = document.getElementById('fileLoadedInfo');
+            const fileLoadedName = document.getElementById('fileLoadedName');
+            const fileLoadedMeta = document.getElementById('fileLoadedMeta');
+            const fileInfoStatus = document.getElementById('fileInfoStatus');
+
+            const outputTotalLines = document.getElementById('outputTotalLines');
+            const outputCurrentLine = document.getElementById('outputCurrentLine');
+            const outputCurrentColumn = document.getElementById('outputCurrentColumn');
+
+            document.getElementById('maxFileSizeLabel').textContent = MAX_FILE_SIZE_MB;
+
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'js/pdf.worker.min.js';
+
+            const codeMirrorOutput = createCodeMirrorEditor(document.getElementById('output'), null);
+
+            setupEditors([
+                createEditorConfig(codeMirrorOutput, outputTotalLines, outputCurrentLine, outputCurrentColumn)
+            ]);
+
+            // Opens the native file picker for the upload zone
+            function openDocFilePicker() {
+                docFileInput.value = '';
+                docFileInput.click();
+            }
+
+            function handleDocFileSelect(event) {
+                const file = event.target.files[0];
+                if (file) setFile(file);
+            }
+
+            function handleDragOver(event) {
+                event.preventDefault();
+                uploadZone.classList.add('drag-over');
+            }
+
+            function handleDragLeave() {
+                uploadZone.classList.remove('drag-over');
+            }
+
+            function handleDrop(event) {
+                event.preventDefault();
+                event.stopPropagation();
+                uploadZone.classList.remove('drag-over');
+                const file = event.dataTransfer.files[0];
+                if (file) setFile(file);
+            }
+
+            // Validates and loads the selected file, then kicks off conversion
+            function setFile(file) {
+                const ext = file.name.split('.').pop().toLowerCase();
+                if (!['docx', 'pdf'].includes(ext)) {
+                    showErrorToast('Please upload a .docx or .pdf file');
+                    return;
+                }
+
+                const sizeInMB = file.size / (1024 * 1024);
+                if (sizeInMB > MAX_FILE_SIZE_MB) {
+                    showErrorToast(`File size exceeds ${MAX_FILE_SIZE_MB} MB limit`);
+                    return;
+                }
+
+                selectedFile = file;
+                const label = ext.toUpperCase();
+
+                fileLoadedName.textContent = file.name;
+                fileLoadedMeta.textContent = `${label} · ${sizeInMB.toFixed(2)} MB`;
+                uploadHint.classList.add('d-none');
+                fileLoadedInfo.classList.remove('d-none');
+                fileInfoStatus.textContent = `${label} file loaded`;
+
+                convertFile();
+            }
+
+            // Clears the loaded file, resetting the drop zone and Markdown output
+            function clearFileInput() {
+                selectedFile = null;
+                docFileInput.value = '';
+                fileLoadedInfo.classList.add('d-none');
+                uploadHint.classList.remove('d-none');
+                fileInfoStatus.textContent = 'No file selected';
+                clearInput(codeMirrorOutput);
+            }
+
+            // Returns the loaded file and its status text so Clear can offer Undo.
+            function getPageUndoState() {
+                return { file: selectedFile, statusText: fileInfoStatus.textContent };
+            }
+
+            // Shows the file that was loaded before Clear ran, without converting it again.
+            function restorePageUndoState(state) {
+                if (!state.file || selectedFile) return;
+                selectedFile = state.file;
+                uploadHint.classList.add('d-none');
+                fileLoadedInfo.classList.remove('d-none');
+                fileInfoStatus.textContent = state.statusText;
+            }
+
+            async function convertFile() {
+                if (!selectedFile) {
+                    showInfoToast('No file selected');
+                    return;
+                }
+                const ext = selectedFile.name.split('.').pop().toLowerCase();
+                try {
+                    if (ext === 'docx') {
+                        await convertDocxToMarkdown(selectedFile);
+                    } else if (ext === 'pdf') {
+                        await convertPdfToMarkdown(selectedFile);
+                    }
+                } catch (error) {
+                    console.log('Conversion error:', error);
+                    showErrorToast('Conversion failed — see console for details');
+                }
+            }
+
+            async function convertDocxToMarkdown(file) {
+                const arrayBuffer = await file.arrayBuffer();
+                let result;
+                try {
+                    result = await mammoth.convertToHtml({ arrayBuffer });
+                } catch (error) {
+                    console.log('Mammoth error:', error);
+                    showErrorToast('Could not read file — DOC format has limited support');
+                    return;
+                }
+                const html = result.value;
+                if (!html.trim()) {
+                    showInfoToast('Conversion produced no content');
+                    return;
+                }
+                const turndownService = new TurndownService({ headingStyle: 'atx', bulletListMarker: '-' });
+                const markdown = turndownService.turndown(html);
+                codeMirrorOutput.setValue(markdown);
+                fileInfoStatus.textContent = 'Converted to Markdown';
+                showSuccessToast('Converted to Markdown');
+            }
+
+            async function convertPdfToMarkdown(file) {
+                showInfoToast('PDF conversion extracts text only — tables and columns are best-effort');
+                const arrayBuffer = await file.arrayBuffer();
+                let pdf;
+                try {
+                    pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                } catch (error) {
+                    console.log('PDF.js error:', error);
+                    showErrorToast('Could not read PDF');
+                    return;
+                }
+                const pageTexts = [];
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    const page = await pdf.getPage(i);
+                    const content = await page.getTextContent();
+                    const pageText = content.items.map(item => item.str).join('');
+                    pageTexts.push(pageText.trim());
+                }
+                const markdown = pageTexts.filter(t => t.length > 0).join('\n\n');
+                if (!markdown.trim()) {
+                    showInfoToast('Conversion produced no content');
+                    return;
+                }
+                codeMirrorOutput.setValue(markdown);
+                fileInfoStatus.textContent = 'Converted to Markdown';
+                showSuccessToast('Converted to Markdown');
+            }
+
+            function printMarkdown() {
+                printData({ title: pageTitle, isInput: false, format: 'Markdown' });
+            }
+        </script>
+    </body>
+</html>

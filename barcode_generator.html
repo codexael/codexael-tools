@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Codexael Toolstack — Barcode Generator</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+        <!-- Metadata -->
+        <meta name="description" content="Create Code 128, Code 39, UPC and ITF barcodes and download them instantly.">
+        <meta name="author" content="Codexael">
+        <meta name="theme-color" content="#fff4e0" media="(prefers-color-scheme: light)">
+        <meta name="theme-color" content="#17140f" media="(prefers-color-scheme: dark)">
+
+        <!-- Open Graph -->
+        <meta property="og:title" content="Codexael Toolstack — Free Barcode Generator">
+        <meta property="og:description" content="Create Code 128, Code 39, UPC and ITF barcodes and download them instantly.">
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="https://tools.codexael.com/barcode_generator.html">
+        <meta property="og:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+        <meta property="og:image:width" content="1200">
+        <meta property="og:image:height" content="630">
+        <meta property="og:image:type" content="image/png">
+        <meta property="og:image:alt" content="Codexael Toolstack — Free Barcode Generator">
+        <meta property="og:site_name" content="Codexael Toolstack">
+
+        <!-- Twitter Card -->
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="Codexael Toolstack — Free Barcode Generator">
+        <meta name="twitter:description" content="Create Code 128, Code 39, UPC and ITF barcodes and download them instantly.">
+        <meta name="twitter:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+
+        <!-- Favicon / App Icon -->
+        <link rel="icon" type="image/svg+xml" href="assets/images/codexael_icon.svg">
+        <link rel="apple-touch-icon" href="assets/images/codexael_icon.svg">
+
+        <!-- Bootstrap 5.2.0-beta1 -->
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+
+        <!-- Bootstrap with Popper 5.2.0-beta1 -->
+        <script src="js/bootstrap.bundle.min.js"></script>
+
+        <!-- Bootstrap Icons 1.11.3 -->
+        <link rel="stylesheet" href="css/bootstrap-icons.min.css">
+
+        <!-- Barcode 4.9.0 -->
+        <script src="js/bwip-js-min.js"></script>
+
+        <!-- Barcode Decode 0.1.5 -->
+        <script src="js/zxing-browser.min.js"></script>
+
+        <!-- CodeMirror 5.65.21 -->
+        <link rel="stylesheet" href="css/codemirror/codemirror.css">
+
+        <!-- Google fonts -->
+        <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+        <!-- Custom CSS -->
+        <link rel="stylesheet" href="css/find-replace.css">
+        <link rel="stylesheet" href="css/keycaps.css">
+
+        <style>
+            /* The linear code keys sit in the middle of the column. */
+            .center-actions-wrapper > .segmented-control {
+                display: flex;
+                justify-content: center;
+                width: fit-content;
+                margin: 0 auto;
+            }
+
+            /* The generated barcode sits on the output area with no frame or shadow. */
+            #outputContainer {
+                border: 0;
+                box-shadow: none;
+                background: transparent;
+            }
+
+            /* The output area is plain white in the light theme. */
+            #outputEditor,
+            #outputEditor .barcode-body {
+                background: #ffffff !important;
+            }
+
+            /* The output area is plain black in the dark theme. */
+            body.dark-theme #outputEditor,
+            body.dark-theme #outputEditor .barcode-body {
+                background: #000000 !important;
+            }
+        </style>
+    </head>
+    <body>
+        <!-- Common layout -->
+        <div id="navbar-container"></div>
+
+        <div class="container-fluid tool-wrapper">
+            <div class="row g-3 g-md-0 gx-md-3 gx-0">
+
+                <!-- Left Editor -->
+                <div id="inputEditor" class="col-md-5 editor-panel">
+                    <div class="editor-header">
+                        <span class="editor-title">Input</span>
+                        <div class="editor-actions">
+                            <button title="Download" onclick="downloadData('barcode_generator.txt')"><i class="bi bi-download icon-btn"></i></button>
+                            <button title="Print" onclick="printData({ title: pageTitle })"><i class="bi bi-printer icon-btn"></i></button>
+                            <div class="divider"></div>
+                            <button class="btn-danger" title="Clear" data-undo-clear onclick="clearBarcodeInputs()"><i class="bi bi-x-lg icon-btn"></i></button>
+                            <button title="Copy" onclick="copyToClipboard(codeMirrorInput, 'copyInputEditor')"><i class="bi bi-copy icon-btn" id="copyInputEditor"></i></button>
+                            <button title="Fullscreen" onclick="toggleEditorFullScreen('inputEditor')"><i class="bi bi-arrows-fullscreen icon-btn"></i></button>
+                        </div>
+                    </div>
+
+                    <textarea class="editor-body" id="input" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"></textarea>
+
+                    <div class="editor-footer">
+                        <div class="status">
+                            <span>Ln <b id="inputCurrentLine">1</b></span>
+                            <span>Col <b id="inputCurrentColumn">1</b></span>
+                            <span>Lines <b id="inputTotalLines">1</b></span>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Center Actions -->
+                <div class="col-md-2 center-col action-panel invisible-scrollbars">
+                    <div class="center-actions-wrapper overflow-hidden">
+                        <div class="center-actions-label">Linear Code</div>
+                        <div class="segmented-control btn-group full-width" role="group" aria-label="Radio toggle">
+                            <input type="radio" name="linear_code" id="code128" value="code128">
+                            <label for="code128">Code-128</label>
+
+                            <input type="radio" name="linear_code" id="code39" value="code39">
+                            <label for="code39">Code-39</label>
+                        </div>
+                    </div>
+
+                    <div class="center-actions-wrapper">
+                        <div class="center-actions-label">Foreground</div>
+                        <input type="color" id="foregroundColorInput" hidden>
+                        <button class="color-button" id="foregroundColorButton">
+                            <span class="color-code" id="foregroundColorCode">#000000</span>
+                        </button>
+                    </div>
+
+                    <div class="center-actions-wrapper">
+                        <div class="center-actions-label">Background</div>
+                        <input type="color" id="backgroundColorInput" hidden>
+                        <button class="color-button" id="backgroundColorButton">
+                            <span class="color-code" id="backgroundColorCode">#FFFFFF</span>
+                        </button>
+                    </div>
+
+                    <div class="row g-2 gap-2 mb-2 justify-content-center no-spacing">
+                        <button class="col btn action-btn-ghost" onclick="downloadBarcode('png')"><i class="bi bi-filetype-png"></i> PNG</button>
+                        <button class="col btn action-btn-ghost" onclick="downloadBarcode('jpeg')"><i class="bi bi-filetype-jpg"></i> JPEG</button>
+                    </div>
+
+                    <button class="btn action-btn-ghost" onclick="openFilePicker()"><i class="bi bi-upc-scan"></i> Scan Barcode</button>
+                    <input type="file" id="fileInput" accept="image/png, image/jpeg" hidden onchange="handleFileSelect(event, fileFormat)">
+                </div>
+
+                <!-- Right Editor -->
+                <div id="outputEditor" class="col-md-5 editor-panel image-background">
+                    <div class="editor-header">
+                        <span class="editor-title">Output</span>
+                        <div class="editor-actions">
+                            <button title="Download" onclick="downloadBarcode('jpeg')"><i class="bi bi-download icon-btn"></i></button>
+                            <button title="Print" onclick="printBarcode()"><i class="bi bi-printer icon-btn"></i></button>
+                            <div class="divider"></div>
+                            <button class="btn-danger" title="Clear" data-undo-clear="Output cleared" onclick="clearBarcode()"><i class="bi bi-x-lg icon-btn"></i></button>
+                            <button title="Fullscreen" onclick="toggleEditorFullScreen('outputEditor')"><i class="bi bi-arrows-fullscreen icon-btn"></i></button>
+                        </div>
+                    </div>
+                    <div class="editor-body center-content barcode-body font-background">
+                        <canvas id="outputContainer" class="barcode-canvas"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <div id="footer-container"></div>
+
+        <!-- Common JS -->
+        <script src="js/tool-help.js"></script>
+        <script src="js/storage.js"></script>
+        <script src="js/common.js"></script>
+        <script src="js/script.js"></script>
+        <script src="js/find-replace.js"></script>
+
+        <!-- CodeMirror 5.65.21 -->
+        <script src="js/codemirror/codemirror.js"></script>
+        <script src="js/codemirror/active-line.js"></script>
+
+        <!-- Custom JS -->
+        <script>
+            const STORAGE_LINEAR_CODE_KEY = "linear_code";
+            
+            // Elements
+            const fileFormat = "Barcode";
+            const pageTitle = "Barcode Generator";
+            const input = document.getElementById("input");
+            const code39 = document.getElementById("code39");
+            const code128 = document.getElementById("code128");
+            const outputContainer = document.getElementById("outputContainer");
+            const foregroundColorInput = document.getElementById("foregroundColorInput");
+            const foregroundColorButton = document.getElementById('foregroundColorButton');
+            const foregroundColorCode = document.getElementById('foregroundColorCode');
+            const backgroundColorInput = document.getElementById("backgroundColorInput");
+            const backgroundColorButton = document.getElementById('backgroundColorButton');
+            const backgroundColorCode = document.getElementById('backgroundColorCode');
+
+            const inputTotalLines = document.getElementById('inputTotalLines');
+            const inputCurrentLine = document.getElementById('inputCurrentLine');
+            const inputCurrentColumn = document.getElementById('inputCurrentColumn');
+
+            const codeMirrorInput = createCodeMirrorEditor(input);
+
+            // Clears all input fields for barcode generation
+            function clearBarcodeInputs() {
+                clearInput(codeMirrorInput);
+                clearBarcode();
+            }
+
+            // Runs after HTML content has fully loaded
+            window.addEventListener("DOMContentLoaded", () => {
+                // Initialize default color scheme for barcode as per current theme
+                var foregroundColor = "#000000";
+                var backgroundColor = "#FFFFFF";
+                if (themeToggle.checked) {
+                    foregroundColor = "#FFFFFF";
+                    backgroundColor = "#000000";
+                }
+
+                foregroundColorInput.value = foregroundColor;
+                foregroundColorButton.style.backgroundColor = foregroundColor;
+                foregroundColorCode.textContent = foregroundColor.toUpperCase();
+                foregroundColorCode.style.color = backgroundColor;
+
+                backgroundColorInput.value = backgroundColor;
+                backgroundColorButton.style.backgroundColor = backgroundColor;
+                backgroundColorCode.textContent = backgroundColor.toUpperCase();
+                backgroundColorCode.style.color = foregroundColor;
+            });
+
+            // Open color picker when button clicked
+            foregroundColorButton.addEventListener('click', () => { foregroundColorInput.click(); });
+            backgroundColorButton.addEventListener('click', () => { backgroundColorInput.click(); });
+
+            // Update button background and hex code when color picked for barcode foreground
+            foregroundColorInput.addEventListener('input', (e) => {
+                const color = e.target.value;
+                foregroundColorButton.style.backgroundColor = color;
+                foregroundColorCode.textContent = color.toUpperCase();
+                generateBarcode();
+            });
+
+            // Update button background and hex code when color picked for barcode background
+            backgroundColorInput.addEventListener('input', (e) => {
+                const color = e.target.value;
+                backgroundColorButton.style.backgroundColor = color;
+                backgroundColorCode.textContent = color.toUpperCase();
+                generateBarcode();
+            });
+            
+            // Generates barcode from input data
+            function generateBarcode() {
+                try {
+                    const checked_linear_code = document.querySelector("input[name='linear_code']:checked");
+                    const data = codeMirrorInput.getValue();
+
+                    if (!data.trim()) {
+                        showInfoToast("Please enter content to generate barcode");
+                        return;
+                    }
+                    if (!checked_linear_code) {
+                        showInfoToast("Please select linear code to generate barcode");
+                        return;
+                    }
+
+                    bwipjs.toCanvas(outputContainer, {
+                        bcid: checked_linear_code.value,
+                        text: data,
+                        scale: 10,
+                        height: 10,
+                        includetext: true,
+                        barcolor: foregroundColorInput.value,
+                        backgroundcolor: backgroundColorInput.value
+                    });
+                } catch (error) {
+                    console.log("Generating barcode error:", error.message);
+                    showErrorToast("Error generating barcode");
+                }
+            }
+
+            // Downloads generated barcode in specified format
+            function downloadBarcode(format) {
+                if (isCanvasEmpty()) {
+                    showInfoToast("No Barcode to download");
+                    return;
+                }
+
+                const borderValue = 10;
+                const borderedCanvas = document.createElement("canvas");
+                const context = borderedCanvas.getContext("2d");
+                borderedCanvas.width = outputContainer.width + borderValue * 2;
+                borderedCanvas.height = outputContainer.height + borderValue * 2;
+                context.fillStyle = backgroundColorInput.value;
+                context.fillRect(0, 0, borderedCanvas.width, borderedCanvas.height);
+                context.drawImage(outputContainer, borderValue, borderValue);
+
+                let mime = format === "jpeg" ? "image/jpeg" : "image/png";
+                let link = document.createElement("a");
+
+                link.href = borderedCanvas.toDataURL(mime);
+                link.download = `qrcode.${format}`;
+
+                link.click();
+            }
+
+            // Sends generated barcode to printer
+            function printBarcode() {
+                try {
+                    if (isCanvasEmpty()) {
+                        showInfoToast("Nothing to print");
+                        return;
+                    }
+                    const barcodeImage = new Image();
+                    barcodeImage.src = outputContainer.toDataURL('image/png');
+                    const printWindow = window.open("", "_blank");
+                    printWindow.document.write(`
+                        <html>
+                            <head>
+                                <title>Codexael Toolstack — ${pageTitle}</title>
+                                <style>
+                                    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; max-width: 100%; max-height: 100%; }
+                                    body { margin: 0; display: flex; padding: 20px; justify-content: center; align-items: center; background-color: ${backgroundColorInput.value} !important; }
+                                    img { max-width: 100%; }
+                                </style>
+                            </head>
+                            <body>
+                            </body>
+                        </html>
+                    `);
+                    printWindow.document.close();
+                    printWindow.document.body.appendChild(barcodeImage);
+
+                    barcodeImage.onload = () => {
+                        printWindow.focus();
+                        printWindow.print();
+                        printWindow.close();
+                    };
+                } catch (error) {
+                    console.log("Printing Barcode error:", error.message);
+                    showErrorToast("Error printing Barcode");
+                }
+            }
+
+            // Clears generated barcode from display
+            function clearBarcode() { outputContainer.width = outputContainer.width; }
+
+            // Reports whether a barcode is showing so Undo can redraw it after Clear.
+            function getPageUndoState() {
+                return { hasBarcode: !isCanvasEmpty() };
+            }
+
+            // Redraws the barcode when Undo restores input that had one showing before Clear.
+            function restorePageUndoState(state) {
+                if (state.hasBarcode && isCanvasEmpty() && codeMirrorInput.getValue().trim()) generateBarcode();
+            }
+
+            // Runs after HTML content has fully loaded, get linear code local storage and generate barcode with default value
+            window.addEventListener("DOMContentLoaded", () => {
+                const linear_code = document.querySelectorAll("input[name='linear_code']");
+                const saved_linear_code = getStorageString(STORAGE_LINEAR_CODE_KEY);
+
+                setDefaultLinearCodeValue();
+
+                let anyChecked = false;
+
+                linear_code.forEach(type => {
+                    if (type.value === saved_linear_code) {
+                        type.checked = true;
+                        anyChecked = true;
+                    }
+                });
+
+                if (!anyChecked) {
+                    linear_code[0].checked = true;
+                    setStorageString(STORAGE_LINEAR_CODE_KEY, linear_code[0].value);
+                }
+
+                linear_code.forEach(radio => {
+                    radio.addEventListener("change", () => {
+                        setStorageString(STORAGE_LINEAR_CODE_KEY, radio.value);
+                        setDefaultLinearCodeValue();
+                        generateBarcode();
+                    });
+                });
+
+                generateBarcode();
+
+                // Handles generating barcode when user types in the input field
+                codeMirrorInput.on("change", (e) => generateBarcode());
+            });
+
+            // Sets default value for linear barcode input
+            function setDefaultLinearCodeValue() {
+                const saved_linear_code = getStorageString(STORAGE_LINEAR_CODE_KEY);
+                if (saved_linear_code === "code39") { codeMirrorInput.setValue("ABC-1234"); }
+                else if (saved_linear_code === "code93") { codeMirrorInput.setValue("ABC-1234-/+"); }
+                else { codeMirrorInput.setValue("ABC-abc-1234"); }
+            }
+
+            // Scans barcode from uploaded image file
+            function scanBarcodeImage(fileData) {
+                try {
+                    const barcodeImage = new Image();
+                    barcodeImage.src = fileData;
+                    barcodeImage.onload = async function () {
+                        const reader = new ZXingBrowser.BrowserMultiFormatReader();
+                        const result = await reader.decodeFromImageUrl(barcodeImage.src);
+
+                        if (result.format === 4) {
+                            code128.checked = true;
+                            codeMirrorInput.setValue(result.text);
+                            generateBarcode();
+                        }
+                        else if (result.format === 2) {
+                            code39.checked = true;
+                            codeMirrorInput.setValue(result.text);
+                            generateBarcode();
+                        }
+                        else { showErrorToast("No valid barcode found in image"); }
+                    };
+                } catch (error) {
+                    console.log("Barcode scanning error:", error.message);
+                    showErrorToast("Error scanning barcode");
+                }
+            }
+
+            // Checks whether the canvas has any drawings
+            function isCanvasEmpty() {
+                const context = outputContainer.getContext('2d');
+                const pixels = context.getImageData(0, 0, outputContainer.width, outputContainer.height).data;
+                for (let z = 3; z < pixels.length; z += 4) { if (pixels[z] !== 0) { return false; } }
+                return true;
+            }
+
+            // Toggles fullscreen mode for barcode
+            function toggleBarcodeFullScreen() {
+                try {
+                    if (isCanvasEmpty()) {
+                        showInfoToast("Nothing to show");
+                        return;
+                    }
+                    if (!document.fullscreenElement) { outputContainer.requestFullscreen(); }
+                    else { document.exitFullscreen(); }
+                } catch (error) {
+                    console.log("Fullscreen error:", error);
+                    showErrorToast("Error doing fullscreen");
+                }
+            }
+
+            setupEditors([
+                createEditorConfig(codeMirrorInput, inputTotalLines, inputCurrentLine, inputCurrentColumn)
+            ]);
+        </script>
+        
+    </body>
+</html>

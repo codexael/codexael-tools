@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Codexael Toolstack — JSON Formatter</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+        <!-- Metadata -->
+        <meta name="description" content="Beautify and validate JSON instantly. Free, and your data never leaves your browser.">
+        <meta name="author" content="Codexael">
+        <meta name="theme-color" content="#fff4e0" media="(prefers-color-scheme: light)">
+        <meta name="theme-color" content="#17140f" media="(prefers-color-scheme: dark)">
+
+        <!-- Open Graph -->
+        <meta property="og:title" content="Codexael Toolstack — JSON Formatter & Validator">
+        <meta property="og:description" content="Beautify and validate JSON instantly. Free, and your data never leaves your browser.">
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="https://tools.codexael.com/json_formatter.html">
+        <meta property="og:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+        <meta property="og:image:width" content="1200">
+        <meta property="og:image:height" content="630">
+        <meta property="og:image:type" content="image/png">
+        <meta property="og:image:alt" content="Codexael Toolstack — JSON Formatter & Validator">
+        <meta property="og:site_name" content="Codexael Toolstack">
+
+        <!-- Twitter Card -->
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="Codexael Toolstack — JSON Formatter & Validator">
+        <meta name="twitter:description" content="Beautify and validate JSON instantly. Free, and your data never leaves your browser.">
+        <meta name="twitter:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+
+        <!-- Favicon / App Icon -->
+        <link rel="icon" type="image/svg+xml" href="assets/images/codexael_icon.svg">
+        <link rel="apple-touch-icon" href="assets/images/codexael_icon.svg">
+
+        <!-- Bootstrap 5.2.0-beta1 -->
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+
+        <!-- Bootstrap with Popper 5.2.0-beta1 -->
+        <script src="js/bootstrap.bundle.min.js"></script>
+
+        <!-- Bootstrap Icons 1.11.3 -->
+        <link rel="stylesheet" href="css/bootstrap-icons.min.css">
+
+        <!-- CodeMirror 5.65.21 -->
+        <link rel="stylesheet" href="css/codemirror/codemirror.css">
+        <link rel="stylesheet" href="css/codemirror/foldgutter.css">
+
+        <!-- Google fonts -->
+        <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+        <!-- Custom CSS -->
+        <link rel="stylesheet" href="css/find-replace.css">
+        <link rel="stylesheet" href="css/keycaps.css">
+    </head>
+    <body>
+        <!-- Common layout -->
+        <div id="navbar-container"></div>
+
+        <div class="container-fluid tool-wrapper">
+            <div class="row g-3 g-md-0 gx-md-3 gx-0">
+
+                <!-- Left Editor -->
+                <div id="inputEditor" class="col-md-5 editor-panel">
+                    <div class="editor-header">
+                        <span class="editor-title">Input</span>
+                        <div class="editor-actions">
+                            <button title="Collapse" onclick="toggleEditor(codeMirrorInput)"><i class="bi bi-dash-square icon-btn"></i></button>
+                            <button title="Expand" onclick="toggleEditor(codeMirrorInput, true)"><i class="bi bi-plus-square icon-btn"></i></button>
+                            <div class="divider"></div>
+                            <button title="Load Dummy Data" onclick="loadDummyData()"><i class="bi bi-file-earmark-text icon-btn"></i></button>
+                            <div class="divider"></div>
+                            <button title="Download" onclick="downloadData('json_formatter.json')"><i class="bi bi-download icon-btn"></i></button>
+                            <button title="Validate" onclick="validateData(format)"><i class="bi bi-check-lg icon-btn"></i></button>
+                            <button title="Print" onclick="printData({ title: pageTitle, format: format })"><i class="bi bi-printer icon-btn"></i></button>
+                            <div class="divider"></div>
+                            <button class="btn-danger" title="Clear" data-undo-clear onclick="clearJSONInputs()"><i class="bi bi-x-lg icon-btn"></i></button>
+                            <button title="Copy" onclick="copyToClipboard(codeMirrorInput, 'copyInputEditor')"><i class="bi bi-copy icon-btn" id="copyInputEditor"></i></button>
+                            <button title="Fullscreen" onclick="toggleEditorFullScreen('inputEditor')"><i class="bi bi-arrows-fullscreen icon-btn"></i></button>
+                        </div>
+                    </div>
+
+                    <textarea class="editor-body" id="input" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"></textarea>
+
+                    <div class="editor-footer">
+                        <div class="status">
+                            <span>Ln <b id="inputCurrentLine">1</b></span>
+                            <span>Col <b id="inputCurrentColumn">1</b></span>
+                            <span>Lines <b id="inputTotalLines">1</b></span>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Center Actions -->
+                <div class="col-md-2 center-col action-panel text-center invisible-scrollbars">
+                    <button class="btn action-btn-ghost" onclick="openFilePicker()"><i class="bi bi-upload"></i> Upload Data</button>
+                    <input type="file" id="fileInput" accept=".json,application/json" hidden onchange="handleFileSelect(event, format)">
+
+                    <button class="btn action-btn-ghost" onclick="validateData(format)"><i class="bi bi-check2-circle"></i> Validate</button>
+                    
+                    <select class="form-select action-select" id="indentSelect">
+                        <option value="2">2 Tab Space</option>
+                        <option value="4">4 Tab Space</option>
+                    </select>
+
+                    <button class="btn action-btn-primary" data-shortcut="run" onclick="processJson()"><i class="bi bi-magic"></i> Format / Beautify</button>
+                    <button class="btn action-btn-primary" onclick="processJson(false)"><i class="bi bi-arrows-angle-contract"></i> Minify / Compact</button>
+
+                    <button class="btn action-btn-pill" onclick="downloadData('json_formatter.json', false)"><i class="bi bi-download"></i> Download</button>
+
+                    <div class="center-actions-separator"></div>
+
+                    <button class="btn action-btn-ghost" onclick="compareJSON()"><i class="bi bi-arrow-left-right"></i> Compare</button>
+
+                    <div class="chk-cyan">
+                        <input type="checkbox" id="ignoreOrder" checked>
+                        <label for="ignoreOrder">Ignore order in collections</label>
+                    </div>
+
+                    <div id="comparisonContainer" class="editor-panel comparison-editor-panel" style="display: none;">
+                        <div class="editor-header">
+                            <span class="editor-title">Comparison Result</span>
+                            <div class="editor-actions">
+                                <button class="btn-danger" title="Clear" data-undo-clear="Comparison cleared" onclick="clearComparisonResult()"><i class="bi bi-x-lg icon-btn"></i></button>
+                                <button title="Fullscreen" onclick="toggleEditorFullScreen('comparisonContainer')"><i class="bi bi-arrows-fullscreen icon-btn"></i></button>
+                            </div>
+                        </div>
+                        <div class="editor-container">
+                            <div class="comparison-result-body" id="comparisonResult"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Editor -->
+                <div id="outputEditor" class="col-md-5 editor-panel">
+                    <div class="editor-header">
+                        <span class="editor-title">Output</span>
+                        <div class="editor-actions">
+                            <button title="Collapse" onclick="toggleEditor(codeMirrorOutput)"><i class="bi bi-dash-square icon-btn"></i></button>
+                            <button title="Expand" onclick="toggleEditor(codeMirrorOutput, true)"><i class="bi bi-plus-square icon-btn"></i></button>
+                            <div class="divider"></div>
+                            <button title="Download" onclick="downloadData('json_formatter.json', false)"><i class="bi bi-download icon-btn"></i></button>
+                            <button title="Validate" onclick="validateData(format, false)"><i class="bi bi-check-lg icon-btn"></i></button>
+                            <button title="Print" onclick="printData({ title: pageTitle, isInput: false, format: format })"><i class="bi bi-printer icon-btn"></i></button>
+                            <div class="divider"></div>
+                            <button class="btn-danger" title="Clear" data-undo-clear="Output cleared" onclick="clearInput(codeMirrorOutput)"><i class="bi bi-x-lg icon-btn"></i></button>
+                            <button title="Copy" data-shortcut="copy" onclick="copyToClipboard(codeMirrorOutput, 'copyOutputEditor')"><i class="bi bi-copy icon-btn" id="copyOutputEditor"></i></button>
+                            <button title="Fullscreen" onclick="toggleEditorFullScreen('outputEditor')"><i class="bi bi-arrows-fullscreen icon-btn"></i></button>
+                        </div>
+                    </div>
+                    
+                    <textarea class="editor-body" id="output" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"></textarea>
+
+                    <div class="editor-footer">
+                        <div class="status">
+                            <span>Ln <b id="outputCurrentLine">1</b></span>
+                            <span>Col <b id="outputCurrentColumn">1</b></span>
+                            <span>Lines <b id="outputTotalLines">1</b></span>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+
+        <!-- CodeMirror 5.65.21 -->
+        <script src="js/codemirror/codemirror.js"></script>
+        <script src="js/codemirror/active-line.js"></script>
+        <script src="js/codemirror/brace-fold.js"></script>
+        <script src="js/codemirror/foldcode.js"></script>
+        <script src="js/codemirror/foldgutter.js"></script>
+        <script src="js/codemirror/javascript.js"></script>
+        <script src="js/codemirror/indent-fold.js"></script>
+        <script src="js/codemirror/matchbrackets.js"></script>
+        <script src="js/codemirror/closetag.js"></script>
+        <script src="js/codemirror/closebrackets.js"></script>
+
+        <div id="footer-container"></div>
+
+        <!-- Common JS -->
+        <script src="js/tool-help.js"></script>
+        <script src="js/storage.js"></script>
+        <script src="js/common.js"></script>
+        <script src="js/custom-dropdown.js"></script>
+        <script src="js/script.js"></script>
+        <script src="js/find-replace.js"></script>
+
+        <!-- Custom JS -->
+        <script>
+
+            // Elements
+            const format = "JSON";
+            const pageTitle = "JSON Formatter";
+
+            // Sample JSON used to populate the input editor for quick testing
+            const DUMMY_JSON = `{"id":1024,"name":"Ada Lovelace","email":"ada.lovelace@example.com","isActive":true,"roles":["admin","editor"],"address":{"street":"12 Analytical Engine Ave","city":"London","zip":"SW1A 1AA"},"projects":[{"id":1,"title":"Difference Engine","completed":true},{"id":2,"title":"Analytical Engine","completed":false}],"balance":1042.50,"notes":null}`;
+            const input = document.getElementById("input");
+            const output = document.getElementById("output");
+            const fileInput = document.getElementById("fileInput");
+            const ignoreOrder = document.getElementById("ignoreOrder");
+            const indentSelect = document.getElementById("indentSelect");
+            CustomDropdown.enhance(indentSelect);
+            const comparisonResult = document.getElementById("comparisonResult");
+            const comparisonContainer = document.getElementById("comparisonContainer");
+
+            const inputTotalLines = document.getElementById('inputTotalLines');
+            const inputCurrentLine = document.getElementById('inputCurrentLine');
+            const inputCurrentColumn = document.getElementById('inputCurrentColumn');
+
+            const outputTotalLines = document.getElementById('outputTotalLines');
+            const outputCurrentLine = document.getElementById('outputCurrentLine');
+            const outputCurrentColumn = document.getElementById('outputCurrentColumn');
+
+            const codeMirrorInput = createCodeMirrorEditor(input, format);
+            const codeMirrorOutput = createCodeMirrorEditor(output, format);
+
+            // Loads sample JSON into the input editor
+            function loadDummyData() {
+                codeMirrorInput.setValue(DUMMY_JSON);
+            }
+
+            // Clears input/output fields
+            function clearJSONInputs() {
+                clearInputs();
+                clearComparisonResult();
+            }
+
+            // Clears comparison result output
+            function clearComparisonResult() { 
+                comparisonContainer.style.display = "none";
+                comparisonResult.innerHTML = "";
+            }
+
+            // Returns the comparison result so Clear can offer Undo.
+            function getPageUndoState() {
+                return { comparisonDisplay: comparisonContainer.style.display, comparisonHtml: comparisonResult.innerHTML };
+            }
+
+            // Shows the comparison result that was showing before Clear ran.
+            function restorePageUndoState(state) {
+                comparisonContainer.style.display = state.comparisonDisplay;
+                comparisonResult.innerHTML = state.comparisonHtml;
+            }
+
+            // Processes JSON data with optional beautify/minify
+            function processJson(isBeautify = true) {
+                clearInput(codeMirrorOutput);
+
+                try {
+                    if (isInputBlank(codeMirrorInput)) return;
+                    const parsed = JSON.parse(codeMirrorInput.getValue());
+                    codeMirrorOutput.setValue(
+                        isBeautify
+                            ? JSON.stringify(parsed, null, indentSelect.value === "4" ? 4 : 2)
+                            : JSON.stringify(parsed)
+                    );
+                } catch (error) {
+                    console.log("Processing JSON error:", error.message);
+                    showErrorToast("Invalid JSON");
+                }
+            }
+            
+            // Compares two JSON objects and highlights differences
+            function compareJSON() {
+                try {
+                    clearComparisonResult();
+                    if (isInputBlank(codeMirrorInput)) return;
+                    if (isInputBlank(codeMirrorOutput)) return;
+
+                    comparisonContainer.style.display = "flex";
+                    comparisonResult.innerHTML = "";
+
+                    let json1, json2;
+
+                    try {
+                        json1 = JSON.parse(codeMirrorInput.getValue());
+                        json2 = JSON.parse(codeMirrorOutput.getValue());
+                    } catch (error) {
+                        console.log("Processing JSON error:", error.message);
+                        showErrorToast("Invalid JSON");
+                        return;
+                    }
+
+                    if (ignoreOrder.checked) {
+                        json1 = normalize(json1);
+                        json2 = normalize(json2);
+                    }
+
+                    const differences = [];
+                    deepCompare(json1, json2, "", differences);
+
+                    comparisonResult.innerHTML = differences.length === 0
+                        ? "✅ JSONs are identical"
+                        : "❌ JSONs are not identical<br /><br />" + differences.join("<br />");
+                } catch (error) {
+                    console.log("Comparing JSON error:", error.message);
+                    showErrorToast("Error comparing JSON");
+                }
+            }
+
+            // Normalizes input value to standard format
+            function normalize(value) {
+                if (Array.isArray(value)) {
+                    return value.map(normalize).sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)));
+                }
+
+                if (value !== null && typeof value === "object") {
+                    return Object.keys(value).sort().reduce((res, key) => {
+                        res[key] = normalize(value[key]);
+                        return res;
+                    }, {});
+                }
+
+                return value;
+            }
+
+            // Recursively compares two JSON objects and records differences
+            function deepCompare(json1, json2, path, differences) {
+                if (typeof json1 !== typeof json2) {
+                    differences.push(`- ${path}: Type changed`);
+                    return;
+                }
+
+                if (Array.isArray(json1)) {
+                    const max = Math.max(json1.length, json2.length);
+                    for (let i = 0; i < max; i++) {
+                        const p = `${path}[${i}]`;
+                        if (i >= json1.length) differences.push(`- ${p}: Added`);
+                        else if (i >= json2.length) differences.push(`- ${p}: Removed`);
+                        else deepCompare(json1[i], json2[i], p, differences);
+                    }
+                    return;
+                }
+
+                if (json1 !== null && typeof json1 === "object") {
+                    const keys = new Set([
+                        ...Object.keys(json1),
+                        ...Object.keys(json2)
+                    ]);
+
+                    keys.forEach(key => {
+                        const p = path ? `${path}.${key}` : key;
+                        if (!(key in json1)) differences.push(`- ${p}: Added`);
+                        else if (!(key in json2)) differences.push(`- ${p}: Removed`);
+                        else deepCompare(json1[key], json2[key], p, differences);
+                    });
+                    return;
+                }
+
+                if (json1 !== json2) differences.push(`- ${path}: Changed from ${JSON.stringify(json1)} → ${JSON.stringify(json2)}`);
+            }
+
+            setupEditors([
+                createEditorConfig(codeMirrorInput, inputTotalLines, inputCurrentLine, inputCurrentColumn),
+                createEditorConfig(codeMirrorOutput, outputTotalLines, outputCurrentLine, outputCurrentColumn)
+            ]);
+        </script>
+
+    </body>
+</html>

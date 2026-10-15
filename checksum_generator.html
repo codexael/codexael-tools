@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Codexael Toolstack — Checksum Generator</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+        <!-- Metadata -->
+        <meta name="description" content="Generate and verify MD5 and SHA checksums for files or text, with no upload.">
+        <meta name="author" content="Codexael">
+        <meta name="theme-color" content="#fff4e0" media="(prefers-color-scheme: light)">
+        <meta name="theme-color" content="#17140f" media="(prefers-color-scheme: dark)">
+
+        <!-- Open Graph -->
+        <meta property="og:title" content="Codexael Toolstack — Checksum Generator & Verifier">
+        <meta property="og:description" content="Generate and verify MD5 and SHA checksums for files or text, with no upload.">
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="https://tools.codexael.com/checksum_generator.html">
+        <meta property="og:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+        <meta property="og:image:width" content="1200">
+        <meta property="og:image:height" content="630">
+        <meta property="og:image:type" content="image/png">
+        <meta property="og:image:alt" content="Codexael Toolstack — Checksum Generator & Verifier">
+        <meta property="og:site_name" content="Codexael Toolstack">
+
+        <!-- Twitter Card -->
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="Codexael Toolstack — Checksum Generator & Verifier">
+        <meta name="twitter:description" content="Generate and verify MD5 and SHA checksums for files or text, with no upload.">
+        <meta name="twitter:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+
+        <!-- Favicon / App Icon -->
+        <link rel="icon" type="image/svg+xml" href="assets/images/codexael_icon.svg">
+        <link rel="apple-touch-icon" href="assets/images/codexael_icon.svg">
+
+        <!-- Bootstrap 5.2.0-beta1 -->
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+
+        <!-- Bootstrap with Popper 5.2.0-beta1 -->
+        <script src="js/bootstrap.bundle.min.js"></script>
+
+        <!-- Crypto 4.2.0 -->
+        <script src="js/crypto-js.min.js"></script>
+
+        <!-- Bootstrap Icons 1.11.3 -->
+        <link rel="stylesheet" href="css/bootstrap-icons.min.css">
+
+        <!-- CodeMirror 5.65.21 -->
+        <link rel="stylesheet" href="css/codemirror/codemirror.css">
+
+        <!-- Google fonts -->
+        <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+        <!-- Custom CSS -->
+        <link rel="stylesheet" href="css/find-replace.css">
+        <link rel="stylesheet" href="css/keycaps.css">
+
+        <style>
+            /* The input panel shows a dashed ink frame and a pink shadow while a file is dragged over it. */
+            #inputEditor.drag-over {
+                outline: 4px dashed var(--ink);
+                outline-offset: -14px;
+                box-shadow: 4px 4px 0 var(--pink);
+            }
+            /* The loaded file shows as a yellow strip under the panel header. */
+            .file-badge {
+                display: none;
+                flex-shrink: 0;
+                align-items: center;
+                gap: 10px;
+                padding: 8px 12px 8px 16px;
+                background: var(--yellow);
+                color: #111111;
+                border-bottom: 4px solid var(--ink);
+                font-size: 0.8rem;
+                font-weight: 700;
+            }
+            .file-badge .file-badge-name {
+                flex: 1;
+                min-width: 0;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+            /* The file size reads as a small tilted sticker. */
+            .file-badge .file-badge-size {
+                padding: 0 6px;
+                background: #111111;
+                color: var(--yellow);
+                font-size: 0.7rem;
+                white-space: nowrap;
+                transform: rotate(-3deg);
+            }
+            /* The remove button is a small keycap that sinks when pressed. */
+            .file-badge .file-badge-clear {
+                flex-shrink: 0;
+                width: 30px;
+                height: 30px;
+                display: grid;
+                place-items: center;
+                padding: 0;
+                background: #ffffff;
+                color: #111111;
+                border: 2.5px solid var(--ink);
+                border-radius: 7px;
+                box-shadow: 0 1.5px 0 var(--ink);
+                font-size: 0.8rem;
+                line-height: 1;
+                transition: transform 0.08s, box-shadow 0.08s, background-color 0.12s;
+            }
+            .file-badge .file-badge-clear:hover {
+                background: var(--red);
+                transform: translateY(0.5px);
+                box-shadow: 0 1px 0 var(--ink);
+            }
+            .file-badge .file-badge-clear:active {
+                transform: translateY(1.5px);
+                box-shadow: 0 0 0 var(--ink);
+            }
+            /* The verify result is stamped on as a tilted sticker, lime for a match and red for no match. */
+            .verify-result {
+                display: none;
+                margin: 18px 4px 8px;
+                padding: 8px 12px;
+                color: #111111;
+                border: 3px solid var(--ink);
+                box-shadow: 2px 2px 0 var(--ink);
+                font: 700 0.78rem/1.5 var(--mono-font);
+                text-transform: uppercase;
+                text-align: left;
+                overflow-wrap: anywhere;
+                transform: rotate(-2deg);
+                animation: stamp 0.28s cubic-bezier(0.2, 1.8, 0.5, 1) both;
+            }
+            .verify-result.match {
+                display: block;
+                background: var(--lime);
+            }
+            .verify-result.no-match {
+                display: block;
+                background: var(--red);
+                transform: rotate(2deg);
+            }
+            /* A locked editor is faded and hatched so it reads as unavailable while a file is loaded. */
+            .CodeMirror.cm-disabled {
+                opacity: 0.55;
+                cursor: not-allowed;
+                background: repeating-linear-gradient(-45deg, var(--paper) 0 10px, var(--bg) 10px 20px);
+            }
+        </style>
+    </head>
+    <body>
+        <!-- Common layout -->
+        <div id="navbar-container"></div>
+
+        <div class="container-fluid tool-wrapper">
+            <div class="row g-3 g-md-0 gx-md-3 gx-0">
+
+                <!-- Left: Input -->
+                <div id="inputEditor" class="col-md-5 editor-panel">
+                    <div class="editor-header">
+                        <span class="editor-title">Input</span>
+                        <div class="editor-actions">
+                            <button id="inputDownloadBtn" title="Download" onclick="downloadData('checksum_generator.txt')"><i class="bi bi-download icon-btn"></i></button>
+                            <button id="inputPrintBtn" title="Print" onclick="printData({ title: pageTitle })"><i class="bi bi-printer icon-btn"></i></button>
+                            <div class="divider" id="inputHeaderDivider"></div>
+                            <button class="btn-danger" title="Clear" data-undo-clear onclick="clearAllInputs()"><i class="bi bi-x-lg icon-btn"></i></button>
+                            <button id="inputCopyBtn" title="Copy" onclick="copyToClipboard(codeMirrorInput, 'copyInputEditor')"><i class="bi bi-copy icon-btn" id="copyInputEditor"></i></button>
+                            <button id="inputFullscreenBtn" title="Fullscreen" onclick="toggleEditorFullScreen('inputEditor')"><i class="bi bi-arrows-fullscreen icon-btn"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="file-badge" id="fileBadge">
+                        <i class="bi bi-file-earmark-fill"></i>
+                        <span class="file-badge-name" id="fileBadgeName">&mdash;</span>
+                        <span class="file-badge-size" id="fileBadgeSize">&mdash;</span>
+                        <button class="file-badge-clear" title="Remove file" onclick="clearFileBadge()"><i class="bi bi-x-lg"></i></button>
+                    </div>
+
+                    <textarea class="editor-body" id="input" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off" placeholder="Enter text, or upload/drop a file to checksum..."></textarea>
+
+                    <div class="editor-footer">
+                        <div class="status">
+                            <span>Ln <b id="inputCurrentLine">1</b></span>
+                            <span>Col <b id="inputCurrentColumn">1</b></span>
+                            <span>Lines <b id="inputTotalLines">1</b></span>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Center Actions -->
+                <div class="col-md-2 center-col action-panel text-center invisible-scrollbars">
+                    <div class="center-actions-wrapper">
+                        <button class="btn action-btn-ghost" id="uploadFileBtn" onclick="openFilePicker(fileInput)"><i class="bi bi-upload"></i> Upload File</button>
+                        <input type="file" id="fileInput" accept="*" hidden onchange="handleChecksumFileSelect(event)">
+
+                        <button class="btn action-btn-ghost" id="uploadTextBtn" onclick="openFilePicker(textFileInput)"><i class="bi bi-file-earmark-text"></i> Upload Text</button>
+                        <input type="file" id="textFileInput" accept=".txt,.md,.csv,.json,.xml,.log,text/plain" hidden onchange="handleChecksumTextFileSelect(event)">
+                    </div>
+                    <div class="center-actions-wrapper overflow-hidden">
+                        <div class="center-actions-label">Output Format</div>
+                        <div class="segmented-control btn-group full-width" role="group" aria-label="Radio toggle">
+                            <input type="radio" name="checksum_output_format" id="hex" value="hex">
+                            <label for="hex">Hex</label>
+
+                            <input type="radio" name="checksum_output_format" id="base64" value="base64">
+                            <label for="base64">Base64</label>
+                        </div>
+                    </div>
+                    <div class="center-actions-wrapper">
+                        <div class="center-actions-label">Algorithms</div>
+                        <div class="chip-group">
+                            <div class="chip-toggle">
+                                <input class="checksum-algorithm" type="checkbox" id="md5" checked>
+                                <label for="md5">MD5</label>
+                            </div>
+                            <div class="chip-toggle">
+                                <input class="checksum-algorithm" type="checkbox" id="sha1" checked>
+                                <label for="sha1">SHA-1</label>
+                            </div>
+                            <div class="chip-toggle">
+                                <input class="checksum-algorithm" type="checkbox" id="sha256" checked>
+                                <label for="sha256">SHA-256</label>
+                            </div>
+                            <div class="chip-toggle">
+                                <input class="checksum-algorithm" type="checkbox" id="sha384">
+                                <label for="sha384">SHA-384</label>
+                            </div>
+                            <div class="chip-toggle">
+                                <input class="checksum-algorithm" type="checkbox" id="sha512">
+                                <label for="sha512">SHA-512</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="center-actions-wrapper">
+                        <button class="btn action-btn-primary" data-shortcut="run" onclick="generateChecksums()"><i class="bi bi-hash"></i> Generate</button>
+                    </div>
+                    <div class="center-actions-separator"></div>
+                    <div class="center-actions-wrapper">
+                        <div class="center-actions-label">Verify Checksum</div>
+                        <input type="text" id="verifyInput" class="input-cyan mb-2" placeholder="Paste a hash to verify...">
+                        <button class="btn action-btn-pill" onclick="verifyChecksum()"><i class="bi bi-check2-circle"></i> Verify</button>
+                        <div class="verify-result" id="verifyResult"></div>
+                    </div>
+                </div>
+
+                <!-- Right: Checksums -->
+                <div id="outputEditor" class="col-md-5 editor-panel">
+                    <div class="editor-header">
+                        <span class="editor-title">Checksums</span>
+                        <div class="editor-actions">
+                            <button title="Download" onclick="downloadData('checksum_generator.txt', false)"><i class="bi bi-download icon-btn"></i></button>
+                            <button title="Print" onclick="printData({ title: pageTitle, isInput: false })"><i class="bi bi-printer icon-btn"></i></button>
+                            <div class="divider"></div>
+                            <button class="btn-danger" title="Clear" data-undo-clear="Output cleared" onclick="clearOutputAndHashes()"><i class="bi bi-x-lg icon-btn"></i></button>
+                            <button title="Copy" data-shortcut="copy" onclick="copyToClipboard(codeMirrorOutput, 'copyOutputEditor')"><i class="bi bi-copy icon-btn" id="copyOutputEditor"></i></button>
+                            <button title="Fullscreen" onclick="toggleEditorFullScreen('outputEditor')"><i class="bi bi-arrows-fullscreen icon-btn"></i></button>
+                        </div>
+                    </div>
+
+                    <textarea class="editor-body" id="output" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"></textarea>
+
+                    <div class="editor-footer">
+                        <div class="status">
+                            <span>Ln <b id="outputCurrentLine">1</b></span>
+                            <span>Col <b id="outputCurrentColumn">1</b></span>
+                            <span>Lines <b id="outputTotalLines">1</b></span>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+
+        <!-- CodeMirror 5.65.21 -->
+        <script src="js/codemirror/codemirror.js"></script>
+        <script src="js/codemirror/active-line.js"></script>
+
+        <div id="footer-container"></div>
+
+        <!-- Common JS -->
+        <script src="js/tool-help.js"></script>
+        <script src="js/storage.js"></script>
+        <script src="js/common.js"></script>
+        <script src="js/script.js"></script>
+        <script src="js/find-replace.js"></script>
+
+        <!-- Custom JS -->
+        <script>
+
+            // Elements
+            const pageTitle = "Checksum Generator";
+            const STORAGE_OUTPUT_FORMAT_KEY = "checksum_output_format";
+
+            const input = document.getElementById("input");
+            const output = document.getElementById("output");
+            const fileInput = document.getElementById("fileInput");
+            const textFileInput = document.getElementById("textFileInput");
+            const inputEditor = document.getElementById("inputEditor");
+
+            const uploadFileBtn = document.getElementById("uploadFileBtn");
+            const uploadTextBtn = document.getElementById("uploadTextBtn");
+
+            const inputDownloadBtn = document.getElementById("inputDownloadBtn");
+            const inputPrintBtn = document.getElementById("inputPrintBtn");
+            const inputHeaderDivider = document.getElementById("inputHeaderDivider");
+            const inputCopyBtn = document.getElementById("inputCopyBtn");
+            const inputFullscreenBtn = document.getElementById("inputFullscreenBtn");
+
+            const fileBadge = document.getElementById("fileBadge");
+            const fileBadgeName = document.getElementById("fileBadgeName");
+            const fileBadgeSize = document.getElementById("fileBadgeSize");
+
+            const verifyInput = document.getElementById("verifyInput");
+            const verifyResult = document.getElementById("verifyResult");
+
+            const inputTotalLines = document.getElementById('inputTotalLines');
+            const inputCurrentLine = document.getElementById('inputCurrentLine');
+            const inputCurrentColumn = document.getElementById('inputCurrentColumn');
+
+            const outputTotalLines = document.getElementById('outputTotalLines');
+            const outputCurrentLine = document.getElementById('outputCurrentLine');
+            const outputCurrentColumn = document.getElementById('outputCurrentColumn');
+
+            const codeMirrorInput = createCodeMirrorEditor(input);
+            const codeMirrorOutput = createCodeMirrorEditor(output);
+            codeMirrorOutput.setOption("readOnly", true);
+
+            setupEditors([
+                createEditorConfig(codeMirrorInput, inputTotalLines, inputCurrentLine, inputCurrentColumn),
+                createEditorConfig(codeMirrorOutput, outputTotalLines, outputCurrentLine, outputCurrentColumn)
+            ]);
+
+            const algorithmFunctions = {
+                md5: CryptoJS.MD5,
+                sha1: CryptoJS.SHA1,
+                sha256: CryptoJS.SHA256,
+                sha384: CryptoJS.SHA384,
+                sha512: CryptoJS.SHA512
+            };
+            const algorithmLabels = { md5: 'MD5', sha1: 'SHA-1', sha256: 'SHA-256', sha384: 'SHA-384', sha512: 'SHA-512' };
+
+            let currentFile = null;
+            let currentFileBuffer = null;
+            let computedHashes = {};
+
+            codeMirrorInput.on("change", syncInputModeUI);
+
+            // Runs after HTML content has fully loaded, get checksum output format from local storage
+            window.addEventListener("DOMContentLoaded", () => {
+                const output_format = document.querySelectorAll("input[name='checksum_output_format']");
+                const saved_output_format = getStorageString(STORAGE_OUTPUT_FORMAT_KEY);
+
+                let anyChecked = false;
+
+                output_format.forEach(type => {
+                    if (type.value === saved_output_format) {
+                        type.checked = true;
+                        anyChecked = true;
+                    }
+                });
+
+                if (!anyChecked) {
+                    output_format[0].checked = true;
+                    setStorageString(STORAGE_OUTPUT_FORMAT_KEY, output_format[0].value);
+                }
+
+                output_format.forEach(radio => {
+                    radio.addEventListener("change", () => setStorageString(STORAGE_OUTPUT_FORMAT_KEY, radio.value));
+                });
+            });
+
+            // Drag & drop support for the input panel
+            inputEditor.addEventListener("dragover", e => { e.preventDefault(); inputEditor.classList.add("drag-over"); });
+            inputEditor.addEventListener("dragleave", () => inputEditor.classList.remove("drag-over"));
+            inputEditor.addEventListener("drop", e => {
+                e.preventDefault();
+                e.stopPropagation();
+                inputEditor.classList.remove("drag-over");
+                if (e.dataTransfer.files.length) loadChecksumFile(e.dataTransfer.files[0]);
+            });
+
+            // Formats byte count into a human readable size
+            function formatBytes(bytes) {
+                if (bytes < 1024) return bytes + " B";
+                if (bytes < 1048576) return (bytes / 1024).toFixed(1) + " KB";
+                if (bytes < 1073741824) return (bytes / 1048576).toFixed(2) + " MB";
+                return (bytes / 1073741824).toFixed(2) + " GB";
+            }
+
+            // Handles a file selected via the file picker
+            function handleChecksumFileSelect(event) {
+                const file = event.target.files[0];
+                if (file) loadChecksumFile(file);
+            }
+
+            // Reads the given file as raw bytes so its checksum matches the file on disk
+            function loadChecksumFile(file) {
+                const sizeInMB = file.size / (1024 * 1024);
+                if (sizeInMB > MAX_FILE_SIZE_MB) {
+                    showErrorToast(`File size exceeds ${MAX_FILE_SIZE_MB} MB limit`);
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = e => {
+                    currentFile = file;
+                    currentFileBuffer = e.target.result;
+                    fileBadgeName.textContent = file.name;
+                    fileBadgeSize.textContent = formatBytes(file.size);
+                    fileBadge.style.display = "flex";
+                    codeMirrorInput.setValue("");
+                    syncInputModeUI();
+                };
+                reader.onerror = () => showErrorToast("Error reading file");
+                reader.readAsArrayBuffer(file);
+            }
+
+            // Handles a text file selected via the "Upload Text" picker
+            function handleChecksumTextFileSelect(event) {
+                const file = event.target.files[0];
+                if (file) loadChecksumTextFile(file);
+            }
+
+            // Reads the given file as text into the input editor
+            function loadChecksumTextFile(file) {
+                const sizeInMB = file.size / (1024 * 1024);
+                if (sizeInMB > MAX_FILE_SIZE_MB) {
+                    showErrorToast(`File size exceeds ${MAX_FILE_SIZE_MB} MB limit`);
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = e => {
+                    clearFileBadge();
+                    codeMirrorInput.setValue(e.target.result);
+                };
+                reader.onerror = () => showErrorToast("Error reading text file");
+                reader.readAsText(file);
+            }
+
+            // Clears the loaded file, falling back to the text input
+            function clearFileBadge() {
+                currentFile = null;
+                currentFileBuffer = null;
+                fileInput.value = "";
+                fileBadge.style.display = "none";
+                syncInputModeUI();
+            }
+
+            // Keeps the input container, upload buttons and header actions in sync with the active input mode
+            function syncInputModeUI() {
+                const hasFile = !!currentFileBuffer;
+                const hasText = codeMirrorInput.getValue().trim().length > 0;
+
+                codeMirrorInput.setOption("readOnly", hasFile);
+                codeMirrorInput.getWrapperElement().classList.toggle("cm-disabled", hasFile);
+
+                uploadFileBtn.disabled = hasText;
+                uploadTextBtn.disabled = hasFile;
+
+                const showTextActions = !hasFile;
+                [inputDownloadBtn, inputPrintBtn, inputHeaderDivider, inputCopyBtn, inputFullscreenBtn].forEach(el => {
+                    el.style.display = showTextActions ? "" : "none";
+                });
+            }
+
+            // Generates checksums for the loaded file, or the text input when no file is loaded
+            function generateChecksums() {
+                clearInput(codeMirrorOutput);
+                computedHashes = {};
+                resetVerifyResult();
+
+                try {
+                    const selectedAlgorithms = Array.from(document.querySelectorAll('.checksum-algorithm:checked')).map(cb => cb.id);
+
+                    if (selectedAlgorithms.length === 0) {
+                        showErrorToast("Select at least one algorithm");
+                        return;
+                    }
+
+                    let message;
+                    if (currentFileBuffer) {
+                        message = CryptoJS.lib.WordArray.create(currentFileBuffer);
+                    } else if (!isInputBlank(codeMirrorInput)) {
+                        message = codeMirrorInput.getValue();
+                    } else {
+                        return;
+                    }
+
+                    const selectedFormat = document.querySelector('input[name="checksum_output_format"]:checked');
+                    const useBase64 = selectedFormat && selectedFormat.id === "base64";
+
+                    let generatedOutput = "";
+
+                    selectedAlgorithms.forEach(algorithm => {
+                        const result = algorithmFunctions[algorithm](message);
+                        const hash = useBase64 ? result.toString(CryptoJS.enc.Base64) : result.toString();
+                        computedHashes[algorithm] = hash;
+
+                        if (generatedOutput) generatedOutput += "\n\n";
+                        generatedOutput += `${algorithmLabels[algorithm]}:\n${hash}`;
+                    });
+
+                    codeMirrorOutput.setValue(generatedOutput);
+                    showSuccessToast("Checksums generated");
+                } catch (error) {
+                    console.log("Generating checksum error:", error.message);
+                    showErrorToast("Error generating checksum");
+                }
+            }
+
+            // Compares a pasted checksum against the generated hashes
+            function verifyChecksum() {
+                const raw = verifyInput.value.trim();
+                if (isBlank(raw, "Enter a checksum to verify")) return;
+
+                if (!Object.keys(computedHashes).length) {
+                    showErrorToast("Generate checksums first");
+                    return;
+                }
+
+                const value = raw.toLowerCase();
+                const match = Object.entries(computedHashes).find(([, hash]) => hash.toLowerCase() === value);
+
+                if (match) {
+                    verifyResult.className = "verify-result match";
+                    verifyResult.innerHTML = `<i class="bi bi-check-circle-fill me-1"></i>Match found — ${algorithmLabels[match[0]]}`;
+                    verifyInput.classList.add("is-valid");
+                    verifyInput.classList.remove("is-invalid");
+                } else {
+                    verifyResult.className = "verify-result no-match";
+                    verifyResult.innerHTML = `<i class="bi bi-x-circle-fill me-1"></i>No match found in the generated checksums`;
+                    verifyInput.classList.add("is-invalid");
+                    verifyInput.classList.remove("is-valid");
+                }
+            }
+
+            // Hides and resets the verify result banner
+            function resetVerifyResult() {
+                verifyResult.className = "verify-result";
+                verifyResult.innerHTML = "";
+                verifyInput.classList.remove("is-valid", "is-invalid");
+            }
+
+            // Clears the input text, loaded file and any generated output
+            function clearAllInputs() {
+                clearInput(codeMirrorInput);
+                clearFileBadge();
+                clearOutputAndHashes();
+            }
+
+            // Clears the output panel along with the hashes it held
+            function clearOutputAndHashes() {
+                clearInput(codeMirrorOutput);
+                computedHashes = {};
+                verifyInput.value = "";
+                resetVerifyResult();
+            }
+
+            // Returns the loaded file, computed hashes and verify result so Clear can offer Undo.
+            function getPageUndoState() {
+                return {
+                    file: currentFile,
+                    fileBuffer: currentFileBuffer,
+                    hashes: JSON.stringify(computedHashes),
+                    verifyResultClass: verifyResult.className,
+                    verifyResultHtml: verifyResult.innerHTML,
+                    verifyInputClass: verifyInput.className
+                };
+            }
+
+            // Puts back the loaded file, computed hashes and verify result that were showing before Clear ran.
+            function restorePageUndoState(state) {
+                if (state.file && !currentFileBuffer) {
+                    currentFile = state.file;
+                    currentFileBuffer = state.fileBuffer;
+                    fileBadgeName.textContent = state.file.name;
+                    fileBadgeSize.textContent = formatBytes(state.file.size);
+                    fileBadge.style.display = "flex";
+                    syncInputModeUI();
+                }
+                computedHashes = JSON.parse(state.hashes);
+                verifyResult.className = state.verifyResultClass;
+                verifyResult.innerHTML = state.verifyResultHtml;
+                verifyInput.className = state.verifyInputClass;
+            }
+        </script>
+
+    </body>
+</html>

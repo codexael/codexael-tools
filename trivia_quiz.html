@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Codexael Toolstack — Trivia Quiz</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta http-equiv="Content-Security-Policy" content="connect-src https://opentdb.com; object-src 'none'; base-uri 'none'; form-action 'none'">
+
+        <!-- Metadata -->
+        <meta name="description" content="Pick a topic and difficulty, beat your best score and challenge your friends.">
+        <meta name="author" content="Codexael">
+        <meta name="theme-color" content="#fff4e0" media="(prefers-color-scheme: light)">
+        <meta name="theme-color" content="#17140f" media="(prefers-color-scheme: dark)">
+
+        <!-- Open Graph -->
+        <meta property="og:title" content="Codexael Toolstack — Free Trivia Quiz: 24 Categories">
+        <meta property="og:description" content="Pick a topic and difficulty, beat your best score and challenge your friends.">
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="https://tools.codexael.com/trivia_quiz.html">
+        <meta property="og:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+        <meta property="og:image:width" content="1200">
+        <meta property="og:image:height" content="630">
+        <meta property="og:image:type" content="image/png">
+        <meta property="og:image:alt" content="Codexael Toolstack — Free Trivia Quiz: 24 Categories">
+        <meta property="og:site_name" content="Codexael Toolstack">
+
+        <!-- Twitter Card -->
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="Codexael Toolstack — Free Trivia Quiz: 24 Categories">
+        <meta name="twitter:description" content="Pick a topic and difficulty, beat your best score and challenge your friends.">
+        <meta name="twitter:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+
+        <!-- Favicon / App Icon -->
+        <link rel="icon" type="image/svg+xml" href="assets/images/codexael_icon.svg">
+        <link rel="apple-touch-icon" href="assets/images/codexael_icon.svg">
+
+        <!-- Bootstrap 5.2.0-beta1 -->
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+
+        <!-- Bootstrap with Popper 5.2.0-beta1 -->
+        <script src="js/bootstrap.bundle.min.js"></script>
+
+        <!-- Bootstrap Icons 1.11.3 -->
+        <link rel="stylesheet" href="css/bootstrap-icons.min.css">
+
+        <!-- Google fonts -->
+        <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+        <!-- Custom CSS -->
+        <link rel="stylesheet" href="css/keycaps.css">
+
+        <style>
+            /* The body grows with its content and does not clip, so the open option lists can extend below it. */
+            .quiz-body {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                gap: 18px;
+                padding: 24px 22px 28px;
+                overflow: visible;
+            }
+
+            .quiz-screen {
+                display: flex;
+                flex-direction: column;
+                gap: 18px;
+            }
+
+            .option-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 14px;
+            }
+
+            .option-grid label {
+                display: block;
+                margin-bottom: 6px;
+                font-size: 0.75rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.04em;
+            }
+
+            .option-grid .cdrop,
+            .option-grid select { margin-bottom: 0; }
+
+            .quiz-meta {
+                font-size: 0.75rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.04em;
+            }
+
+            .quiz-status {
+                margin: 0;
+                font-size: 0.85rem;
+                font-weight: 700;
+            }
+
+            /* Bootstrap btn hover and active states would hide the ink border without these values. */
+            .quiz-actions {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 12px;
+            }
+
+            .quiz-actions .btn {
+                --bs-btn-hover-border-color: var(--ink);
+                --bs-btn-active-border-color: var(--ink);
+                width: auto;
+                flex: 0 1 auto;
+                margin-bottom: 0;
+            }
+
+            .quiz-actions .btn.grow { flex: 1 1 200px; }
+
+            /* The progress row shows the question number, the score and a filling bar. */
+            .progress-row {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: space-between;
+                gap: 8px;
+            }
+
+            .progress-track {
+                height: 12px;
+                background: var(--paper);
+                border: 2px solid var(--ink);
+                border-radius: 99px;
+                overflow: hidden;
+            }
+
+            .progress-fill {
+                height: 100%;
+                width: 0;
+                background: var(--orange);
+                transition: width 0.25s ease;
+            }
+
+            .question-tags {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            .question-tags span {
+                padding: 2px 10px;
+                background: var(--ink);
+                color: var(--bg);
+                font-family: var(--display-font);
+                font-size: 0.7rem;
+                letter-spacing: 0.05em;
+                text-transform: uppercase;
+            }
+
+            /* The question sits on an orange card that keeps dark text in both themes. */
+            .question-card {
+                padding: 22px 24px;
+                background: var(--orange);
+                color: #111111;
+                border: 3px solid var(--ink);
+                border-radius: 12px;
+                box-shadow: 4px 4px 0 var(--ink);
+                font-size: 1.15rem;
+                font-weight: 700;
+                line-height: 1.5;
+                overflow-wrap: anywhere;
+            }
+
+            .answer-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 12px;
+            }
+
+            /* Each answer is a keycap with its number key shown on the left. */
+            .answer-btn {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                min-width: 0;
+                padding: 12px 14px;
+                background: var(--paper);
+                color: var(--ink);
+                border: 3px solid var(--ink);
+                border-radius: 12px;
+                box-shadow: 0 3px 0 var(--ink);
+                font-weight: 700;
+                text-align: left;
+                overflow-wrap: anywhere;
+                transition: transform 0.08s, box-shadow 0.08s, background-color 0.12s;
+            }
+
+            .answer-btn:not(:disabled):hover {
+                transform: translateY(1px);
+                box-shadow: 0 2px 0 var(--ink);
+                background: var(--yellow);
+                color: #111111;
+            }
+
+            .answer-btn:not(:disabled):active {
+                transform: translateY(3px);
+                box-shadow: 0 0 0 var(--ink);
+            }
+
+            .answer-btn .answer-key {
+                flex: none;
+                width: 28px;
+                height: 28px;
+                display: grid;
+                place-items: center;
+                border: 2px solid currentColor;
+                border-radius: 6px;
+                font-family: var(--display-font);
+                font-size: 0.85rem;
+            }
+
+            .answer-btn:disabled { cursor: default; opacity: 0.6; }
+
+            .answer-btn.correct,
+            .answer-btn.wrong { opacity: 1; color: #111111; }
+            .answer-btn.correct { background: var(--lime); }
+            .answer-btn.wrong { background: var(--red); }
+
+            .answer-feedback {
+                margin: 0;
+                font-size: 0.95rem;
+                font-weight: 700;
+            }
+
+            /* The final score is shown large on a lime card. */
+            .score-card {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 6px;
+                padding: 24px;
+                background: var(--lime);
+                color: #111111;
+                border: 3px solid var(--ink);
+                border-radius: 12px;
+                box-shadow: 4px 4px 0 var(--ink);
+                text-align: center;
+            }
+
+            .score-value {
+                font-family: var(--display-font);
+                font-size: 2.6rem;
+                line-height: 1.1;
+            }
+
+            .score-message { font-weight: 700; }
+
+            .best-badge {
+                padding: 2px 10px;
+                background: #111111;
+                color: #ffffff;
+                font-family: var(--display-font);
+                font-size: 0.75rem;
+                letter-spacing: 0.06em;
+            }
+
+            .review-list {
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                margin: 0;
+                padding: 0;
+                list-style: none;
+            }
+
+            .review-list li {
+                display: flex;
+                gap: 10px;
+                padding: 10px 12px;
+                background: var(--paper);
+                border: 2px solid var(--ink);
+                border-radius: 8px;
+                font-size: 0.85rem;
+                line-height: 1.45;
+            }
+
+            .review-list li i { flex: none; font-size: 1.1rem; }
+            .review-list li div { min-width: 0; overflow-wrap: anywhere; }
+            .review-list li b { display: block; }
+
+            .privacy-note {
+                padding: 10px 12px;
+                border: 2px dashed var(--ink);
+                font-size: 0.75rem;
+                font-weight: 700;
+                line-height: 1.5;
+            }
+
+            @media (max-width: 480px) {
+                .quiz-body {
+                    padding: 20px 16px 24px;
+                }
+
+                .option-grid,
+                .answer-grid {
+                    grid-template-columns: 1fr;
+                }
+
+                .quiz-actions .btn,
+                .quiz-actions .btn.grow {
+                    flex: 1 1 100%;
+                }
+            }
+
+            @media (prefers-reduced-motion: reduce) {
+                .progress-fill { transition: none; }
+            }
+        </style>
+    </head>
+    <body>
+        <!-- Common layout -->
+        <div id="navbar-container"></div>
+
+        <div class="container-fluid tool-wrapper">
+            <div class="row">
+                <div class="col-md-8 offset-md-2">
+                    <div class="editor-panel">
+                        <div class="editor-header">
+                            <span class="editor-title">Trivia Quiz</span>
+                            <div class="editor-actions">
+                                <button title="Share score" onclick="shareScore()"><i class="bi bi-share icon-btn"></i></button>
+                            </div>
+                        </div>
+
+                        <div class="editor-body quiz-body">
+
+                            <!-- Setup screen -->
+                            <section class="quiz-screen" id="setupScreen">
+                                <div class="option-grid">
+                                    <div>
+                                        <label for="categorySelect">Category</label>
+                                        <select class="form-control" id="categorySelect"></select>
+                                    </div>
+                                    <div>
+                                        <label for="difficultySelect">Difficulty</label>
+                                        <select class="form-control" id="difficultySelect">
+                                            <option value="">Any difficulty</option>
+                                            <option value="easy">Easy</option>
+                                            <option value="medium">Medium</option>
+                                            <option value="hard">Hard</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label for="typeSelect">Question type</label>
+                                        <select class="form-control" id="typeSelect">
+                                            <option value="">Any type</option>
+                                            <option value="multiple">Multiple choice</option>
+                                            <option value="boolean">True or False</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label for="amountSelect">Questions</label>
+                                        <select class="form-control" id="amountSelect">
+                                            <option value="5">5 questions</option>
+                                            <option value="10" selected>10 questions</option>
+                                            <option value="15">15 questions</option>
+                                            <option value="20">20 questions</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="quiz-actions">
+                                    <button class="btn action-btn-primary grow" id="startBtn" data-shortcut="run" onclick="startQuiz()"><i class="bi bi-play-fill"></i> Start quiz</button>
+                                </div>
+
+                                <p class="quiz-status" id="setupStatus" role="status"></p>
+                                <div class="quiz-meta" id="bestScoreSetup"></div>
+                            </section>
+
+                            <!-- Question screen -->
+                            <section class="quiz-screen" id="questionScreen" hidden>
+                                <div class="progress-row quiz-meta">
+                                    <span id="questionNumber">Question 1 of 10</span>
+                                    <span id="liveScore">Score: 0</span>
+                                </div>
+                                <div class="progress-track" aria-hidden="true"><div class="progress-fill" id="progressFill"></div></div>
+
+                                <div class="question-tags" id="questionTags"></div>
+                                <div class="question-card" id="questionText" aria-live="polite"></div>
+
+                                <div class="answer-grid" id="answerGrid"></div>
+                                <p class="answer-feedback" id="answerFeedback" role="status"></p>
+
+                                <div class="quiz-actions">
+                                    <button class="btn action-btn-primary grow" id="nextBtn" onclick="nextQuestion()" disabled><i class="bi bi-arrow-right"></i> <span id="nextLabel">Next question</span></button>
+                                    <button class="btn action-btn-ghost" onclick="quitQuiz()"><i class="bi bi-x-lg"></i> Quit</button>
+                                </div>
+                                <div class="quiz-meta">Keys: 1–4 to answer, Enter for next</div>
+                            </section>
+
+                            <!-- Results screen -->
+                            <section class="quiz-screen" id="resultsScreen" hidden>
+                                <div class="score-card">
+                                    <span class="best-badge" id="newBestBadge" hidden>NEW BEST SCORE</span>
+                                    <span class="score-value" id="finalScore">0 / 10</span>
+                                    <span class="score-message" id="scoreMessage"></span>
+                                </div>
+
+                                <div class="quiz-actions">
+                                    <button class="btn action-btn-primary grow" id="playAgainBtn" data-shortcut="run" onclick="startQuiz()"><i class="bi bi-arrow-repeat"></i> Play again</button>
+                                    <button class="btn action-btn-ghost" onclick="showSetup()"><i class="bi bi-sliders"></i> Change options</button>
+                                    <button class="btn action-btn-ghost" onclick="shareScore()"><i class="bi bi-share"></i> Share score</button>
+                                </div>
+
+                                <p class="quiz-status" id="resultsStatus" role="status"></p>
+                                <div class="quiz-meta" id="bestScoreResults"></div>
+
+                                <div>
+                                    <div class="quiz-meta mb-2">Your answers</div>
+                                    <ul class="review-list" id="reviewList"></ul>
+                                </div>
+                            </section>
+
+                            <div class="privacy-note">
+                                <i class="bi bi-info-circle"></i> Questions come from <a href="https://opentdb.com" target="_blank" rel="noopener noreferrer">Open Trivia Database</a>, a free public API. Your answers and best score stay in your browser.
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <div id="footer-container"></div>
+
+        <!-- Common JS -->
+        <script src="js/tool-help.js"></script>
+        <script src="js/storage.js"></script>
+        <script src="js/common.js"></script>
+        <script src="js/custom-dropdown.js"></script>
+        <script src="js/script.js"></script>
+        <script src="js/api-client.js"></script>
+
+        <!-- Custom JS -->
+        <script>
+
+            const pageTitle = "Trivia Quiz";
+
+            const QUIZ_URL = "https://opentdb.com/api.php";
+            const QUIZ_MAX_BYTES = 65536;
+            const OPTIONS_KEY = "toolstack_trivia_options";
+            const BEST_KEY = "toolstack_trivia_best";
+
+            // The service allows one request every 5 seconds from the same address.
+            const RATE_LIMIT_MS = 5200;
+
+            const CATEGORIES = [
+                [9, "General Knowledge"], [10, "Books"], [11, "Film"], [12, "Music"],
+                [13, "Musicals & Theatres"], [14, "Television"], [15, "Video Games"], [16, "Board Games"],
+                [17, "Science & Nature"], [18, "Computers"], [19, "Mathematics"], [20, "Mythology"],
+                [21, "Sports"], [22, "Geography"], [23, "History"], [24, "Politics"],
+                [25, "Art"], [26, "Celebrities"], [27, "Animals"], [28, "Vehicles"],
+                [29, "Comics"], [30, "Gadgets"], [31, "Anime & Manga"], [32, "Cartoons & Animation"]
+            ];
+
+            const setupScreen = document.getElementById("setupScreen");
+            const questionScreen = document.getElementById("questionScreen");
+            const resultsScreen = document.getElementById("resultsScreen");
+            const selects = {
+                category: document.getElementById("categorySelect"),
+                difficulty: document.getElementById("difficultySelect"),
+                type: document.getElementById("typeSelect"),
+                amount: document.getElementById("amountSelect")
+            };
+            const startBtn = document.getElementById("startBtn");
+            const playAgainBtn = document.getElementById("playAgainBtn");
+            const setupStatus = document.getElementById("setupStatus");
+            const resultsStatus = document.getElementById("resultsStatus");
+            const questionNumber = document.getElementById("questionNumber");
+            const liveScore = document.getElementById("liveScore");
+            const progressFill = document.getElementById("progressFill");
+            const questionTags = document.getElementById("questionTags");
+            const questionText = document.getElementById("questionText");
+            const answerGrid = document.getElementById("answerGrid");
+            const answerFeedback = document.getElementById("answerFeedback");
+            const nextBtn = document.getElementById("nextBtn");
+            const nextLabel = document.getElementById("nextLabel");
+
+            let questions = [];
+            let questionIndex = 0;
+            let score = 0;
+            let answered = false;
+            let lastResult = null;
+            let quizController = null;
+            let lastRequestAt = 0;
+            let startWhenOnline = false;
+
+            // Fills the category list and restores the options chosen last time.
+            function setupOptions() {
+                selects.category.innerHTML = `<option value="">Any category</option>` +
+                    CATEGORIES.map(([id, name]) => `<option value="${id}">${name}</option>`).join("");
+
+                const saved = getStorageItem(OPTIONS_KEY, null);
+                if (saved && typeof saved === "object") {
+                    Object.entries(selects).forEach(([name, select]) => {
+                        if ([...select.options].some(option => option.value === saved[name])) select.value = saved[name];
+                    });
+                }
+
+                Object.values(selects).forEach(select => {
+                    CustomDropdown.enhance(select, select === selects.category ? { search: true } : undefined);
+                    select.addEventListener("change", saveOptions);
+                });
+            }
+
+            function readOptions() {
+                return Object.fromEntries(Object.entries(selects).map(([name, select]) => [name, select.value]));
+            }
+
+            // Saves the chosen options and ignores blocked storage.
+            function saveOptions() {
+                try { setStorageItem(OPTIONS_KEY, readOptions()); } catch { /* Options still work for this visit. */ }
+            }
+
+            function categoryName(id) {
+                return CATEGORIES.find(([categoryId]) => String(categoryId) === String(id))?.[1] || "Any category";
+            }
+
+            // Returns the saved best score, or null when there is none or it is broken.
+            function getBestScore() {
+                const best = getStorageItem(BEST_KEY, null);
+                if (!best || !Number.isInteger(best.correct) || !Number.isInteger(best.total) || best.total <= 0) return null;
+                return best;
+            }
+
+            function describeBest() {
+                const best = getBestScore();
+                return best ? `Best score: ${best.correct} / ${best.total} (${Math.round(best.correct / best.total * 100)}%)` : "No best score yet";
+            }
+
+            // Shows one of the three screens and hides the others.
+            function showScreen(screen) {
+                [setupScreen, questionScreen, resultsScreen].forEach(item => item.hidden = item !== screen);
+            }
+
+            function showSetup() {
+                document.getElementById("bestScoreSetup").textContent = describeBest();
+                showScreen(setupScreen);
+            }
+
+            // Waits for a pause and stops early when the request is cancelled.
+            function wait(ms, signal) {
+                return new Promise((resolve, reject) => {
+                    const timer = setTimeout(resolve, ms);
+                    signal.addEventListener("abort", () => {
+                        clearTimeout(timer);
+                        reject(new ApiError("Request was cancelled", "aborted"));
+                    }, { once: true });
+                });
+            }
+
+            // Decodes a URL-encoded text from the service and fails on broken text.
+            function decodeText(value) {
+                if (typeof value !== "string") throw new ApiError("The trivia service sent a broken question", "invalid");
+                try {
+                    return decodeURIComponent(value).trim();
+                } catch {
+                    throw new ApiError("The trivia service sent a broken question", "invalid");
+                }
+            }
+
+            // Shuffles a copy of a list so the correct answer is not always in the same place.
+            function shuffle(list) {
+                const copy = [...list];
+                for (let i = copy.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [copy[i], copy[j]] = [copy[j], copy[i]];
+                }
+                return copy;
+            }
+
+            // Turns one raw question from the service into a checked question with its answers in order.
+            function parseQuestion(raw) {
+                if (!raw || !Array.isArray(raw.incorrect_answers)) throw new ApiError("The trivia service sent a broken question", "invalid");
+                const correct = decodeText(raw.correct_answer);
+                const wrong = raw.incorrect_answers.map(decodeText);
+                const isBoolean = raw.type === "boolean";
+                return {
+                    question: decodeText(raw.question),
+                    category: decodeText(raw.category).replace(/^(Entertainment|Science): /, ""),
+                    difficulty: typeof raw.difficulty === "string" ? raw.difficulty : "",
+                    correct,
+                    answers: isBoolean ? ["True", "False"] : shuffle([correct, ...wrong]),
+                    chosen: null
+                };
+            }
+
+            // Builds the request address from the chosen options.
+            function buildQuizUrl(options) {
+                const params = new URLSearchParams({ amount: options.amount, encode: "url3986" });
+                if (options.category) params.set("category", options.category);
+                if (options.difficulty) params.set("difficulty", options.difficulty);
+                if (options.type) params.set("type", options.type);
+                return `${QUIZ_URL}?${params}`;
+            }
+
+            // Fetches one set of questions while keeping to the service's one request every 5 seconds.
+            async function requestQuestions(url, signal, status) {
+                const waitMs = lastRequestAt + RATE_LIMIT_MS - Date.now();
+                if (waitMs > 0) {
+                    status.textContent = `Loading questions in ${Math.ceil(waitMs / 1000)} seconds...`;
+                    await wait(waitMs, signal);
+                }
+                status.textContent = "Loading questions...";
+                lastRequestAt = Date.now();
+                return fetchPublicJson(url, { serviceName: "The trivia service", maxBytes: QUIZ_MAX_BYTES, signal });
+            }
+
+            // Fetches and checks a full quiz, waiting and asking once more when the service says it is busy.
+            async function fetchQuestions(options, signal, status) {
+                const url = buildQuizUrl(options);
+                let reply = await requestQuestions(url, signal, status);
+                if (reply?.response_code === 5) reply = await requestQuestions(url, signal, status);
+
+                switch (reply?.response_code) {
+                    case 0: break;
+                    case 1: throw new ApiError("There are not enough questions for these options, so try fewer questions or another category", "invalid");
+                    case 5: throw new ApiError("The trivia service is busy, please wait a few seconds and try again", "rate-limit");
+                    default: throw new ApiError("The trivia service could not make a quiz with these options", "invalid");
+                }
+
+                if (!Array.isArray(reply.results) || !reply.results.length) throw new ApiError("The trivia service sent no questions", "invalid");
+                return reply.results.map(parseQuestion);
+            }
+
+            // Turns or clears the busy state on both start buttons.
+            function setLoading(isLoading) {
+                startBtn.disabled = isLoading;
+                playAgainBtn.disabled = isLoading;
+            }
+
+            // Loads a new quiz with the chosen options and starts it when every question is ready.
+            async function startQuiz() {
+                if (quizController) quizController.abort();
+                startWhenOnline = false;
+
+                const controller = new AbortController();
+                quizController = controller;
+                const options = readOptions();
+                const status = resultsScreen.hidden ? setupStatus : resultsStatus;
+                setLoading(true);
+
+                try {
+                    questions = await fetchQuestions(options, controller.signal, status);
+                    status.textContent = "";
+                    questionIndex = 0;
+                    score = 0;
+                    lastResult = null;
+                    showScreen(questionScreen);
+                    renderQuestion();
+                } catch (error) {
+                    // A request replaced by a newer one ends quietly.
+                    if (error.kind === "aborted") return;
+
+                    showErrorToast(error.message);
+                    if (error.kind === "offline") {
+                        startWhenOnline = true;
+                        status.textContent = "You are offline. The quiz will start when your connection comes back.";
+                    } else {
+                        status.textContent = `${error.message}.`;
+                    }
+                } finally {
+                    if (quizController === controller) {
+                        quizController = null;
+                        setLoading(false);
+                    }
+                }
+            }
+
+            // Draws the current question with one numbered button for each answer.
+            function renderQuestion() {
+                const item = questions[questionIndex];
+                answered = false;
+                questionNumber.textContent = `Question ${questionIndex + 1} of ${questions.length}`;
+                liveScore.textContent = `Score: ${score}`;
+                progressFill.style.width = `${questionIndex / questions.length * 100}%`;
+
+                questionTags.replaceChildren(...[item.category, item.difficulty].filter(Boolean).map(text => {
+                    const tag = document.createElement("span");
+                    tag.textContent = text;
+                    return tag;
+                }));
+                questionText.textContent = item.question;
+
+                answerGrid.replaceChildren(...item.answers.map((answer, index) => {
+                    const button = document.createElement("button");
+                    button.type = "button";
+                    button.className = "answer-btn";
+                    const key = document.createElement("span");
+                    key.className = "answer-key";
+                    key.textContent = index + 1;
+                    const text = document.createElement("span");
+                    text.textContent = answer;
+                    button.append(key, text);
+                    button.addEventListener("click", () => chooseAnswer(index));
+                    return button;
+                }));
+
+                answerFeedback.textContent = "";
+                nextBtn.disabled = true;
+                nextLabel.textContent = questionIndex === questions.length - 1 ? "See results" : "Next question";
+            }
+
+            // Marks the chosen answer, shows the correct one and updates the score.
+            function chooseAnswer(index) {
+                if (answered) return;
+                answered = true;
+
+                const item = questions[questionIndex];
+                item.chosen = item.answers[index];
+                const isCorrect = item.chosen === item.correct;
+                if (isCorrect) score++;
+
+                [...answerGrid.children].forEach((button, buttonIndex) => {
+                    button.disabled = true;
+                    if (item.answers[buttonIndex] === item.correct) button.classList.add("correct");
+                    else if (buttonIndex === index) button.classList.add("wrong");
+                });
+
+                liveScore.textContent = `Score: ${score}`;
+                progressFill.style.width = `${(questionIndex + 1) / questions.length * 100}%`;
+                answerFeedback.textContent = isCorrect ? "✅ Correct!" : `❌ Not quite. The answer is ${item.correct}.`;
+                nextBtn.disabled = false;
+                nextBtn.focus();
+            }
+
+            function nextQuestion() {
+                if (!answered) return;
+                questionIndex++;
+                if (questionIndex < questions.length) renderQuestion();
+                else showResults();
+            }
+
+            function quitQuiz() {
+                questions = [];
+                showSetup();
+            }
+
+            // Picks a short message that matches how well the player did.
+            function scoreMessage(percent) {
+                if (percent === 100) return "Perfect score! You are a trivia legend.";
+                if (percent >= 80) return "Brilliant! Nearly flawless.";
+                if (percent >= 50) return "Nice work! More right than wrong.";
+                if (percent >= 25) return "Not bad. Have another go!";
+                return "Tough round. Try an easier difficulty?";
+            }
+
+            // Saves the score when it beats the best percentage, or matches it over more questions.
+            function saveIfBest(correct, total) {
+                const best = getBestScore();
+                const isBetter = !best || correct / total > best.correct / best.total ||
+                    (correct / total === best.correct / best.total && total > best.total);
+                if (!isBetter || correct === 0) return false;
+                try {
+                    setStorageItem(BEST_KEY, { correct, total });
+                    return true;
+                } catch {
+                    return false;
+                }
+            }
+
+            // Shows the final score, the best score and a review of every answer.
+            function showResults() {
+                const total = questions.length;
+                const percent = Math.round(score / total * 100);
+                const options = readOptions();
+                lastResult = { score, total, category: categoryName(options.category), difficulty: options.difficulty };
+
+                document.getElementById("finalScore").textContent = `${score} / ${total}`;
+                document.getElementById("scoreMessage").textContent = `${percent}% · ${scoreMessage(percent)}`;
+                document.getElementById("newBestBadge").hidden = !saveIfBest(score, total);
+                document.getElementById("bestScoreResults").textContent = describeBest();
+                resultsStatus.textContent = "";
+
+                document.getElementById("reviewList").replaceChildren(...questions.map(item => {
+                    const row = document.createElement("li");
+                    const icon = document.createElement("i");
+                    const isCorrect = item.chosen === item.correct;
+                    icon.className = isCorrect ? "bi bi-check-circle-fill" : "bi bi-x-circle-fill";
+                    const body = document.createElement("div");
+                    const question = document.createElement("b");
+                    question.textContent = item.question;
+                    const detail = document.createElement("span");
+                    detail.textContent = isCorrect ? `Your answer: ${item.chosen}` : `Your answer: ${item.chosen} · Correct: ${item.correct}`;
+                    body.append(question, detail);
+                    row.append(icon, body);
+                    return row;
+                }));
+
+                showScreen(resultsScreen);
+            }
+
+            function copyText(text) {
+                navigator.clipboard.writeText(text)
+                    .then(() => showSuccessToast("Score copied, paste it anywhere to share"))
+                    .catch(() => showErrorToast("Could not copy, your browser blocked the clipboard"));
+            }
+
+            // Shares the last score with the device share sheet, or copies it with a link.
+            function shareScore() {
+                if (!lastResult) {
+                    showInfoToast("Finish a quiz to share your score");
+                    return;
+                }
+                const level = lastResult.difficulty ? `, ${lastResult.difficulty}` : "";
+                const shareText = `🧠 I scored ${lastResult.score}/${lastResult.total} on the Trivia Quiz (${lastResult.category}${level}). Can you beat me?`;
+                if (navigator.share) {
+                    navigator.share({ title: "Trivia Quiz", text: shareText, url: location.href }).catch(() => {});
+                } else {
+                    copyText(`${shareText}\n${location.href}`);
+                }
+            }
+
+            // Number keys pick an answer and Enter moves on, unless the user is typing or a dialog is open.
+            document.addEventListener("keydown", event => {
+                if (questionScreen.hidden || event.ctrlKey || event.metaKey || event.altKey) return;
+                if (isTypingTarget(event.target) || isOverlayOpen()) return;
+
+                const number = Number(event.key);
+                if (!answered && Number.isInteger(number) && number >= 1 && number <= answerGrid.children.length) {
+                    event.preventDefault();
+                    chooseAnswer(number - 1);
+                } else if (answered && event.key === "Enter" && event.target.tagName !== "BUTTON") {
+                    event.preventDefault();
+                    nextQuestion();
+                }
+            });
+
+            setupOptions();
+            showSetup();
+
+            // A quiz that could not start while offline starts when the connection comes back.
+            window.addEventListener("online", () => {
+                if (startWhenOnline && !quizController) startQuiz();
+            });
+        </script>
+
+    </body>
+</html>

@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Codexael Toolstack — UUID Generator</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+        <!-- Metadata -->
+        <meta name="description" content="Generate and validate v1, v4 and v7 UUIDs instantly.">
+        <meta name="author" content="Codexael">
+        <meta name="theme-color" content="#fff4e0" media="(prefers-color-scheme: light)">
+        <meta name="theme-color" content="#17140f" media="(prefers-color-scheme: dark)">
+
+        <!-- Open Graph -->
+        <meta property="og:title" content="Codexael Toolstack — UUID / GUID Generator">
+        <meta property="og:description" content="Generate and validate v1, v4 and v7 UUIDs instantly.">
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="https://tools.codexael.com/uuid_generator.html">
+        <meta property="og:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+        <meta property="og:image:width" content="1200">
+        <meta property="og:image:height" content="630">
+        <meta property="og:image:type" content="image/png">
+        <meta property="og:image:alt" content="Codexael Toolstack — UUID / GUID Generator">
+        <meta property="og:site_name" content="Codexael Toolstack">
+
+        <!-- Twitter Card -->
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="Codexael Toolstack — UUID / GUID Generator">
+        <meta name="twitter:description" content="Generate and validate v1, v4 and v7 UUIDs instantly.">
+        <meta name="twitter:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+
+        <!-- Favicon / App Icon -->
+        <link rel="icon" type="image/svg+xml" href="assets/images/codexael_icon.svg">
+        <link rel="apple-touch-icon" href="assets/images/codexael_icon.svg">
+
+        <!-- Bootstrap 5.2.0-beta1 -->
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+
+        <!-- Bootstrap with Popper 5.2.0-beta1 -->
+        <script src="js/bootstrap.bundle.min.js"></script>
+
+        <!-- Bootstrap Icons 1.11.3 -->
+        <link rel="stylesheet" href="css/bootstrap-icons.min.css">
+
+        <!-- CodeMirror 5.65.21 -->
+        <link rel="stylesheet" href="css/codemirror/codemirror.css">
+
+        <!-- Google fonts -->
+        <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+        <!-- Custom CSS -->
+        <link rel="stylesheet" href="css/find-replace.css">
+        <link rel="stylesheet" href="css/keycaps.css">
+
+        <style>
+            /* The validate result is stamped on as a tilted sticker, lime for a valid UUID and red for an invalid one. */
+            .verify-result {
+                display: none;
+                margin: 18px 4px 8px;
+                padding: 8px 12px;
+                color: #111111;
+                border: 3px solid var(--ink);
+                box-shadow: 2px 2px 0 var(--ink);
+                font: 700 0.78rem/1.6 var(--mono-font);
+                text-align: left;
+                overflow-wrap: anywhere;
+                transform: rotate(-1.5deg);
+                animation: stamp 0.28s cubic-bezier(0.2, 1.8, 0.5, 1) both;
+            }
+            .verify-result.match {
+                display: block;
+                background: var(--lime);
+            }
+            .verify-result.no-match {
+                display: block;
+                background: var(--red);
+                text-transform: uppercase;
+                transform: rotate(2deg);
+            }
+            /* Each detail name reads as a small black tag in front of its value. */
+            .verify-result .detail-label {
+                display: inline-block;
+                margin-top: 4px;
+                padding: 0 5px;
+                background: #111111;
+                color: var(--lime);
+                font-size: 0.66rem;
+                text-transform: uppercase;
+            }
+        </style>
+    </head>
+    <body>
+        <!-- Common layout -->
+        <div id="navbar-container"></div>
+
+        <div class="container-fluid tool-wrapper">
+            <div class="row g-3 g-md-0 gx-md-3 gx-0">
+
+                <!-- Left: Generated UUIDs -->
+                <div id="outputEditor" class="col-md-10 editor-panel">
+                    <div class="editor-header">
+                        <span class="editor-title">Generated UUIDs</span>
+                        <div class="editor-actions">
+                            <button title="Download" onclick="downloadData('uuid_generator.txt', false)"><i class="bi bi-download icon-btn"></i></button>
+                            <button title="Print" onclick="printData({ title: pageTitle, isInput: false })"><i class="bi bi-printer icon-btn"></i></button>
+                            <div class="divider"></div>
+                            <button class="btn-danger" title="Clear" data-undo-clear="Output cleared" onclick="clearGeneratedUUIDs()"><i class="bi bi-x-lg icon-btn"></i></button>
+                            <button title="Copy" data-shortcut="copy" onclick="copyToClipboard(codeMirrorOutput, 'copyOutputEditor')"><i class="bi bi-copy icon-btn" id="copyOutputEditor"></i></button>
+                            <button title="Fullscreen" onclick="toggleEditorFullScreen('outputEditor')"><i class="bi bi-arrows-fullscreen icon-btn"></i></button>
+                        </div>
+                    </div>
+
+                    <textarea class="editor-body" id="output" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off" placeholder="Click Generate to create UUIDs..."></textarea>
+
+                    <div class="editor-footer">
+                        <div class="status">
+                            <span>Ln <b id="outputCurrentLine">1</b></span>
+                            <span>Col <b id="outputCurrentColumn">1</b></span>
+                            <span>Lines <b id="outputTotalLines">1</b></span>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Right: Actions -->
+                <div class="col-md-2 center-col action-panel text-center invisible-scrollbars">
+                    <div class="center-actions-wrapper overflow-hidden">
+                        <div class="center-actions-label">Version</div>
+                        <div class="segmented-control btn-group full-width" role="group" aria-label="Radio toggle">
+                            <input type="radio" name="uuid_version" id="v1" value="v1">
+                            <label for="v1">v1</label>
+
+                            <input type="radio" name="uuid_version" id="v4" value="v4" checked>
+                            <label for="v4">v4</label>
+
+                            <input type="radio" name="uuid_version" id="v7" value="v7">
+                            <label for="v7">v7</label>
+                        </div>
+                    </div>
+
+                    <div class="center-actions-wrapper">
+                        <div class="center-actions-label">Quantity</div>
+                        <div class="input-stepper">
+                            <button type="button" data-step="dec" title="Decrease"><i class="bi bi-dash"></i></button>
+                            <div class="stepper-divider"></div>
+                            <input type="number" id="quantityInput" min="1" max="1000" value="1">
+                            <div class="stepper-divider"></div>
+                            <button type="button" data-step="inc" title="Increase"><i class="bi bi-plus"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="center-actions-wrapper">
+                        <div class="center-actions-label">Format</div>
+                        <div class="chip-group">
+                            <div class="chip-toggle">
+                                <input type="checkbox" id="uuidUppercase">
+                                <label for="uuidUppercase">Uppercase</label>
+                            </div>
+                            <div class="chip-toggle">
+                                <input type="checkbox" id="uuidNoHyphens">
+                                <label for="uuidNoHyphens">No Hyphens</label>
+                            </div>
+                            <div class="chip-toggle">
+                                <input type="checkbox" id="uuidBraces">
+                                <label for="uuidBraces">Braces {}</label>
+                            </div>
+                            <div class="chip-toggle">
+                                <input type="checkbox" id="uuidUrn">
+                                <label for="uuidUrn">urn:uuid: Prefix</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="center-actions-wrapper">
+                        <button class="btn action-btn-primary" data-shortcut="run" onclick="generateUUIDs()"><i class="bi bi-stars"></i> Generate</button>
+                    </div>
+
+                    <div class="center-actions-separator"></div>
+
+                    <div class="center-actions-wrapper">
+                        <div class="center-actions-label">Validate UUID</div>
+                        <input type="text" id="validateInput" class="input-cyan mb-2" placeholder="Paste a UUID to validate...">
+                        <button class="btn action-btn-ghost" onclick="validateUUID()"><i class="bi bi-check2-circle"></i> Validate</button>
+                        <div class="verify-result" id="validateResult"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- CodeMirror 5.65.21 -->
+        <script src="js/codemirror/codemirror.js"></script>
+        <script src="js/codemirror/active-line.js"></script>
+
+        <div id="footer-container"></div>
+
+        <!-- Common JS -->
+        <script src="js/tool-help.js"></script>
+        <script src="js/storage.js"></script>
+        <script src="js/common.js"></script>
+        <script src="js/custom-input.js"></script>
+        <script src="js/script.js"></script>
+        <script src="js/find-replace.js"></script>
+
+        <!-- Custom JS -->
+        <script>
+
+            // Elements
+            const pageTitle = "UUID Generator";
+            const MAX_UUID_QUANTITY = 1000;
+            const UUID_REGEX = /^(?:urn:uuid:)?\{?([0-9a-f]{8})-?([0-9a-f]{4})-?([0-9a-f]{4})-?([0-9a-f]{4})-?([0-9a-f]{12})\}?$/i;
+
+            const output = document.getElementById("output");
+            const quantityInput = document.getElementById("quantityInput");
+            const validateInput = document.getElementById("validateInput");
+            const validateResult = document.getElementById("validateResult");
+
+            const outputTotalLines = document.getElementById('outputTotalLines');
+            const outputCurrentLine = document.getElementById('outputCurrentLine');
+            const outputCurrentColumn = document.getElementById('outputCurrentColumn');
+
+            const codeMirrorOutput = createCodeMirrorEditor(output);
+            codeMirrorOutput.setOption("readOnly", true);
+
+            setupEditors([
+                createEditorConfig(codeMirrorOutput, outputTotalLines, outputCurrentLine, outputCurrentColumn)
+            ]);
+
+            // Returns n cryptographically random bytes
+            function randomBytes(n) {
+                const bytes = new Uint8Array(n);
+                crypto.getRandomValues(bytes);
+                return bytes;
+            }
+
+            // Formats 16 raw bytes as a canonical lowercase, hyphenated UUID string
+            function bytesToUUID(bytes) {
+                const hex = Array.from(bytes, b => b.toString(16).padStart(2, "0")).join("");
+                return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`;
+            }
+
+            // Generates a version 4 (random) UUID
+            function generateV4() {
+                const bytes = randomBytes(16);
+                bytes[6] = (bytes[6] & 0x0f) | 0x40;
+                bytes[8] = (bytes[8] & 0x3f) | 0x80;
+                return bytesToUUID(bytes);
+            }
+
+            // Generates a version 7 (Unix timestamp, time-ordered) UUID
+            function generateV7() {
+                const bytes = randomBytes(16);
+                const ts = BigInt(Date.now());
+                for (let i = 0; i < 6; i++) bytes[i] = Number((ts >> BigInt((5 - i) * 8)) & 0xffn);
+                bytes[6] = (bytes[6] & 0x0f) | 0x70;
+                bytes[8] = (bytes[8] & 0x3f) | 0x80;
+                return bytesToUUID(bytes);
+            }
+
+            // Persistent clock sequence/node for v1 generation, since browsers have no real MAC address
+            let v1ClockSeq = randomBytes(2);
+            v1ClockSeq[0] = (v1ClockSeq[0] & 0x3f) | 0x80;
+            let v1Node = randomBytes(6);
+            v1Node[0] |= 0x01;
+            let v1LastTimestamp = 0n;
+            let v1Counter = 0n;
+
+            // Generates a version 1 (time-based) UUID
+            function generateV1() {
+                const GREGORIAN_OFFSET = 122192928000000000n;
+                let ts = BigInt(Date.now()) * 10000n + GREGORIAN_OFFSET;
+
+                if (ts <= v1LastTimestamp) { v1Counter++; ts = v1LastTimestamp + v1Counter; }
+                else v1Counter = 0n;
+                v1LastTimestamp = ts;
+
+                const timeLow = ts & 0xffffffffn;
+                const timeMid = (ts >> 32n) & 0xffffn;
+                const timeHiVersion = ((ts >> 48n) & 0x0fffn) | 0x1000n;
+
+                const bytes = new Uint8Array(16);
+                bytes[0] = Number((timeLow >> 24n) & 0xffn);
+                bytes[1] = Number((timeLow >> 16n) & 0xffn);
+                bytes[2] = Number((timeLow >> 8n) & 0xffn);
+                bytes[3] = Number(timeLow & 0xffn);
+                bytes[4] = Number((timeMid >> 8n) & 0xffn);
+                bytes[5] = Number(timeMid & 0xffn);
+                bytes[6] = Number((timeHiVersion >> 8n) & 0xffn);
+                bytes[7] = Number(timeHiVersion & 0xffn);
+                bytes[8] = v1ClockSeq[0];
+                bytes[9] = v1ClockSeq[1];
+                bytes.set(v1Node, 10);
+
+                return bytesToUUID(bytes);
+            }
+
+            // Applies the selected formatting options to a canonical UUID string
+            function formatUUID(uuid, { uppercase, noHyphens, braces, urn }) {
+                let result = uuid;
+                if (noHyphens) result = result.replace(/-/g, "");
+                if (uppercase) result = result.toUpperCase();
+                if (urn) result = "urn:uuid:" + result;
+                if (braces) result = "{" + result + "}";
+                return result;
+            }
+
+            // Generates the selected quantity of UUIDs in the chosen version and format
+            function generateUUIDs() {
+                try {
+                    const version = document.querySelector('input[name="uuid_version"]:checked').value;
+                    const quantity = Math.min(Math.max(parseInt(quantityInput.value, 10) || 1, 1), MAX_UUID_QUANTITY);
+                    quantityInput.value = quantity;
+
+                    const opts = {
+                        uppercase: document.getElementById("uuidUppercase").checked,
+                        noHyphens: document.getElementById("uuidNoHyphens").checked,
+                        braces: document.getElementById("uuidBraces").checked,
+                        urn: document.getElementById("uuidUrn").checked
+                    };
+
+                    const generator = version === "v1" ? generateV1 : version === "v7" ? generateV7 : generateV4;
+
+                    const results = [];
+                    for (let i = 0; i < quantity; i++) results.push(formatUUID(generator(), opts));
+
+                    codeMirrorOutput.setValue(results.join("\n"));
+                    showSuccessToast(`Generated ${quantity} UUID${quantity > 1 ? "s" : ""}`);
+                } catch (error) {
+                    console.log("Generating UUIDs error:", error.message);
+                    showErrorToast("Error generating UUIDs");
+                }
+            }
+
+            // Resets every field on the page back to its default state
+            function clearGeneratedUUIDs() {
+                clearInput(codeMirrorOutput);
+
+                document.getElementById("v4").checked = true;
+                quantityInput.value = 1;
+
+                document.getElementById("uuidUppercase").checked = false;
+                document.getElementById("uuidNoHyphens").checked = false;
+                document.getElementById("uuidBraces").checked = false;
+                document.getElementById("uuidUrn").checked = false;
+
+                validateInput.value = "";
+                resetValidateResult();
+            }
+
+            // Hides and resets the validate result banner
+            function resetValidateResult() {
+                validateResult.className = "verify-result";
+                validateResult.innerHTML = "";
+                validateInput.classList.remove("is-valid", "is-invalid");
+            }
+
+            // Returns the validate result so Clear can offer Undo.
+            function getPageUndoState() {
+                return { validateResultClass: validateResult.className, validateResultHtml: validateResult.innerHTML, validateInputClass: validateInput.className };
+            }
+
+            // Shows the validate result that was showing before Clear ran.
+            function restorePageUndoState(state) {
+                validateResult.className = state.validateResultClass;
+                validateResult.innerHTML = state.validateResultHtml;
+                validateInput.className = state.validateInputClass;
+            }
+
+            // Validates a pasted UUID and reports its version, variant and canonical form
+            function validateUUID() {
+                const raw = validateInput.value.trim();
+                if (isBlank(raw, "Enter a UUID to validate")) return;
+
+                const match = raw.match(UUID_REGEX);
+                if (!match) {
+                    showValidateResult(false);
+                    return;
+                }
+
+                const hex = match.slice(1, 6).join("").toLowerCase();
+                const versionNibble = hex[12];
+                const variantNibble = parseInt(hex[16], 16);
+
+                const versionLabels = {
+                    "1": "Version 1 (time-based)",
+                    "2": "Version 2 (DCE security)",
+                    "3": "Version 3 (name-based, MD5)",
+                    "4": "Version 4 (random)",
+                    "5": "Version 5 (name-based, SHA-1)",
+                    "7": "Version 7 (time-ordered)"
+                };
+                const versionLabel = hex === "0".repeat(32)
+                    ? "Nil UUID"
+                    : (versionLabels[versionNibble] || `Unknown (version ${versionNibble})`);
+
+                const variantLabel = variantNibble >= 8 && variantNibble <= 0xB
+                    ? "RFC 4122"
+                    : variantNibble === 0xC || variantNibble === 0xD
+                        ? "Microsoft (reserved)"
+                        : variantNibble >= 0xE
+                            ? "Reserved (future)"
+                            : "NCS backward compatible";
+
+                const canonical = `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`;
+
+                showValidateResult(true, versionLabel, variantLabel, canonical);
+            }
+
+            // Renders the validate result banner
+            function showValidateResult(isValid, version = "", variant = "", canonical = "") {
+                if (!isValid) {
+                    validateResult.className = "verify-result no-match";
+                    validateResult.innerHTML = `<i class="bi bi-x-circle-fill me-1"></i>Not a valid UUID`;
+                    validateInput.classList.add("is-invalid");
+                    validateInput.classList.remove("is-valid");
+                    return;
+                }
+
+                validateResult.className = "verify-result match";
+                validateResult.innerHTML = `
+                    <i class="bi bi-check-circle-fill me-1"></i>Valid UUID<br>
+                    <span class="detail-label">Version:</span> ${version}<br>
+                    <span class="detail-label">Variant:</span> ${variant}<br>
+                    <span class="detail-label">Canonical:</span> ${canonical}
+                `;
+                validateInput.classList.add("is-valid");
+                validateInput.classList.remove("is-invalid");
+            }
+
+            // Validates on Enter key inside the validate input
+            validateInput.addEventListener("keyup", e => { if (e.key === "Enter") validateUUID(); });
+        </script>
+
+    </body>
+</html>

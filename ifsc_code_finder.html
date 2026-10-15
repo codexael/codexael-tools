@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Codexael Toolstack — IFSC Code Finder</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta http-equiv="Content-Security-Policy" content="connect-src https://ifsc.razorpay.com; object-src 'none'; base-uri 'none'; form-action 'none'">
+
+        <!-- Metadata -->
+        <meta name="description" content="Find the bank, branch, address and MICR for any Indian IFSC code.">
+        <meta name="author" content="Codexael">
+        <meta name="theme-color" content="#fff4e0" media="(prefers-color-scheme: light)">
+        <meta name="theme-color" content="#17140f" media="(prefers-color-scheme: dark)">
+
+        <!-- Open Graph -->
+        <meta property="og:title" content="Codexael Toolstack — IFSC Code Finder">
+        <meta property="og:description" content="Find the bank, branch, address and MICR for any Indian IFSC code.">
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="https://tools.codexael.com/ifsc_code_finder.html">
+        <meta property="og:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+        <meta property="og:image:width" content="1200">
+        <meta property="og:image:height" content="630">
+        <meta property="og:image:type" content="image/png">
+        <meta property="og:image:alt" content="Codexael Toolstack — IFSC Code Finder">
+        <meta property="og:site_name" content="Codexael Toolstack">
+
+        <!-- Twitter Card -->
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="Codexael Toolstack — IFSC Code Finder">
+        <meta name="twitter:description" content="Find the bank, branch, address and MICR for any Indian IFSC code.">
+        <meta name="twitter:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+
+        <!-- Favicon / App Icon -->
+        <link rel="icon" type="image/svg+xml" href="assets/images/codexael_icon.svg">
+        <link rel="apple-touch-icon" href="assets/images/codexael_icon.svg">
+
+        <!-- Bootstrap 5.2.0-beta1 -->
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+
+        <!-- Bootstrap with Popper 5.2.0-beta1 -->
+        <script src="js/bootstrap.bundle.min.js"></script>
+
+        <!-- Bootstrap Icons 1.11.3 -->
+        <link rel="stylesheet" href="css/bootstrap-icons.min.css">
+
+        <!-- Google fonts -->
+        <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+        <!-- Custom CSS -->
+        <link rel="stylesheet" href="css/keycaps.css">
+
+        <style>
+            /* The body grows with its content and does not clip. */
+            .ifsc-body {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                gap: 18px;
+                padding: 24px 22px 28px;
+            }
+
+            .ifsc-form {
+                display: grid;
+                grid-template-columns: minmax(0, 1fr) auto;
+                align-items: end;
+                gap: 14px;
+            }
+
+            .ifsc-form label,
+            .ifsc-meta {
+                display: block;
+                font-size: 0.75rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.04em;
+            }
+
+            .ifsc-form label { margin-bottom: 6px; }
+
+            .ifsc-form input {
+                margin-bottom: 0;
+                font-size: 1.1rem;
+                letter-spacing: 0.12em;
+                text-transform: uppercase;
+            }
+
+            /* Bootstrap btn hover and active states would hide the ink border without these values. */
+            .ifsc-form .btn,
+            .ifsc-actions .btn {
+                --bs-btn-hover-border-color: var(--ink);
+                --bs-btn-active-border-color: var(--ink);
+                width: auto;
+                margin-bottom: 0;
+            }
+
+            .ifsc-hint,
+            .ifsc-status {
+                margin: 0;
+                font-size: 0.8rem;
+                font-weight: 700;
+            }
+
+            /* The code is split into its three parts so users can see how an IFSC is built. */
+            .ifsc-parts {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 6px;
+                font-variant-numeric: tabular-nums;
+            }
+
+            .ifsc-parts span {
+                padding: 2px 8px;
+                border: 2px solid var(--ink);
+                font-family: var(--display-font);
+                font-size: 0.8rem;
+                letter-spacing: 0.08em;
+            }
+
+            .ifsc-parts small {
+                align-self: center;
+                font-size: 0.72rem;
+                font-weight: 700;
+            }
+
+            .ifsc-body.loading .bank-card,
+            .ifsc-body.loading .detail-list { opacity: 0.55; }
+
+            /* The bank and branch sit on a lime card that keeps dark text in both themes. */
+            .bank-card {
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+                padding: 20px 22px;
+                background: var(--lime);
+                color: #111111;
+                border: 3px solid var(--ink);
+                border-radius: 12px;
+                box-shadow: 4px 4px 0 var(--ink);
+                overflow-wrap: anywhere;
+            }
+
+            .bank-code {
+                align-self: flex-start;
+                padding: 2px 10px;
+                background: #111111;
+                color: #ffffff;
+                font-family: var(--display-font);
+                font-size: 0.8rem;
+                letter-spacing: 0.1em;
+            }
+
+            .bank-name {
+                margin: 0;
+                font-family: var(--display-font);
+                font-size: 1.35rem;
+                line-height: 1.3;
+            }
+
+            .bank-branch { font-weight: 700; }
+
+            .mode-chips {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+                margin-top: 6px;
+            }
+
+            .mode-chips span {
+                display: inline-flex;
+                align-items: center;
+                gap: 4px;
+                padding: 2px 10px;
+                border: 2px solid #111111;
+                border-radius: 99px;
+                font-size: 0.78rem;
+                font-weight: 700;
+            }
+
+            .mode-chips .off {
+                opacity: 0.55;
+                text-decoration: line-through;
+            }
+
+            .detail-list {
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                margin: 0;
+                padding: 0;
+                list-style: none;
+            }
+
+            .detail-list li {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                padding: 10px 12px;
+                background: var(--paper);
+                border: 2px solid var(--ink);
+                border-radius: 8px;
+                font-size: 0.88rem;
+                line-height: 1.45;
+            }
+
+            .detail-list .detail-label {
+                flex: none;
+                width: 92px;
+                font-size: 0.72rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.04em;
+            }
+
+            .detail-list .detail-value {
+                flex: 1;
+                min-width: 0;
+                overflow-wrap: anywhere;
+            }
+
+            .detail-list button,
+            .detail-list a {
+                flex: none;
+                padding: 2px 6px;
+                background: none;
+                border: 0;
+                color: var(--ink);
+                font-size: 1rem;
+            }
+
+            .ifsc-actions {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 12px;
+            }
+
+            .privacy-note {
+                padding: 10px 12px;
+                border: 2px dashed var(--ink);
+                font-size: 0.75rem;
+                font-weight: 700;
+                line-height: 1.5;
+            }
+
+            @media (max-width: 576px) {
+                .ifsc-body {
+                    padding: 20px 16px 24px;
+                }
+
+                .ifsc-form {
+                    grid-template-columns: 1fr;
+                }
+
+                .ifsc-form .btn,
+                .ifsc-actions .btn {
+                    width: 100%;
+                }
+
+                .detail-list li {
+                    flex-wrap: wrap;
+                }
+
+                .detail-list .detail-label {
+                    width: 100%;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <!-- Common layout -->
+        <div id="navbar-container"></div>
+
+        <div class="container-fluid tool-wrapper">
+            <div class="row">
+                <div class="col-md-8 offset-md-2">
+                    <div class="editor-panel">
+                        <div class="editor-header">
+                            <span class="editor-title">IFSC Code Finder</span>
+                            <div class="editor-actions">
+                                <button title="Copy all details" data-shortcut="copy" onclick="copyAll(this)"><i class="bi bi-copy icon-btn"></i></button>
+                                <div class="divider"></div>
+                                <button title="Clear" onclick="clearLookup()"><i class="bi bi-trash3 icon-btn"></i></button>
+                            </div>
+                        </div>
+
+                        <div class="editor-body ifsc-body" id="ifscBody">
+
+                            <div class="ifsc-form">
+                                <div>
+                                    <label for="codeInput">IFSC code</label>
+                                    <input type="text" class="form-control input-cyan" id="codeInput" maxlength="15" autocomplete="off" spellcheck="false" placeholder="e.g. SBIN0000300">
+                                </div>
+                                <button class="btn action-btn-primary" id="lookupBtn" data-shortcut="run" onclick="lookUp()"><i class="bi bi-search"></i> Find branch</button>
+                            </div>
+
+                            <div class="ifsc-parts" id="ifscParts" aria-live="polite">
+                                <span>SBIN</span><small>bank</small><span>0</span><small>always zero</small><span>000300</span><small>branch</small>
+                            </div>
+                            <p class="ifsc-hint">An IFSC has 11 characters: 4 letters for the bank, a zero, then 6 letters or numbers for the branch. You can find it on a cheque or in your bank's app.</p>
+                            <p class="ifsc-status" id="ifscStatus" role="status"></p>
+
+                            <div id="resultArea" class="d-flex flex-column gap-3" hidden>
+                                <div class="bank-card">
+                                    <span class="bank-code" id="resultCode"></span>
+                                    <h2 class="bank-name" id="resultBank"></h2>
+                                    <span class="bank-branch" id="resultBranch"></span>
+                                    <div class="mode-chips" id="resultModes"></div>
+                                </div>
+
+                                <ul class="detail-list" id="detailList"></ul>
+
+                                <div class="ifsc-actions">
+                                    <button class="btn action-btn-ghost" onclick="copyAll()"><i class="bi bi-copy"></i> Copy all details</button>
+                                    <button class="btn action-btn-ghost" onclick="shareBranch()"><i class="bi bi-share"></i> Share</button>
+                                </div>
+                            </div>
+
+                            <div class="privacy-note">
+                                <i class="bi bi-info-circle"></i> Branch details come from <a href="https://ifsc.razorpay.com" target="_blank" rel="noopener noreferrer">Razorpay's IFSC API</a>, built from Reserve Bank of India data. Only the code you look up is sent. Always confirm details with your bank before sending money.
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <div id="footer-container"></div>
+
+        <!-- Common JS -->
+        <script src="js/tool-help.js"></script>
+        <script src="js/storage.js"></script>
+        <script src="js/common.js"></script>
+        <script src="js/script.js"></script>
+        <script src="js/api-client.js"></script>
+
+        <!-- Custom JS -->
+        <script>
+
+            const pageTitle = "IFSC Code Finder";
+
+            const LOOKUP_URL = "https://ifsc.razorpay.com/";
+            const LOOKUP_MAX_BYTES = 8192;
+            const IFSC_PATTERN = /^[A-Z]{4}0[A-Z0-9]{6}$/;
+            const PAYMENT_MODES = ["UPI", "NEFT", "RTGS", "IMPS"];
+
+            const ifscBody = document.getElementById("ifscBody");
+            const codeInput = document.getElementById("codeInput");
+            const lookupBtn = document.getElementById("lookupBtn");
+            const ifscParts = document.getElementById("ifscParts");
+            const ifscStatus = document.getElementById("ifscStatus");
+            const resultArea = document.getElementById("resultArea");
+
+            let currentBranch = null;
+            let lookupController = null;
+            let retryWhenOnline = false;
+
+            // Removes spaces and dashes and turns letters to upper case, so pasted codes work.
+            function normaliseCode(raw) {
+                return raw.replace(/[\s-]/g, "").toUpperCase();
+            }
+
+            // Shows the typed code split into its bank, zero and branch parts.
+            function renderParts() {
+                const code = normaliseCode(codeInput.value) || "SBIN0000300";
+                const pieces = [[code.slice(0, 4), "bank"], [code.slice(4, 5), "always zero"], [code.slice(5, 11), "branch"]];
+                ifscParts.replaceChildren(...pieces.filter(([text]) => text).flatMap(([text, label]) => {
+                    const part = document.createElement("span");
+                    part.textContent = text;
+                    const note = document.createElement("small");
+                    note.textContent = label;
+                    return [part, note];
+                }));
+            }
+
+            function text(value) {
+                return typeof value === "string" ? value.trim() : "";
+            }
+
+            // Turns upper-case text from the service into title case for easier reading.
+            function titleCase(value) {
+                return value.toLowerCase().replace(/\b([a-z])/g, letter => letter.toUpperCase());
+            }
+
+            // Keeps only the fields the page shows and checks that the reply is a real branch.
+            function parseBranch(reply) {
+                if (!reply || typeof reply !== "object" || !text(reply.IFSC) || !text(reply.BANK)) return null;
+                return {
+                    ifsc: text(reply.IFSC),
+                    bank: text(reply.BANK),
+                    branch: titleCase(text(reply.BRANCH)),
+                    address: text(reply.ADDRESS),
+                    city: titleCase(text(reply.CITY)),
+                    district: titleCase(text(reply.DISTRICT)),
+                    state: titleCase(text(reply.STATE)),
+                    contact: text(reply.CONTACT),
+                    micr: text(reply.MICR),
+                    swift: text(reply.SWIFT),
+                    modes: Object.fromEntries(PAYMENT_MODES.map(mode => [mode, reply[mode] === true]))
+                };
+            }
+
+            function setLoading(isLoading) {
+                ifscBody.classList.toggle("loading", isLoading);
+                lookupBtn.disabled = isLoading;
+            }
+
+            // Lists the details shown in rows, leaving out the ones the bank did not provide.
+            function detailRows(branch) {
+                return [
+                    ["IFSC", branch.ifsc],
+                    ["Branch", branch.branch],
+                    ["Address", branch.address],
+                    ["City", branch.city],
+                    ["District", branch.district],
+                    ["State", branch.state],
+                    ["MICR", branch.micr],
+                    ["SWIFT", branch.swift],
+                    ["Contact", branch.contact]
+                ].filter(([, value]) => value);
+            }
+
+            // Draws the bank card, the payment mode chips and one row for each detail.
+            function showBranch(branch) {
+                currentBranch = branch;
+                document.getElementById("resultCode").textContent = branch.ifsc;
+                document.getElementById("resultBank").textContent = branch.bank;
+                document.getElementById("resultBranch").textContent = [branch.branch, branch.city, branch.state].filter(Boolean).join(" · ");
+
+                document.getElementById("resultModes").replaceChildren(...PAYMENT_MODES.map(mode => {
+                    const chip = document.createElement("span");
+                    const supported = branch.modes[mode];
+                    chip.className = supported ? "" : "off";
+                    chip.title = supported ? `${mode} is supported` : `${mode} is not supported`;
+                    chip.innerHTML = `<i class="bi ${supported ? "bi-check-lg" : "bi-x-lg"}"></i>`;
+                    chip.append(mode);
+                    return chip;
+                }));
+
+                document.getElementById("detailList").replaceChildren(...detailRows(branch).map(([label, value]) => {
+                    const row = document.createElement("li");
+                    const name = document.createElement("span");
+                    name.className = "detail-label";
+                    name.textContent = label;
+                    const content = document.createElement("span");
+                    content.className = "detail-value";
+                    content.textContent = value;
+                    row.append(name, content);
+
+                    if (label === "Address") {
+                        const map = document.createElement("a");
+                        map.href = `https://www.openstreetmap.org/search?query=${encodeURIComponent(`${branch.bank} ${branch.branch} ${branch.city}`)}`;
+                        map.target = "_blank";
+                        map.rel = "noopener noreferrer";
+                        map.title = "Search this branch on a map";
+                        map.innerHTML = '<i class="bi bi-geo-alt"></i>';
+                        row.append(map);
+                    }
+
+                    const copy = document.createElement("button");
+                    copy.type = "button";
+                    copy.title = `Copy ${label}`;
+                    copy.innerHTML = '<i class="bi bi-copy"></i>';
+                    copy.addEventListener("click", () => copyText(value, copy));
+                    row.append(copy);
+                    return row;
+                }));
+
+                resultArea.hidden = false;
+            }
+
+            // Looks up the typed code and keeps the last branch on screen when the request fails.
+            async function lookUp() {
+                const code = normaliseCode(codeInput.value);
+                renderParts();
+                if (!code) {
+                    showInfoToast("Enter an IFSC code to look up");
+                    codeInput.focus();
+                    return;
+                }
+                if (!IFSC_PATTERN.test(code)) {
+                    ifscStatus.textContent = "That is not a valid IFSC. It needs 4 letters, a zero, then 6 letters or numbers, such as SBIN0000300.";
+                    return;
+                }
+
+                if (lookupController) lookupController.abort();
+                const controller = new AbortController();
+                lookupController = controller;
+                retryWhenOnline = false;
+                setLoading(true);
+                ifscStatus.textContent = "Looking up...";
+
+                try {
+                    const reply = await fetchPublicJson(LOOKUP_URL + code, { serviceName: "The IFSC service", maxBytes: LOOKUP_MAX_BYTES, signal: controller.signal });
+                    const branch = parseBranch(reply);
+                    if (!branch) throw new ApiError("The IFSC service sent no branch details", "invalid");
+                    ifscStatus.textContent = "";
+                    showBranch(branch);
+                } catch (error) {
+                    // A request replaced by a newer one ends quietly.
+                    if (error.kind === "aborted") return;
+
+                    // The service answers 404 when no branch has this code, which is a normal result and not a failure.
+                    if (error.status === 404) {
+                        ifscStatus.textContent = `No bank branch uses ${code}. Check the code on your cheque or bank app.`;
+                        currentBranch = null;
+                        resultArea.hidden = true;
+                        return;
+                    }
+
+                    showErrorToast(error.message);
+                    if (error.kind === "offline") {
+                        retryWhenOnline = true;
+                        ifscStatus.textContent = "You are offline. The lookup will run when your connection comes back.";
+                    } else {
+                        ifscStatus.textContent = `${error.message}. Click Find branch to try again.`;
+                    }
+                } finally {
+                    if (lookupController === controller) {
+                        lookupController = null;
+                        setLoading(false);
+                    }
+                }
+            }
+
+            function copyText(value, btn) {
+                if (isBlank(value, "Nothing to copy")) return;
+                navigator.clipboard.writeText(value).then(() => {
+                    showSuccessToast("Copied to clipboard");
+                    if (btn) {
+                        const icon = btn.querySelector("i");
+                        const original = icon.className;
+                        icon.className = "bi bi-check-lg";
+                        setTimeout(() => icon.className = original, 1000);
+                    }
+                }).catch(() => showErrorToast("Could not copy, your browser blocked the clipboard"));
+            }
+
+            // Builds a plain-text summary of the branch, one detail per line.
+            function describeBranch(branch) {
+                const modes = PAYMENT_MODES.filter(mode => branch.modes[mode]).join(", ") || "None listed";
+                return [`${branch.bank}`, ...detailRows(branch).map(([label, value]) => `${label}: ${value}`), `Supports: ${modes}`].join("\n");
+            }
+
+            function copyAll(btn) {
+                if (!currentBranch) return showInfoToast("Look up an IFSC code first");
+                copyText(describeBranch(currentBranch), btn);
+            }
+
+            // Uses the device share sheet when available and falls back to copying the details.
+            function shareBranch() {
+                if (!currentBranch) return showInfoToast("Look up an IFSC code first");
+                const shareText = describeBranch(currentBranch);
+                if (navigator.share) {
+                    navigator.share({ title: `IFSC ${currentBranch.ifsc}`, text: shareText }).catch(() => {});
+                } else {
+                    copyText(shareText);
+                }
+            }
+
+            function clearLookup() {
+                if (lookupController) lookupController.abort();
+                codeInput.value = "";
+                ifscStatus.textContent = "";
+                currentBranch = null;
+                retryWhenOnline = false;
+                resultArea.hidden = true;
+                renderParts();
+                codeInput.focus();
+            }
+
+            codeInput.addEventListener("input", renderParts);
+
+            // Enter in the code field runs the lookup.
+            codeInput.addEventListener("keydown", event => {
+                if (event.key === "Enter" && !event.ctrlKey && !event.metaKey) {
+                    event.preventDefault();
+                    lookUp();
+                }
+            });
+
+            // A lookup that failed while offline runs again when the connection comes back.
+            window.addEventListener("online", () => {
+                if (retryWhenOnline && !lookupController) lookUp();
+            });
+        </script>
+
+    </body>
+</html>

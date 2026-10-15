@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Codexael Toolstack — HTML Formatter</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+        <!-- Metadata -->
+        <meta name="description" content="Clean up messy HTML and preview how it renders, right in your browser.">
+        <meta name="author" content="Codexael">
+        <meta name="theme-color" content="#fff4e0" media="(prefers-color-scheme: light)">
+        <meta name="theme-color" content="#17140f" media="(prefers-color-scheme: dark)">
+
+        <!-- Open Graph -->
+        <meta property="og:title" content="Codexael Toolstack — HTML Formatter & Viewer">
+        <meta property="og:description" content="Clean up messy HTML and preview how it renders, right in your browser.">
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="https://tools.codexael.com/html_formatter.html">
+        <meta property="og:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+        <meta property="og:image:width" content="1200">
+        <meta property="og:image:height" content="630">
+        <meta property="og:image:type" content="image/png">
+        <meta property="og:image:alt" content="Codexael Toolstack — HTML Formatter & Viewer">
+        <meta property="og:site_name" content="Codexael Toolstack">
+
+        <!-- Twitter Card -->
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="Codexael Toolstack — HTML Formatter & Viewer">
+        <meta name="twitter:description" content="Clean up messy HTML and preview how it renders, right in your browser.">
+        <meta name="twitter:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+
+        <!-- Favicon / App Icon -->
+        <link rel="icon" type="image/svg+xml" href="assets/images/codexael_icon.svg">
+        <link rel="apple-touch-icon" href="assets/images/codexael_icon.svg">
+
+        <!-- Bootstrap 5.2.0-beta1 -->
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+
+        <!-- Bootstrap with Popper 5.2.0-beta1 -->
+        <script src="js/bootstrap.bundle.min.js"></script>
+
+        <!-- Bootstrap Icons 1.11.3 -->
+        <link rel="stylesheet" href="css/bootstrap-icons.min.css">
+
+        <!-- CodeMirror 5.65.21 -->
+        <link rel="stylesheet" href="css/codemirror/codemirror.css">
+        <link rel="stylesheet" href="css/codemirror/foldgutter.css">
+
+        <!-- Google fonts -->
+        <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+        <!-- Custom CSS -->
+        <link rel="stylesheet" href="css/find-replace.css">
+        <link rel="stylesheet" href="css/keycaps.css">
+    </head>
+    <body>
+        <!-- Common layout -->
+        <div id="navbar-container"></div>
+
+        <div class="container-fluid tool-wrapper">
+            <div class="row g-3 g-md-0 gx-md-3 gx-0">
+
+                <!-- Left Editor -->
+                <div id="inputEditor" class="col-md-5 editor-panel">
+                    <div class="editor-header">
+                        <span class="editor-title">Input</span>
+                        <div class="editor-actions">
+                            <button title="Collapse" onclick="toggleEditor(codeMirrorInput)"><i class="bi bi-dash-square icon-btn"></i></button>
+                            <button title="Expand" onclick="toggleEditor(codeMirrorInput, true)"><i class="bi bi-plus-square icon-btn"></i></button>
+                            <div class="divider"></div>
+                            <button title="Load Dummy Data" onclick="loadDummyData()"><i class="bi bi-file-earmark-text icon-btn"></i></button>
+                            <div class="divider"></div>
+                            <button title="Download" onclick="downloadData('html_formatter.html')"><i class="bi bi-download icon-btn"></i></button>
+                            <button title="Print" onclick="printData({ title: pageTitle, format: format })"><i class="bi bi-printer icon-btn"></i></button>
+                            <div class="divider"></div>
+                            <button class="btn-danger" title="Clear" data-undo-clear onclick="clearHTMLInputs()"><i class="bi bi-x-lg icon-btn"></i></button>
+                            <button title="Copy" onclick="copyToClipboard(codeMirrorInput, 'copyInputEditor')"><i class="bi bi-copy icon-btn" id="copyInputEditor"></i></button>
+                            <button title="Fullscreen" onclick="toggleEditorFullScreen('inputEditor')"><i class="bi bi-arrows-fullscreen icon-btn"></i></button>
+                        </div>
+                    </div>
+
+                    <textarea class="editor-body" id="input" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"></textarea>
+
+                    <div class="editor-footer">
+                        <div class="status">
+                            <span>Ln <b id="inputCurrentLine">1</b></span>
+                            <span>Col <b id="inputCurrentColumn">1</b></span>
+                            <span>Lines <b id="inputTotalLines">1</b></span>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Center Actions -->
+                <div class="col-md-2 center-col action-panel text-center invisible-scrollbars">
+                    <button class="btn action-btn-ghost" onclick="openFilePicker()"><i class="bi bi-upload"></i> Upload Data</button>
+                    <input type="file" id="fileInput" accept=".html,.htm,text/html" hidden onchange="handleFileSelect(event, format)">
+
+                    <div class="chk-cyan">
+                        <input type="checkbox" id="ignoreEscapes" checked>
+                        <label for="ignoreEscapes">Ignore escape sequences</label>
+                    </div>
+
+                    <button class="btn action-btn-ghost" onclick="switchOutputTab(true)"><i class="bi bi-eye"></i> Preview</button>
+
+                    <select class="form-select action-select" id="indentSelect">
+                        <option value="2">2 Tab Space</option>
+                        <option value="4">4 Tab Space</option>
+                    </select>
+
+                    <button class="btn action-btn-primary" data-shortcut="run" onclick="processHtml()"><i class="bi bi-magic"></i> Format / Beautify</button>
+                    <button class="btn action-btn-primary" onclick="processHtml(false)"><i class="bi bi-arrows-angle-contract"></i> Minify / Compact</button>
+
+                    <button class="btn action-btn-pill" onclick="downloadData('html_formatter.html', false)"><i class="bi bi-download"></i> Download</button>
+                </div>
+
+                <!-- Right Editor -->
+                <div id="outputEditor" class="col-md-5 editor-panel">
+                    <div class="editor-header">
+                        <span class="editor-title">Output</span>
+                        <div id="outputEditorActions" class="editor-actions">
+                            <button title="Collapse" onclick="toggleEditor(codeMirrorOutput)"><i class="bi bi-dash-square icon-btn"></i></button>
+                            <button title="Expand" onclick="toggleEditor(codeMirrorOutput, true)"><i class="bi bi-plus-square icon-btn"></i></button>
+                            <div class="divider"></div>
+                            <button title="Download" onclick="downloadData('html_formatter.html', false)"><i class="bi bi-download icon-btn"></i></button>
+                            <button title="Print" onclick="printData({ title: pageTitle, isInput: false, format: format })"><i class="bi bi-printer icon-btn"></i></button>
+                            <div class="divider"></div>
+                            <button class="btn-danger" title="Clear" data-undo-clear="Output cleared" onclick="clearInput(codeMirrorOutput)"><i class="bi bi-x-lg icon-btn"></i></button>
+                            <button title="Copy" data-shortcut="copy" onclick="copyToClipboard(codeMirrorOutput, 'copyOutputEditor')"><i class="bi bi-copy icon-btn" id="copyOutputEditor"></i></button>
+                            <button title="Fullscreen" onclick="toggleEditorFullScreen('outputEditor')"><i class="bi bi-arrows-fullscreen icon-btn"></i></button>
+                        </div>
+                        <div id="previewActions" class="editor-actions" style="display: none;">
+                            <button title="Print" onclick="printHTMLPreview()"><i class="bi bi-printer icon-btn"></i></button>
+                            <button title="Fullscreen" onclick="toggleEditorFullScreen('outputEditor')"><i class="bi bi-arrows-fullscreen icon-btn"></i></button>
+                        </div>
+                    </div>
+
+                    <textarea class="editor-body" id="output" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"></textarea>
+
+                    <iframe class="preview-body white-background" id="previewFrame" style="display: none;"></iframe>
+
+                    <div id="outputEditorFooter">
+                        <div class="editor-footer">
+                            <div class="status">
+                                <span>Ln <b id="outputCurrentLine">1</b></span>
+                                <span>Col <b id="outputCurrentColumn">1</b></span>
+                                <span>Lines <b id="outputTotalLines">1</b></span>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- CodeMirror 5.65.21 -->
+        <script src="js/codemirror/codemirror.js"></script>
+        <script src="js/codemirror/active-line.js"></script>
+        <script src="js/codemirror/foldcode.js"></script>
+        <script src="js/codemirror/foldgutter.js"></script>
+        <script src="js/codemirror/brace-fold.js"></script>
+        <script src="js/codemirror/xml-fold.js"></script>
+        <script src="js/codemirror/xml.js"></script>
+        <script src="js/codemirror/javascript.js"></script>
+        <script src="js/codemirror/css.js"></script>
+        <script src="js/codemirror/htmlmixed.js"></script>
+        <script src="js/codemirror/matchbrackets.js"></script>
+        <script src="js/codemirror/matchtags.js"></script>
+        <script src="js/codemirror/indent-fold.js"></script>
+        <script src="js/codemirror/closetag.js"></script>
+        <script src="js/codemirror/closebrackets.js"></script>
+
+        <div id="footer-container"></div>
+
+        <!-- Common JS -->
+        <script src="js/tool-help.js"></script>
+        <script src="js/storage.js"></script>
+        <script src="js/common.js"></script>
+        <script src="js/custom-dropdown.js"></script>
+        <script src="js/script.js"></script>
+        <script src="js/find-replace.js"></script>
+
+        <!-- Custom JS -->
+        <script>
+
+            // Elements
+            const format = "HTML";
+            const pageTitle = "HTML Formatter";
+
+            // Sample HTML used to populate the input editor for quick testing (includes inline CSS and JS)
+            const DUMMY_HTML = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Sample Page</title><style>body{font-family:Arial,sans-serif;margin:0;padding:20px}.card{border:1px solid #ccc;padding:10px}.card>h2{color:#2c3e50}.card:hover{background:#f9f9f9}</style></head><body><header><h1>Welcome to Toolstack</h1><p>All handy tools in one place.</p></header><main><section class="card"><h2>About</h2><p>This is a <strong>sample</strong> HTML block used for <em>testing</em> the formatter.</p><ul id="features"><li>Fast</li><li>Free</li><li>Offline-friendly</li></ul></section></main><footer><p>&copy; 2026 Codexael</p></footer><script>var list=document.getElementById('features');if(list){list.innerHTML+='<li>Secure</li><li>Simple</li>';}console.log('Toolstack demo script loaded');<\/script></body></html>`;
+
+            // HTML void elements that never have a closing tag, so they must not push the indent level
+            const VOID_ELEMENTS = new Set([
+                "area", "base", "br", "col", "embed", "hr", "img", "input",
+                "link", "meta", "param", "source", "track", "wbr"
+            ]);
+            const input = document.getElementById("input");
+            const output = document.getElementById("output");
+            const fileInput = document.getElementById("fileInput");
+            const indentSelect = document.getElementById("indentSelect");
+            CustomDropdown.enhance(indentSelect);
+            const previewFrame = document.getElementById("previewFrame");
+            const ignoreEscapes = document.getElementById("ignoreEscapes");
+            const previewActions = document.getElementById("previewActions");
+            const outputEditorActions = document.getElementById("outputEditorActions");
+            const outputEditorFooter = document.getElementById("outputEditorFooter");
+
+            const inputTotalLines = document.getElementById('inputTotalLines');
+            const inputCurrentLine = document.getElementById('inputCurrentLine');
+            const inputCurrentColumn = document.getElementById('inputCurrentColumn');
+
+            const outputTotalLines = document.getElementById('outputTotalLines');
+            const outputCurrentLine = document.getElementById('outputCurrentLine');
+            const outputCurrentColumn = document.getElementById('outputCurrentColumn');
+
+            const codeMirrorInput = createCodeMirrorEditor(input, format);
+            const codeMirrorOutput = createCodeMirrorEditor(output, format);
+            const codeMirrorOutputWrapper = codeMirrorOutput.getWrapperElement();
+
+            // Loads sample HTML into the input editor
+            function loadDummyData() {
+                codeMirrorInput.setValue(DUMMY_HTML);
+            }
+
+            // Clears all HTML input fields
+            function clearHTMLInputs() {
+                switchOutputTab();
+                clearInputs();
+                previewFrame.srcdoc = "";
+            }
+
+            // Reports whether the preview tab is showing so Undo can reopen it after Clear.
+            function getPageUndoState() {
+                return { previewShown: previewFrame.style.display === "block" };
+            }
+
+            // Reopens the preview tab with the restored input when it was showing before Clear ran.
+            function restorePageUndoState(state) {
+                if (state.previewShown && previewFrame.style.display !== "block") switchOutputTab(true);
+            }
+
+            // Processes HTML with optional beautify/minify
+            function processHtml(isBeautify = true) {
+                clearInput(codeMirrorOutput);
+
+                try {
+                    switchOutputTab();
+                    const { html: safeHtml, blocks } = extractRawTextBlocks(codeMirrorInput.getValue());
+                    const html = safeHtml.replace(/>\s+</g, "><").replace(/\s+/g, " ").trim();
+                    const tabSize = indentSelect.value === "4" ? 4 : 2;
+                    const result = isBeautify
+                        ? formatHTML(html, tabSize)
+                        : html;
+                    codeMirrorOutput.setValue(restoreRawTextBlocks(result, blocks, isBeautify, tabSize));
+                } catch (error) {
+                    console.log("Processing HTML error:", error.message);
+                    showErrorToast("Invalid HTML");
+                }
+            }
+
+            // Pulls script/style element content out into placeholders so it is never treated as markup whitespace
+            function extractRawTextBlocks(html) {
+                const blocks = [];
+                const safeHtml = html.replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1\s*>/gi, match => {
+                    const tag = match.match(/^<(script|style)\b/i)[1].toLowerCase();
+                    const openTagEnd = match.indexOf(">") + 1;
+                    const closeTagStart = match.lastIndexOf("<");
+                    const content = match.slice(openTagEnd, closeTagStart);
+                    if (!content.trim()) return match;
+
+                    const index = blocks.length;
+                    blocks.push({ tag, content });
+                    return match.slice(0, openTagEnd) + `%%HTML_FMT_BLOCK_${index}%%` + match.slice(closeTagStart);
+                });
+                return { html: safeHtml, blocks };
+            }
+
+            // Restores each script/style placeholder; beautify mode also indents the CSS/JS content itself
+            function restoreRawTextBlocks(html, blocks, isBeautify, tabSize) {
+                return html.replace(/%%HTML_FMT_BLOCK_(\d+)%%/g, (placeholder, index, offset, full) => {
+                    const block = blocks[Number(index)];
+                    if (!isBeautify) return block.content;
+
+                    const formatted = block.tag === "style"
+                        ? formatCSS(block.content, tabSize)
+                        : formatJS(block.content, tabSize);
+
+                    const lineStart = full.lastIndexOf("\n", offset) + 1;
+                    const indentPrefix = full.slice(lineStart, offset);
+                    return formatted.split("\n").map((line, i) => i === 0 ? line : indentPrefix + line).join("\n");
+                });
+            }
+
+            // Formats CSS content with brace/semicolon-based indentation
+            function formatCSS(css, tabSize) {
+                const PADDING = " ".repeat(tabSize);
+                let indent = 0;
+                let output = "";
+                let line = "";
+                let i = 0;
+                const n = css.length;
+
+                function flushLine() {
+                    const trimmed = line.trim();
+                    if (trimmed) output += PADDING.repeat(indent) + trimmed + "\n";
+                    line = "";
+                }
+
+                while (i < n) {
+                    const ch = css[i];
+
+                    if (ch === "/" && css[i + 1] === "*") {
+                        flushLine();
+                        const end = css.indexOf("*/", i + 2);
+                        const comment = end === -1 ? css.slice(i) : css.slice(i, end + 2);
+                        output += PADDING.repeat(indent) + comment + "\n";
+                        i += comment.length;
+                        continue;
+                    }
+
+                    if (ch === '"' || ch === "'") {
+                        const quote = ch;
+                        let j = i + 1;
+                        let str = ch;
+                        while (j < n) {
+                            str += css[j];
+                            if (css[j] === "\\") { j++; if (j < n) str += css[j]; }
+                            else if (css[j] === quote) { j++; break; }
+                            j++;
+                        }
+                        line += str;
+                        i = j;
+                        continue;
+                    }
+
+                    if (ch === "{") {
+                        line += (line && !/\s$/.test(line) ? " " : "") + "{";
+                        flushLine();
+                        indent++;
+                        i++;
+                        continue;
+                    }
+                    if (ch === "}") {
+                        flushLine();
+                        indent = Math.max(indent - 1, 0);
+                        output += PADDING.repeat(indent) + "}\n";
+                        i++;
+                        continue;
+                    }
+                    if (ch === ";") {
+                        line += ";";
+                        flushLine();
+                        i++;
+                        continue;
+                    }
+                    if (/\s/.test(ch)) {
+                        if (line && !/\s$/.test(line)) line += " ";
+                        i++;
+                        continue;
+                    }
+                    line += ch;
+                    i++;
+                }
+                flushLine();
+                return output.trim();
+            }
+
+            // Formats JS content with brace/semicolon-aware indentation, respecting strings, template literals, comments and regex literals
+            function formatJS(js, tabSize) {
+                const PADDING = " ".repeat(tabSize);
+                let indent = 0;
+                let output = "";
+                let line = "";
+                let i = 0;
+                const n = js.length;
+                let parenDepth = 0;
+                let lastSignificantChar = "";
+                let lastSignificantWord = "";
+
+                const REGEX_ALLOWED_KEYWORDS = new Set([
+                    "return", "typeof", "case", "do", "else", "in", "instanceof",
+                    "new", "void", "throw", "delete", "yield", "await"
+                ]);
+
+                function flushLine() {
+                    const trimmed = line.trim();
+                    if (trimmed) output += PADDING.repeat(indent) + trimmed + "\n";
+                    line = "";
+                }
+
+                function isRegexAllowed() {
+                    if (!lastSignificantChar) return true;
+                    if (/[a-zA-Z0-9_$)\]]/.test(lastSignificantChar)) {
+                        return REGEX_ALLOWED_KEYWORDS.has(lastSignificantWord);
+                    }
+                    return true;
+                }
+
+                function readSimpleString(str, start, quote) {
+                    let j = start;
+                    let out = quote;
+                    j++;
+                    while (j < str.length) {
+                        out += str[j];
+                        if (str[j] === "\\") { j++; if (j < str.length) out += str[j]; }
+                        else if (str[j] === quote) { j++; break; }
+                        j++;
+                    }
+                    return { text: out, next: j };
+                }
+
+                while (i < n) {
+                    const ch = js[i];
+
+                    // Line comment
+                    if (ch === "/" && js[i + 1] === "/") {
+                        const end = js.indexOf("\n", i);
+                        const comment = end === -1 ? js.slice(i) : js.slice(i, end);
+                        line += (line && !/\s$/.test(line) ? " " : "") + comment;
+                        flushLine();
+                        i += comment.length;
+                        continue;
+                    }
+
+                    // Block comment
+                    if (ch === "/" && js[i + 1] === "*") {
+                        const end = js.indexOf("*/", i + 2);
+                        const comment = end === -1 ? js.slice(i) : js.slice(i, end + 2);
+                        line += comment;
+                        i += comment.length;
+                        continue;
+                    }
+
+                    // Single/double-quoted strings
+                    if (ch === "'" || ch === '"') {
+                        const { text, next } = readSimpleString(js, i, ch);
+                        line += text;
+                        lastSignificantChar = '"';
+                        lastSignificantWord = "";
+                        i = next;
+                        continue;
+                    }
+
+                    // Template literals (handles ${...} interpolation, including nested braces/strings)
+                    if (ch === "`") {
+                        let j = i + 1;
+                        let str = ch;
+                        while (j < n) {
+                            if (js[j] === "\\") { str += js[j]; j++; if (j < n) { str += js[j]; j++; } continue; }
+                            if (js[j] === "`") { str += js[j]; j++; break; }
+                            if (js[j] === "$" && js[j + 1] === "{") {
+                                str += "${";
+                                j += 2;
+                                let braceDepth = 1;
+                                while (j < n && braceDepth > 0) {
+                                    const c = js[j];
+                                    if (c === "{") { braceDepth++; str += c; j++; }
+                                    else if (c === "}") { braceDepth--; str += c; j++; }
+                                    else if (c === "'" || c === '"') {
+                                        const r = readSimpleString(js, j, c);
+                                        str += r.text;
+                                        j = r.next;
+                                    } else if (c === "`") {
+                                        str += c; j++;
+                                        while (j < n && js[j] !== "`") { str += js[j]; j++; }
+                                        if (j < n) { str += js[j]; j++; }
+                                    } else { str += c; j++; }
+                                }
+                                continue;
+                            }
+                            str += js[j];
+                            j++;
+                        }
+                        line += str;
+                        lastSignificantChar = '"';
+                        lastSignificantWord = "";
+                        i = j;
+                        continue;
+                    }
+
+                    // Regex literal (heuristic: only when a regex is syntactically plausible here)
+                    if (ch === "/" && isRegexAllowed()) {
+                        let j = i + 1;
+                        let str = ch;
+                        let inClass = false;
+                        let closed = false;
+                        while (j < n) {
+                            const c = js[j];
+                            str += c;
+                            if (c === "\\") { j++; if (j < n) str += js[j]; }
+                            else if (c === "[") inClass = true;
+                            else if (c === "]") inClass = false;
+                            else if (c === "/" && !inClass) { j++; closed = true; break; }
+                            else if (c === "\n") break;
+                            j++;
+                        }
+                        if (closed) {
+                            while (j < n && /[a-z]/i.test(js[j])) { str += js[j]; j++; }
+                            line += str;
+                            lastSignificantChar = "/";
+                            lastSignificantWord = "";
+                            i = j;
+                            continue;
+                        }
+                        // Not actually a regex (e.g. unterminated) - fall through and treat "/" as a normal character
+                    }
+
+                    if (ch === "(") { parenDepth++; line += ch; lastSignificantChar = ch; lastSignificantWord = ""; i++; continue; }
+                    if (ch === ")") { parenDepth = Math.max(parenDepth - 1, 0); line += ch; lastSignificantChar = ch; lastSignificantWord = ""; i++; continue; }
+
+                    if (ch === "{") {
+                        line += (line && !/\s$/.test(line) ? " " : "") + "{";
+                        flushLine();
+                        indent++;
+                        lastSignificantChar = "{";
+                        lastSignificantWord = "";
+                        i++;
+                        continue;
+                    }
+                    if (ch === "}") {
+                        flushLine();
+                        indent = Math.max(indent - 1, 0);
+
+                        // Peek past whitespace: merge onto this line only for genuine continuations
+                        // (else/catch/finally/while, or closing punctuation) - anything else starts fresh
+                        let k = i + 1;
+                        while (k < n && /\s/.test(js[k])) k++;
+                        const rest = js.slice(k, k + 7);
+                        const isKeywordMerge = /^else\b/.test(rest) || /^catch\b/.test(rest) || /^finally\b/.test(rest) || /^while\b/.test(rest);
+                        const mergesWithNext = k < n && (
+                            js[k] === "," || js[k] === ")" || js[k] === "]" || js[k] === ";" || isKeywordMerge
+                        );
+
+                        if (mergesWithNext) {
+                            line = isKeywordMerge ? "} " : "}";
+                        } else {
+                            output += PADDING.repeat(indent) + "}\n";
+                        }
+                        lastSignificantChar = "}";
+                        lastSignificantWord = "";
+                        i++;
+                        continue;
+                    }
+                    if (ch === ";" && parenDepth === 0) {
+                        line += ";";
+                        flushLine();
+                        lastSignificantChar = ";";
+                        lastSignificantWord = "";
+                        i++;
+                        continue;
+                    }
+
+                    if (/\s/.test(ch)) {
+                        if (line && !/\s$/.test(line)) line += " ";
+                        i++;
+                        continue;
+                    }
+
+                    line += ch;
+                    if (/[a-zA-Z0-9_$]/.test(ch)) lastSignificantWord += ch;
+                    else lastSignificantWord = "";
+                    lastSignificantChar = ch;
+                    i++;
+                }
+                flushLine();
+                return output.trim();
+            }
+
+            // Formats HTML string with specified indentation
+            function formatHTML(html, tabSize) {
+                const PADDING = " ".repeat(tabSize);
+                let formatted = "";
+                let indent = 0;
+                if (ignoreEscapes.checked) html = removeEscapes(html);
+                html = html
+                    .replace(/(<(?:script|style)\b[^>]*>)\s*(%%HTML_FMT_BLOCK_\d+%%)\s*(<\/(?:script|style)>)/gi, "$1\n$2\n$3")
+                    .replace(/></g, ">\n<")
+                    .replace(/\n\s*\n/g, "\n");
+
+                html.split("\n").forEach(line => {
+                    line = line.trim();
+                    if (!line) return;
+
+                    const isClosingTag = /^<\/\w/.test(line);
+                    const isOpeningTag = /^<\w[^>]*[^\/]>$/.test(line);
+                    const tagName = (line.match(/^<\/?([\w-]+)/) || [])[1];
+                    const isVoidTag = isOpeningTag && tagName && VOID_ELEMENTS.has(tagName.toLowerCase());
+
+                    if (isClosingTag) indent = Math.max(indent - 1, 0);
+                    formatted += PADDING.repeat(indent) + line + "\n";
+                    if (isOpeningTag && !isVoidTag) indent++;
+                });
+
+                return formatted.trim();
+            }
+
+            // Switches output tab between code and preview
+            function switchOutputTab(htmlPreview = false) {
+                if (htmlPreview && isInputBlank(codeMirrorInput)) return;
+                previewFrame.srcdoc = ignoreEscapes.checked ? removeEscapes(codeMirrorInput.getValue()) : codeMirrorInput.getValue();
+                codeMirrorOutputWrapper.style.display = htmlPreview ? "none" : "block";
+                previewFrame.style.display = htmlPreview ? "block" : "none";
+                outputEditorActions.style.display = htmlPreview ? "none" : "flex";
+                outputEditorFooter.style.display = htmlPreview ? "none" : "block";
+                previewActions.style.display = htmlPreview ? "flex" : "none";
+            }
+
+            // Removes escape characters from input string
+            function removeEscapes(input) {
+                try {
+                    return input.replace(/\\[nrtbfv\\'"0]|[\n\r\t\b\f\v]/g, "");
+                } catch (error) { console.log("Something went wrong removing escapes:", error); }
+                return "";
+            }
+
+            // Prints the HTML content from preview
+            function printHTMLPreview() {
+                try {
+                    const data = previewFrame.srcdoc;
+                    if (isBlank(data, "Nothing to print")) return;
+
+                    const printWindow = window.open("", "_blank");
+                    printWindow.document.write(previewFrame.srcdoc);
+                    printWindow.document.close();
+                    printWindow.focus();
+                    printWindow.print();
+                    printWindow.close();
+                } catch (error) { 
+                    console.log("Printing " + format + " error:", error.message);
+                    showErrorToast(`Error printing ${format}`);
+                }
+            }
+
+            setupEditors([
+                createEditorConfig(codeMirrorInput, inputTotalLines, inputCurrentLine, inputCurrentColumn),
+                createEditorConfig(codeMirrorOutput, outputTotalLines, outputCurrentLine, outputCurrentColumn)
+            ]);
+        </script>
+
+    </body>
+</html>

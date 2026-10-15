@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Codexael Toolstack — Data Converter</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+        <!-- Metadata -->
+        <meta name="description" content="Convert JSON to XML and XML to JSON instantly in your browser.">
+        <meta name="author" content="Codexael">
+        <meta name="theme-color" content="#fff4e0" media="(prefers-color-scheme: light)">
+        <meta name="theme-color" content="#17140f" media="(prefers-color-scheme: dark)">
+
+        <!-- Open Graph -->
+        <meta property="og:title" content="Codexael Toolstack — JSON ⇄ XML Converter">
+        <meta property="og:description" content="Convert JSON to XML and XML to JSON instantly in your browser.">
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="https://tools.codexael.com/data_converter.html">
+        <meta property="og:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+        <meta property="og:image:width" content="1200">
+        <meta property="og:image:height" content="630">
+        <meta property="og:image:type" content="image/png">
+        <meta property="og:image:alt" content="Codexael Toolstack — JSON ⇄ XML Converter">
+        <meta property="og:site_name" content="Codexael Toolstack">
+
+        <!-- Twitter Card -->
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="Codexael Toolstack — JSON ⇄ XML Converter">
+        <meta name="twitter:description" content="Convert JSON to XML and XML to JSON instantly in your browser.">
+        <meta name="twitter:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+
+        <!-- Favicon / App Icon -->
+        <link rel="icon" type="image/svg+xml" href="assets/images/codexael_icon.svg">
+        <link rel="apple-touch-icon" href="assets/images/codexael_icon.svg">
+
+        <!-- Bootstrap 5.2.0-beta1 -->
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+
+        <!-- Bootstrap with Popper 5.2.0-beta1 -->
+        <script src="js/bootstrap.bundle.min.js"></script>
+
+        <!-- Bootstrap Icons 1.11.3 -->
+        <link rel="stylesheet" href="css/bootstrap-icons.min.css">
+
+        <!-- CodeMirror 5.65.21 -->
+        <link rel="stylesheet" href="css/codemirror/codemirror.css">
+        <link rel="stylesheet" href="css/codemirror/foldgutter.css">
+
+        <!-- Google fonts -->
+        <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+        <!-- Custom CSS -->
+        <link rel="stylesheet" href="css/find-replace.css">
+        <link rel="stylesheet" href="css/keycaps.css">
+    </head>
+    <body>
+        <!-- Common layout -->
+        <div id="navbar-container"></div>
+
+        <div class="container-fluid tool-wrapper">
+            <div class="row g-3 g-md-0 gx-md-3 gx-0">
+
+                <!-- Left Editor -->
+                <div class="col-md-5 no-padding">
+                    <div class="fit-content">
+                        <select class="form-select active form-select-sm w-auto" id="inputFormat" onchange="formatChange(inputFormat, outputFormat)">
+                            <option value="json">JSON</option>
+                            <option value="xml">XML</option>
+                        </select>
+                    </div>
+                    <div id="inputEditor" class="editor-panel converter-editor-panel">
+                        <div class="editor-header">
+                            <span class="editor-title">Input</span>
+                            <div class="editor-actions">
+                                <button title="Collapse" onclick="toggleEditor(codeMirrorInput)"><i class="bi bi-dash-square icon-btn"></i></button>
+                                <button title="Expand" onclick="toggleEditor(codeMirrorInput, true)"><i class="bi bi-plus-square icon-btn"></i></button>
+                                <div class="divider"></div>
+                                <button title="Download" onclick="downloadDynamicData()"><i class="bi bi-download icon-btn"></i></button>
+                                <button title="Validate" onclick="validateDynamicData()"><i class="bi bi-check-lg icon-btn"></i></button>
+                                <button title="Print" onclick="printDynamicData()"><i class="bi bi-printer icon-btn"></i></button>
+                                <div class="divider"></div>
+                                <button class="btn-danger" title="Clear" data-undo-clear onclick="clearInputs()"><i class="bi bi-x-lg icon-btn"></i></button>
+                                <button title="Copy" onclick="copyToClipboard(codeMirrorInput, 'copyInputEditor')"><i class="bi bi-copy icon-btn" id="copyInputEditor"></i></button>
+                                <button title="Fullscreen" onclick="toggleEditorFullScreen('inputEditor')"><i class="bi bi-arrows-fullscreen icon-btn"></i></button>
+                            </div>
+                        </div>
+
+                        <textarea class="editor-body" id="input" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"></textarea>
+
+                        <div class="editor-footer">
+                            <div class="status">
+                                <span>Ln <b id="inputCurrentLine">1</b></span>
+                                <span>Col <b id="inputCurrentColumn">1</b></span>
+                                <span>Lines <b id="inputTotalLines">1</b></span>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Center Actions -->
+                <div class="col-md-2 center-col converter-action-panel text-center invisible-scrollbars">
+                    <button class="btn action-btn-ghost" onclick="openFilePicker()"><i class="bi bi-upload"></i> Upload Data</button>
+                    <input type="file" id="fileInput" accept="*" hidden onchange="handleFileSelect(event, fileFormat)">
+
+                    <select class="form-select action-select" id="indentSelect">
+                        <option value="2">2 Tab Space</option>
+                        <option value="4">4 Tab Space</option>
+                    </select>
+
+                    <button class="btn action-btn-primary" data-shortcut="run" onclick="convertData()"><i class="bi bi-magic"></i> Convert (Beautify)</button>
+                    <button class="btn action-btn-primary" onclick="convertData(false)"><i class="bi bi-arrows-angle-contract"></i> Convert (Minify)</button>
+
+                    <button class="btn action-btn-pill" onclick="downloadDynamicData(false)"><i class="bi bi-download"></i> Download</button>
+                </div>
+
+                <!-- Right Editor -->
+                <div class="col-md-5 no-padding">
+                    <div class="right-aligned">
+                        <div class="fit-content">
+                            <select class="form-select active form-select-sm w-auto" id="outputFormat" onchange="formatChange(outputFormat, inputFormat)">
+                                <option value="json">JSON</option>
+                                <option value="xml">XML</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="outputEditor" class="editor-panel converter-editor-panel">
+                        <div class="editor-header">
+                            <span class="editor-title">Output</span>
+                            <div class="editor-actions">
+                                <button title="Collapse" onclick="toggleEditor(codeMirrorOutput)"><i class="bi bi-dash-square icon-btn"></i></button>
+                                <button title="Expand" onclick="toggleEditor(codeMirrorOutput, true)"><i class="bi bi-plus-square icon-btn"></i></button>
+                                <div class="divider"></div>
+                                <button title="Download" onclick="downloadDynamicData(false)"><i class="bi bi-download icon-btn"></i></button>
+                                <button title="Validate" onclick="validateDynamicData(false)"><i class="bi bi-check-lg icon-btn"></i></button>
+                                <button title="Print" onclick="printDynamicData(false)"><i class="bi bi-printer icon-btn"></i></button>
+                                <div class="divider"></div>
+                                <button class="btn-danger" title="Clear" data-undo-clear="Output cleared" onclick="clearInput(codeMirrorOutput)"><i class="bi bi-x-lg icon-btn"></i></button>
+                                <button title="Copy" data-shortcut="copy" onclick="copyToClipboard(codeMirrorOutput, 'copyOutputEditor')"><i class="bi bi-copy icon-btn" id="copyOutputEditor"></i></button>
+                                <button title="Fullscreen" onclick="toggleEditorFullScreen('outputEditor')"><i class="bi bi-arrows-fullscreen icon-btn"></i></button>
+                            </div>
+                        </div>
+                        
+                        <textarea class="editor-body" id="output" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"></textarea>
+
+                        <div class="editor-footer">
+                            <div class="status">
+                                <span>Ln <b id="outputCurrentLine">1</b></span>
+                                <span>Col <b id="outputCurrentColumn">1</b></span>
+                                <span>Lines <b id="outputTotalLines">1</b></span>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+
+        <!-- CodeMirror 5.65.21 -->
+        <script src="js/codemirror/codemirror.js"></script>
+        <script src="js/codemirror/active-line.js"></script>
+        <script src="js/codemirror/brace-fold.js"></script>
+        <script src="js/codemirror/foldcode.js"></script>
+        <script src="js/codemirror/foldgutter.js"></script>
+        <script src="js/codemirror/xml-fold.js"></script>
+        <script src="js/codemirror/xml.js"></script>
+        <script src="js/codemirror/indent-fold.js"></script>
+        <script src="js/codemirror/matchbrackets.js"></script>
+        <script src="js/codemirror/matchtags.js"></script>
+        <script src="js/codemirror/closetag.js"></script>
+        <script src="js/codemirror/closebrackets.js"></script>
+        <script src="js/codemirror/javascript.js"></script>
+
+        <div id="footer-container"></div>
+
+        <!-- Common JS -->
+        <script src="js/tool-help.js"></script>
+        <script src="js/storage.js"></script>
+        <script src="js/common.js"></script>
+        <script src="js/custom-dropdown.js"></script>
+        <script src="js/script.js"></script>
+        <script src="js/find-replace.js"></script>
+
+        <!-- Custom JS -->
+        <script>
+            
+            // Elements
+            const fileFormat = "data";
+            const pageTitle = "Data Converter";
+            const input = document.getElementById("input");
+            const output = document.getElementById("output");
+            const inputFormat = document.getElementById("inputFormat");
+            const outputFormat = document.getElementById("outputFormat");
+            const fileInput = document.getElementById("fileInput");
+            const indentSelect = document.getElementById("indentSelect");
+            CustomDropdown.enhance(inputFormat);
+            CustomDropdown.enhance(outputFormat);
+            CustomDropdown.enhance(indentSelect);
+
+            const inputTotalLines = document.getElementById('inputTotalLines');
+            const inputCurrentLine = document.getElementById('inputCurrentLine');
+            const inputCurrentColumn = document.getElementById('inputCurrentColumn');
+
+            const outputTotalLines = document.getElementById('outputTotalLines');
+            const outputCurrentLine = document.getElementById('outputCurrentLine');
+            const outputCurrentColumn = document.getElementById('outputCurrentColumn');
+
+            codeMirrorInput = createCodeMirrorEditor(input, getFieldFormat(true).toUpperCase());
+            codeMirrorOutput = createCodeMirrorEditor(output, getFieldFormat(false).toUpperCase());
+            
+            formatChange(inputFormat, outputFormat);
+
+            // Downloads data based on selected field format
+            function downloadDynamicData(isInput = true) {
+                var format = getFieldFormat(isInput);
+                if (!format) return;
+                downloadData(`data_converter.${format}`, isInput);
+            }
+
+            // Prints data based on selected field format
+            function printDynamicData(isInput = true) {
+                var format = getFieldFormat(isInput);
+                if (!format) return;
+                printData({ title: pageTitle, isInput: isInput, format: format.toUpperCase() });
+            }
+
+            // Validates data based on selected field format
+            function validateDynamicData(isInput = true) {
+                var format = getFieldFormat(isInput);
+                if (!format) return;
+                validateData(format.toUpperCase(), isInput);
+            }
+
+            // Returns selected format value for given field
+            function getFieldFormat(isInput) {
+                const format = isInput ? inputFormat.value : outputFormat.value;
+                return (format === 'json' || format === 'xml') ? format : '';
+            }
+
+            // Handles format change and updates other format
+            function formatChange(changedFormat, otherFormat) {
+                clearInputs();
+                if (changedFormat.value && changedFormat.value === otherFormat.value) {
+                    for (let option of otherFormat.options) {
+                        if (option.value && option.value !== changedFormat.value) {
+                            otherFormat.value = option.value;
+                            break;
+                        }
+                    }
+                    CustomDropdown.refresh(otherFormat);
+                }
+                updateCodeMirrorEditors();
+            }
+
+            function updateCodeMirrorEditors() {
+                var format = getFieldFormat(true).toUpperCase();
+                codeMirrorInput.setOption("mode", getEditorMode(format));
+                codeMirrorInput.setOption("matchTags", format !== "JSON");
+
+                format = getFieldFormat(false).toUpperCase();
+                codeMirrorOutput.setOption("mode", getEditorMode(format));
+                codeMirrorOutput.setOption("matchTags", format !== "JSON");
+            }
+
+            // Converts data between formats with optional beautify
+            function convertData(isBeautify = true) {
+                if (inputFormat.value === "xml") {
+                    if (outputFormat.value === "json") convertXMLToJSON(isBeautify);
+                }
+                else if (inputFormat.value === "json") {
+                    if (outputFormat.value === "xml") convertJSONToXML(isBeautify);
+                }
+            }
+
+            // Converts JSON to XML with optional beautify
+            function convertJSONToXML(isBeautify) {
+                clearInput(codeMirrorOutput);
+                try {
+                    if (isInputBlank(codeMirrorInput)) return;
+                    const parsedJSON = JSON.parse(codeMirrorInput.getValue());
+                    codeMirrorOutput.setValue(convertObjectToXML(parsedJSON, isBeautify));
+                } catch (error) {
+                    console.log("JSON to XML conversion error:", error.message);
+                    showErrorToast("Invalid JSON");
+                }
+            }
+
+            // Converts a parsed JSON value into a well-formed XML string with one root element.
+            function convertObjectToXML(parsedJSON, isBeautify = true) {
+                const NEWLINE = isBeautify ? "\n" : "";
+                const PADDING = isBeautify ? " ".repeat(indentSelect.value === "4" ? 4 : 2) : "";
+                const ROOT_TAG = "root";
+                const ITEM_TAG = "item";
+
+                // Builds the element for one value, and repeats the tag once per item for arrays.
+                function convert(value, tag, indent) {
+                    if (Array.isArray(value)) {
+                        if (value.length === 0) return `${indent}<${tag}/>${NEWLINE}`;
+                        return value.map(item => Array.isArray(item)
+                            ? `${indent}<${tag}>${NEWLINE}${convert(item, ITEM_TAG, indent + PADDING)}${indent}</${tag}>${NEWLINE}`
+                            : convert(item, tag, indent)).join("");
+                    }
+                    if (value === null) return `${indent}<${tag}/>${NEWLINE}`;
+                    if (typeof value === "object") {
+                        const keys = Object.keys(value);
+                        if (keys.length === 0) return `${indent}<${tag}/>${NEWLINE}`;
+                        const children = keys.map(key => convert(value[key], toXMLName(key), indent + PADDING)).join("");
+                        return `${indent}<${tag}>${NEWLINE}${children}${indent}</${tag}>${NEWLINE}`;
+                    }
+                    return `${indent}<${tag}>${escapeXML(value)}</${tag}>${NEWLINE}`;
+                }
+
+                let body;
+                const keys = parsedJSON && typeof parsedJSON === "object" && !Array.isArray(parsedJSON) ? Object.keys(parsedJSON) : [];
+                const onlyValue = keys.length === 1 ? parsedJSON[keys[0]] : undefined;
+
+                // A single key that holds an object is used as the root, so XML to JSON output converts back unchanged.
+                if (onlyValue && typeof onlyValue === "object" && !Array.isArray(onlyValue)) {
+                    body = convert(onlyValue, toXMLName(keys[0]), "");
+                }
+                // A top-level array becomes repeated item elements inside the default root.
+                else if (Array.isArray(parsedJSON) && parsedJSON.length > 0) {
+                    body = `<${ROOT_TAG}>${NEWLINE}${convert(parsedJSON, ITEM_TAG, PADDING)}</${ROOT_TAG}>${NEWLINE}`;
+                }
+                else {
+                    body = convert(Array.isArray(parsedJSON) ? null : parsedJSON, ROOT_TAG, "");
+                }
+
+                return (`<?xml version="1.0" encoding="UTF-8" ?>${NEWLINE}` + body).trim();
+            }
+
+            // Turns a JSON key into a valid XML element name by replacing invalid characters with an underscore.
+            function toXMLName(key) {
+                const name = String(key).replace(/[^\p{L}\p{N}_.\-]/gu, "_");
+                return /^[\p{L}_]/u.test(name) ? name : `_${name}`;
+            }
+
+            // Escapes special characters and removes control characters that XML does not allow.
+            function escapeXML(value) {
+                return String(value).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F￾￿]/g, "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;");
+            }
+
+            // Converts XML to JSON with optional beautify
+            function convertXMLToJSON(isBeautify) {
+                clearInput(codeMirrorOutput);
+                try {
+                    if (isInputBlank(codeMirrorInput)) return;
+                    const root = new DOMParser().parseFromString(codeMirrorInput.getValue(), "text/xml").documentElement;
+                    const json = { [root.nodeName]: convertXMLToObject(root) };
+                    codeMirrorOutput.setValue(
+                        isBeautify
+                            ? JSON.stringify(json, null, indentSelect.value === "4" ? 4 : 2)
+                            : JSON.stringify(json)
+                    );
+                } catch (error) {
+                    console.log("XML to JSON conversion error:", error.message);
+                    showErrorToast("Invalid XML");
+                }
+            }
+
+            // Converts XML node into a JavaScript object
+            function convertXMLToObject(node) {
+                let obj = {};
+
+                if (node.children.length === 0) return node.textContent.trim();
+
+                for (let child of node.children) {
+                    const name = child.nodeName;
+                    const value = convertXMLToObject(child);
+
+                    if (obj[name]) {
+                        if (!Array.isArray(obj[name])) obj[name] = [obj[name]];
+                        obj[name].push(value);
+                    }
+                    else obj[name] = value;
+                }
+
+                return obj;
+            }
+
+            setupEditors([
+                createEditorConfig(codeMirrorInput, inputTotalLines, inputCurrentLine, inputCurrentColumn),
+                createEditorConfig(codeMirrorOutput, outputTotalLines, outputCurrentLine, outputCurrentColumn)
+            ]);
+        </script>
+
+    </body>
+</html>

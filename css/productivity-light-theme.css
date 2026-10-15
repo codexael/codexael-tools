@@ -1,0 +1,86 @@
+/* Day-theme colours below all come from what text_editor.html already uses on its own light surfaces: var(--surface)/var(--surface-color) for the panes, the #7c6af7 accent from find-replace.css for hovers on a light pane, and the #ef4444 danger red from text_editor.css. */
+
+/* All productivity-tool body panes are transparent in day theme. */
+body:not(.dark-theme) .ts-body,
+body:not(.dark-theme) .dd-body,
+body:not(.dark-theme) .converter-body,
+body:not(.dark-theme) .calculator-body,
+body:not(.dark-theme) .percent-body,
+body:not(.dark-theme) .currency-body,
+body:not(.dark-theme) .todo-body,
+body:not(.dark-theme) .notes-list-body,
+body:not(.dark-theme) .poker-body,
+body:not(.dark-theme) .ip-body,
+body:not(.dark-theme) .cron-body {
+    background: var(--body-bg) !important;
+}
+
+/* With the panes transparent, labels/buttons/icons need light ink to stay visible, matching the app's existing text-on-dark-background colour. */
+body:not(.dark-theme) .ts-body,
+body:not(.dark-theme) .dd-body,
+body:not(.dark-theme) .converter-body,
+body:not(.dark-theme) .calculator-body,
+body:not(.dark-theme) .percent-body,
+body:not(.dark-theme) .currency-body,
+body:not(.dark-theme) .todo-body,
+body:not(.dark-theme) .notes-list-body,
+body:not(.dark-theme) .poker-body,
+body:not(.dark-theme) .ip-body,
+body:not(.dark-theme) .cron-body {
+    color: #E5E7EB;
+}
+
+/* Inline buttons ("Use below", "Now"). */
+body:not(.dark-theme) .ts-inline-btn,
+body:not(.dark-theme) .dd-inline-btn,
+body:not(.dark-theme) .ip-inline-btn,
+body:not(.dark-theme) .cron-inline-btn,
+body:not(.dark-theme) .cron-chip {
+    color: #E5E7EB;
+}
+
+/* Hover state on a light pane, matching find-replace.css's .fr-btn:hover / .fr-toggle.active. */
+body:not(.dark-theme) .ts-inline-btn:hover,
+body:not(.dark-theme) .dd-inline-btn:hover,
+body:not(.dark-theme) .ip-inline-btn:hover,
+body:not(.dark-theme) .cron-inline-btn:hover,
+body:not(.dark-theme) .cron-chip:hover,
+body:not(.dark-theme) .ts-zone-swap-btn:hover,
+body:not(.dark-theme) .dd-swap-btn:hover,
+body:not(.dark-theme) .converter-swap-btn:hover,
+body:not(.dark-theme) .currency-swap-btn:hover,
+body:not(.dark-theme) .calc-btn:hover,
+body:not(.dark-theme) .calc-mem-btn:hover,
+body:not(.dark-theme) .calc-history-item:hover {
+    background: rgba(124, 106, 247, 0.15);
+    border-color: rgba(124, 106, 247, 0.3);
+    color: #7c6af7;
+}
+
+/* A picked cron chip keeps its cyan fill on a light pane, even on hover. */
+body:not(.dark-theme) .cron-chip.active,
+body:not(.dark-theme) .cron-chip.active:hover {
+    background: #00ffff;
+    border-color: #00ffff;
+    color: #020617;
+}
+
+body:not(.dark-theme) .rates-toggle {
+    color: #7c6af7;
+}
+
+body:not(.dark-theme) .calc-btn.calc-op {
+    color: #7c6af7;
+    border-color: rgba(124, 106, 247, 0.3);
+}
+
+/* Danger/delete ink, matching text_editor.css's own delete colour. */
+body:not(.dark-theme) .calc-btn.calc-danger {
+    color: #ef4444;
+}
+
+body:not(.dark-theme) .todo-delete-btn:hover,
+body:not(.dark-theme) .calc-history-clear:hover {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+}

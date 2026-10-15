@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Codexael Toolstack — Base64 Image Converter</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+        <!-- Metadata -->
+        <meta name="description" content="Turn images into Base64 data URIs and back again, with no upload.">
+        <meta name="author" content="Codexael">
+        <meta name="theme-color" content="#fff4e0" media="(prefers-color-scheme: light)">
+        <meta name="theme-color" content="#17140f" media="(prefers-color-scheme: dark)">
+
+        <!-- Open Graph -->
+        <meta property="og:title" content="Codexael Toolstack — Base64 Image Converter">
+        <meta property="og:description" content="Turn images into Base64 data URIs and back again, with no upload.">
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="https://tools.codexael.com/base64_image_converter.html">
+        <meta property="og:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+        <meta property="og:image:width" content="1200">
+        <meta property="og:image:height" content="630">
+        <meta property="og:image:type" content="image/png">
+        <meta property="og:image:alt" content="Codexael Toolstack — Base64 Image Converter">
+        <meta property="og:site_name" content="Codexael Toolstack">
+
+        <!-- Twitter Card -->
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="Codexael Toolstack — Base64 Image Converter">
+        <meta name="twitter:description" content="Turn images into Base64 data URIs and back again, with no upload.">
+        <meta name="twitter:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+
+        <!-- Favicon / App Icon -->
+        <link rel="icon" type="image/svg+xml" href="assets/images/codexael_icon.svg">
+        <link rel="apple-touch-icon" href="assets/images/codexael_icon.svg">
+
+        <!-- Bootstrap 5.2.0-beta1 -->
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+
+        <!-- Bootstrap with Popper 5.2.0-beta1 -->
+        <script src="js/bootstrap.bundle.min.js"></script>
+
+        <!-- Bootstrap Icons 1.11.3 -->
+        <link rel="stylesheet" href="css/bootstrap-icons.min.css">
+
+        <!-- CodeMirror 5.65.21 -->
+        <link rel="stylesheet" href="css/codemirror/codemirror.css">
+
+        <!-- Google fonts -->
+        <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+        <!-- Custom CSS -->
+        <link rel="stylesheet" href="css/find-replace.css">
+        <link rel="stylesheet" href="css/keycaps.css">
+    </head>
+    <body>
+        <!-- Common layout -->
+        <div id="navbar-container"></div>
+
+        <div class="container-fluid tool-wrapper">
+            <div class="row g-3 g-md-0 gx-md-3 gx-0">
+
+                <!-- Left: Image -->
+                <div id="inputEditor" class="col-md-5 editor-panel">
+                    <div class="editor-header">
+                        <span class="editor-title">Image</span>
+                        <div class="editor-actions">
+                            <button title="Download" onclick="downloadImage()"><i class="bi bi-download icon-btn"></i></button>
+                            <button title="Print" onclick="printImage()"><i class="bi bi-printer icon-btn"></i></button>
+                            <div class="divider"></div>
+                            <button class="btn-danger" title="Clear" data-undo-clear onclick="clearAll()"><i class="bi bi-x-lg icon-btn"></i></button>
+                            <button title="Fullscreen" onclick="toggleEditorFullScreen('inputEditor')"><i class="bi bi-arrows-fullscreen icon-btn"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="editor-body image-body image-background center-xy flex-column" id="imageDropZone" onclick="openFilePicker(fileInput)">
+                        <div id="imageDropHint" class="center-xy flex-column image-drop-hint">
+                            <i class="bi bi-image"></i>
+                            <span>Drag &amp; drop an image, or <u>browse</u></span>
+                            <span class="hint-sub">PNG, JPG, GIF, WebP, SVG &middot; up to <span id="maxFileSizeLabel"></span> MB</span>
+                        </div>
+                        <img id="imagePreview" class="d-none" alt="Preview">
+                    </div>
+
+                    <div class="editor-footer">
+                        <div class="status">
+                            <span><i class="bi bi-file-earmark-image"></i> <b id="imageFileName">No file</b></span>
+                            <span><i class="bi bi-hdd"></i> <b id="imageFileSize">&mdash;</b></span>
+                            <span><i class="bi bi-tag"></i> <b id="imageFileType">&mdash;</b></span>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Center Actions -->
+                <div class="col-md-2 center-col action-panel text-center invisible-scrollbars">
+                    <div class="center-actions-wrapper">
+                        <button class="btn action-btn-ghost" onclick="openFilePicker(fileInput)"><i class="bi bi-upload"></i> Upload Image</button>
+                        <input type="file" id="fileInput" accept="image/*" hidden onchange="handleImageFileSelect(event)">
+
+                        <button class="btn action-btn-ghost" onclick="openFilePicker(base64FileInput)"><i class="bi bi-file-earmark-text"></i> Upload Base64</button>
+                        <input type="file" id="base64FileInput" accept=".txt,.b64,text/plain" hidden onchange="handleFileSelect(event, null, codeMirrorOutput)">
+                    </div>
+                    <div class="center-actions-wrapper overflow-hidden">
+                        <div class="center-actions-label">Base64 Format</div>
+                        <div class="segmented-control btn-group full-width" role="group" aria-label="Radio toggle">
+                            <input type="radio" name="b64_format" id="raw" value="raw">
+                            <label for="raw">Raw</label>
+
+                            <input type="radio" name="b64_format" id="dataurl" value="dataurl">
+                            <label for="dataurl">Data URL</label>
+                        </div>
+                    </div>
+                    <div class="center-actions-wrapper">
+                        <button class="btn action-btn-primary" data-shortcut="run" onclick="encodeImage()"><i class="bi bi-magic"></i> Encode</button>
+                        <button class="btn action-btn-primary" onclick="decodeImage()"><i class="bi bi-magic"></i> Decode</button>
+                    </div>
+                </div>
+
+                <!-- Right: Base64 -->
+                <div id="outputEditor" class="col-md-5 editor-panel">
+                    <div class="editor-header">
+                        <span class="editor-title">Base64</span>
+                        <div class="editor-actions">
+                            <button title="Download" onclick="downloadData('base64_image_converter.txt', false)"><i class="bi bi-download icon-btn"></i></button>
+                            <button title="Print" onclick="printData({ title: pageTitle, isInput: false })"><i class="bi bi-printer icon-btn"></i></button>
+                            <div class="divider"></div>
+                            <button class="btn-danger" title="Clear" data-undo-clear onclick="clearAll()"><i class="bi bi-x-lg icon-btn"></i></button>
+                            <button title="Copy" data-shortcut="copy" onclick="copyToClipboard(codeMirrorOutput, 'copyOutputEditor')"><i class="bi bi-copy icon-btn" id="copyOutputEditor"></i></button>
+                            <button title="Fullscreen" onclick="toggleEditorFullScreen('outputEditor')"><i class="bi bi-arrows-fullscreen icon-btn"></i></button>
+                        </div>
+                    </div>
+
+                    <textarea class="editor-body" id="output" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"></textarea>
+
+                    <div class="editor-footer">
+                        <div class="status">
+                            <span>Ln <b id="outputCurrentLine">1</b></span>
+                            <span>Col <b id="outputCurrentColumn">1</b></span>
+                            <span>Lines <b id="outputTotalLines">1</b></span>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+
+        <!-- CodeMirror 5.65.21 -->
+        <script src="js/codemirror/codemirror.js"></script>
+        <script src="js/codemirror/active-line.js"></script>
+
+        <div id="footer-container"></div>
+
+        <!-- Common JS -->
+        <script src="js/tool-help.js"></script>
+        <script src="js/storage.js"></script>
+        <script src="js/common.js"></script>
+        <script src="js/script.js"></script>
+        <script src="js/find-replace.js"></script>
+
+        <!-- Custom JS -->
+        <script>
+
+            // Elements
+            const pageTitle = "Base64 Image Converter";
+            const STORAGE_B64_FORMAT_KEY = "b64_format";
+
+            const output = document.getElementById("output");
+            const fileInput = document.getElementById("fileInput");
+            const imageDropZone = document.getElementById("imageDropZone");
+            const imageDropHint = document.getElementById("imageDropHint");
+            const imagePreview = document.getElementById("imagePreview");
+            const imageFileName = document.getElementById("imageFileName");
+            const imageFileSize = document.getElementById("imageFileSize");
+            const imageFileType = document.getElementById("imageFileType");
+
+            const outputTotalLines = document.getElementById('outputTotalLines');
+            const outputCurrentLine = document.getElementById('outputCurrentLine');
+            const outputCurrentColumn = document.getElementById('outputCurrentColumn');
+
+            const codeMirrorOutput = createCodeMirrorEditor(output);
+
+            let currentImageDataUrl = "";
+            let currentImageMime = "";
+            let currentImageName = "";
+
+            document.getElementById("maxFileSizeLabel").textContent = MAX_FILE_SIZE_MB;
+
+            // Runs after HTML content has fully loaded, get base64 format from local storage
+            window.addEventListener("DOMContentLoaded", () => {
+                const b64_format = document.querySelectorAll("input[name='b64_format']");
+                const saved_b64_format = getStorageString(STORAGE_B64_FORMAT_KEY);
+
+                let anyChecked = false;
+
+                b64_format.forEach(type => {
+                    if (type.value === saved_b64_format) {
+                        type.checked = true;
+                        anyChecked = true;
+                    }
+                });
+
+                if (!anyChecked) {
+                    b64_format[0].checked = true;
+                    setStorageString(STORAGE_B64_FORMAT_KEY, b64_format[0].value);
+                }
+
+                b64_format.forEach(radio => {
+                    radio.addEventListener("change", () => setStorageString(STORAGE_B64_FORMAT_KEY, radio.value));
+                });
+            });
+
+            // Formats byte count into a human readable size
+            function formatBytes(bytes) {
+                if (bytes < 1024) return bytes + " B";
+                if (bytes < 1048576) return (bytes / 1024).toFixed(1) + " KB";
+                return (bytes / 1048576).toFixed(2) + " MB";
+            }
+
+            // Reads the selected image file and shows its preview
+            function loadImageFile(file) {
+                if (!file.type.startsWith("image/")) {
+                    showErrorToast("Please select a valid image file");
+                    return;
+                }
+
+                const sizeInMB = file.size / (1024 * 1024);
+                if (sizeInMB > MAX_FILE_SIZE_MB) {
+                    showErrorToast(`File size exceeds ${MAX_FILE_SIZE_MB} MB limit`);
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = e => showImagePreview(e.target.result, file.name, file.size, file.type);
+                reader.onerror = () => showErrorToast("Error reading image file");
+                reader.readAsDataURL(file);
+            }
+
+            // Displays the given image data URL in the preview panel
+            function showImagePreview(dataUrl, name, size, type) {
+                currentImageDataUrl = dataUrl;
+                currentImageMime = type || "image/png";
+                currentImageName = name || "";
+
+                imagePreview.src = dataUrl;
+                imagePreview.classList.remove("d-none");
+                imageDropHint.classList.add("d-none");
+
+                imageFileName.textContent = name || "decoded_image";
+                imageFileSize.textContent = size ? formatBytes(size) : "—";
+                imageFileType.textContent = type || "—";
+            }
+
+            // Clears the image preview panel
+            function clearImagePanel() {
+                currentImageDataUrl = "";
+                currentImageMime = "";
+                currentImageName = "";
+
+                fileInput.value = "";
+                imagePreview.src = "";
+                imagePreview.classList.add("d-none");
+                imageDropHint.classList.remove("d-none");
+
+                imageFileName.textContent = "No file";
+                imageFileSize.textContent = "—";
+                imageFileType.textContent = "—";
+            }
+
+            // Returns the loaded image and its file details so Clear can offer Undo.
+            function getPageUndoState() {
+                return {
+                    dataUrl: currentImageDataUrl,
+                    mime: currentImageMime,
+                    name: currentImageName,
+                    fileNameText: imageFileName.textContent,
+                    fileSizeText: imageFileSize.textContent,
+                    fileTypeText: imageFileType.textContent
+                };
+            }
+
+            // Shows the image that was loaded before Clear ran, with the same file details.
+            function restorePageUndoState(state) {
+                if (!state.dataUrl || currentImageDataUrl) return;
+                showImagePreview(state.dataUrl, state.name, null, state.mime);
+                imageFileName.textContent = state.fileNameText;
+                imageFileSize.textContent = state.fileSizeText;
+                imageFileType.textContent = state.fileTypeText;
+            }
+
+            // Handles image selected via the file picker
+            function handleImageFileSelect(event) {
+                const file = event.target.files[0];
+                if (file) loadImageFile(file);
+            }
+
+            // Drag & drop support for the image panel
+            imageDropZone.addEventListener("dragover", e => { e.preventDefault(); imageDropZone.classList.add("drag-over"); });
+            imageDropZone.addEventListener("dragleave", () => imageDropZone.classList.remove("drag-over"));
+            imageDropZone.addEventListener("drop", e => {
+                e.preventDefault();
+                e.stopPropagation();
+                imageDropZone.classList.remove("drag-over");
+                if (e.dataTransfer.files.length) loadImageFile(e.dataTransfer.files[0]);
+            });
+
+            // Encodes the loaded image to Base64
+            function encodeImage() {
+                try {
+                    if (!currentImageDataUrl) {
+                        showInfoToast("Please upload an image first");
+                        return;
+                    }
+
+                    const selected = document.querySelector('input[name="b64_format"]:checked');
+                    const raw = currentImageDataUrl.split(",")[1];
+                    codeMirrorOutput.setValue(selected && selected.value === "dataurl" ? currentImageDataUrl : raw);
+                    showSuccessToast("Image encoded to Base64");
+                } catch (error) {
+                    console.log("Encoding error:", error.message);
+                    showErrorToast("Error encoding image");
+                }
+            }
+
+            // Decodes a Base64 string (or data URL) back into an image
+            function decodeImage() {
+                try {
+                    const value = codeMirrorOutput.getValue().trim();
+                    if (isBlank(value)) return;
+
+                    let dataUrl;
+                    if (value.startsWith("data:")) {
+                        dataUrl = value;
+                    } else {
+                        let mime = "image/png";
+                        try {
+                            const bin = atob(value.substring(0, 12));
+                            const bytes = [...bin].map(c => c.charCodeAt(0));
+                            if (bytes[0] === 0xFF && bytes[1] === 0xD8) mime = "image/jpeg";
+                            else if (bytes[0] === 0x89 && bytes[1] === 0x50) mime = "image/png";
+                            else if (bytes[0] === 0x47 && bytes[1] === 0x49) mime = "image/gif";
+                            else if (bytes[0] === 0x52 && bytes[1] === 0x49) mime = "image/webp";
+                            else if (bytes[0] === 0x3C) mime = "image/svg+xml";
+                        } catch { /* fall back to default mime */ }
+                        dataUrl = `data:${mime};base64,${value}`;
+                    }
+
+                    const testImage = new Image();
+                    testImage.onload = () => {
+                        showImagePreview(dataUrl, "decoded_image", null, dataUrl.substring(5, dataUrl.indexOf(";")));
+                        showSuccessToast("Base64 decoded to image");
+                    };
+                    testImage.onerror = () => showErrorToast("Invalid Base64 image data");
+                    testImage.src = dataUrl;
+                } catch (error) {
+                    console.log("Decoding error:", error.message);
+                    showErrorToast("Error decoding Base64");
+                }
+            }
+
+            // Maps a mime subtype to its conventional file extension
+            function getExtensionFromMime(mime) {
+                const overrides = { "image/jpeg": "jpg", "image/svg+xml": "svg" };
+                return overrides[mime] || (mime.split("/")[1] || "png");
+            }
+
+            // Downloads the currently displayed image
+            function downloadImage() {
+                if (!currentImageDataUrl) {
+                    showInfoToast("Nothing to download");
+                    return;
+                }
+
+                const fileName = `base64_image_converter.${getExtensionFromMime(currentImageMime)}`;
+
+                const a = document.createElement("a");
+                a.href = currentImageDataUrl;
+                a.download = fileName;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            }
+
+            // Clears both the image panel and the Base64 panel
+            function clearAll() {
+                clearImagePanel();
+                clearInput(codeMirrorOutput);
+            }
+
+            // Prints the currently displayed image
+            function printImage() {
+                try {
+                    if (!currentImageDataUrl) {
+                        showInfoToast("Nothing to print");
+                        return;
+                    }
+
+                    const printWindow = window.open("", "_blank");
+                    printWindow.document.write(`
+                        <html>
+                            <head>
+                                <title>Codexael Toolstack — ${pageTitle}</title>
+                                <style>
+                                    body { margin: 0; display: flex; align-items: center; justify-content: center; height: 100vh; }
+                                    img { max-width: 100%; max-height: 100%; }
+                                </style>
+                            </head>
+                            <body><img src="${currentImageDataUrl}"></body>
+                        </html>
+                    `);
+                    printWindow.document.close();
+                    printWindow.onload = function () {
+                        printWindow.focus();
+                        printWindow.print();
+                        printWindow.close();
+                    };
+                } catch (error) {
+                    console.log("Printing image error:", error.message);
+                    showErrorToast("Error printing image");
+                }
+            }
+
+            setupEditors([
+                createEditorConfig(codeMirrorOutput, outputTotalLines, outputCurrentLine, outputCurrentColumn)
+            ]);
+        </script>
+
+    </body>
+</html>

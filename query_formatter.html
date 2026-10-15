@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Codexael Toolstack — Query Formatter</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+        <!-- Metadata -->
+        <meta name="description" content="Format PostgreSQL, SQL Server, MySQL, SQLite and N1QL queries in one click.">
+        <meta name="author" content="Codexael">
+        <meta name="theme-color" content="#fff4e0" media="(prefers-color-scheme: light)">
+        <meta name="theme-color" content="#17140f" media="(prefers-color-scheme: dark)">
+
+        <!-- Open Graph -->
+        <meta property="og:title" content="Codexael Toolstack — SQL & N1QL Query Formatter">
+        <meta property="og:description" content="Format PostgreSQL, SQL Server, MySQL, SQLite and N1QL queries in one click.">
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="https://tools.codexael.com/query_formatter.html">
+        <meta property="og:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+        <meta property="og:image:width" content="1200">
+        <meta property="og:image:height" content="630">
+        <meta property="og:image:type" content="image/png">
+        <meta property="og:image:alt" content="Codexael Toolstack — SQL & N1QL Query Formatter">
+        <meta property="og:site_name" content="Codexael Toolstack">
+
+        <!-- Twitter Card -->
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="Codexael Toolstack — SQL & N1QL Query Formatter">
+        <meta name="twitter:description" content="Format PostgreSQL, SQL Server, MySQL, SQLite and N1QL queries in one click.">
+        <meta name="twitter:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+
+        <!-- Favicon / App Icon -->
+        <link rel="icon" type="image/svg+xml" href="assets/images/codexael_icon.svg">
+        <link rel="apple-touch-icon" href="assets/images/codexael_icon.svg">
+
+        <!-- Bootstrap 5.2.0-beta1 -->
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+
+        <!-- Bootstrap with Popper 5.2.0-beta1 -->
+        <script src="js/bootstrap.bundle.min.js"></script>
+
+        <!-- Bootstrap Icons 1.11.3 -->
+        <link rel="stylesheet" href="css/bootstrap-icons.min.css">
+
+        <!-- CodeMirror 5.65.21 -->
+        <link rel="stylesheet" href="css/codemirror/codemirror.css">
+        <link rel="stylesheet" href="css/codemirror/foldgutter.css">
+
+        <!-- Google fonts -->
+        <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+        <!-- Custom CSS -->
+        <link rel="stylesheet" href="css/find-replace.css">
+        <link rel="stylesheet" href="css/keycaps.css">
+        <link rel="stylesheet" href="css/query_formatter.css">
+    </head>
+    <body>
+        <!-- Common layout -->
+        <div id="navbar-container"></div>
+
+        <div class="container-fluid tool-wrapper">
+            <div class="row g-3 g-md-0 gx-md-3 gx-0">
+
+                <!-- Left Editor -->
+                <div id="inputEditor" class="col-md-5 editor-panel">
+                    <div class="editor-header">
+                        <span class="editor-title">Input</span>
+                        <div class="editor-actions">
+                            <button title="Collapse" onclick="toggleEditor(codeMirrorInput)"><i class="bi bi-dash-square icon-btn"></i></button>
+                            <button title="Expand" onclick="toggleEditor(codeMirrorInput, true)"><i class="bi bi-plus-square icon-btn"></i></button>
+                            <div class="divider"></div>
+                            <button title="Load Dummy Data" onclick="loadDummyData()"><i class="bi bi-file-earmark-text icon-btn"></i></button>
+                            <div class="divider"></div>
+                            <button title="Download" onclick="downloadData(downloadFileName)"><i class="bi bi-download icon-btn"></i></button>
+                            <button title="Print" onclick="printData({ title: pageTitle, format: format })"><i class="bi bi-printer icon-btn"></i></button>
+                            <div class="divider"></div>
+                            <button class="btn-danger" title="Clear" data-undo-clear onclick="clearInputs()"><i class="bi bi-x-lg icon-btn"></i></button>
+                            <button title="Copy" onclick="copyToClipboard(codeMirrorInput, 'copyInputEditor')"><i class="bi bi-copy icon-btn" id="copyInputEditor"></i></button>
+                            <button title="Fullscreen" onclick="toggleEditorFullScreen('inputEditor')"><i class="bi bi-arrows-fullscreen icon-btn"></i></button>
+                        </div>
+                    </div>
+
+                    <textarea class="editor-body" id="input" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"></textarea>
+
+                    <div class="editor-footer">
+                        <div class="status">
+                            <span>Ln <b id="inputCurrentLine">1</b></span>
+                            <span>Col <b id="inputCurrentColumn">1</b></span>
+                            <span>Lines <b id="inputTotalLines">1</b></span>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Center Actions -->
+                <div class="col-md-2 center-col action-panel text-center invisible-scrollbars">
+                    <select class="form-select action-select" id="languageSelect" aria-label="Query language">
+                        <option value="postgresql">PostgreSQL</option>
+                        <option value="mssql">MS SQL Server</option>
+                        <option value="mysql">MySQL</option>
+                        <option value="sqlite">SQLite</option>
+                        <option value="couchbase" selected>Couchbase N1QL</option>
+                    </select>
+
+                    <button class="btn action-btn-ghost" onclick="openFilePicker()"><i class="bi bi-upload"></i> Upload Query</button>
+                    <input type="file" id="fileInput" accept=".sql,.n1ql,.txt,text/plain" hidden onchange="handleFileSelect(event, format)">
+
+                    <select class="form-select action-select" id="keywordCaseSelect" aria-label="Keyword case">
+                        <option value="upper">UPPER Keywords</option>
+                        <option value="lower">lower Keywords</option>
+                        <option value="preserve">Keep Keyword Case</option>
+                    </select>
+
+                    <select class="form-select action-select" id="indentSelect" aria-label="Indent">
+                        <option value="2">2 Tab Space</option>
+                        <option value="4">4 Tab Space</option>
+                        <option value="tab">Tab</option>
+                    </select>
+
+                    <button class="btn action-btn-primary" data-shortcut="run" onclick="processQuery()"><i class="bi bi-magic"></i> Format / Beautify</button>
+                    <button class="btn action-btn-primary" onclick="processQuery(false)"><i class="bi bi-arrows-angle-contract"></i> Minify / Compact</button>
+
+                    <button class="btn action-btn-pill" onclick="downloadData(downloadFileName, false)"><i class="bi bi-download"></i> Download</button>
+
+                    <div class="center-actions-separator"></div>
+
+                    <!-- Parameters found in the input -->
+                    <div id="paramsContainer" class="editor-panel qf-panel" style="display: none;">
+                        <div class="editor-header">
+                            <span class="editor-title">Parameters</span>
+                        </div>
+                        <div class="qf-panel-body">
+                            <div class="qf-hint" id="paramsHint"></div>
+                            <div id="paramsList"></div>
+                            <button class="btn action-btn-primary" onclick="fillParameters()"><i class="bi bi-input-cursor-text"></i> Fill Parameters</button>
+                        </div>
+                    </div>
+
+                    <!-- Tables or keyspaces found in the input -->
+                    <div id="objectsContainer" class="editor-panel qf-panel" style="display: none;">
+                        <div class="editor-header">
+                            <span class="editor-title" id="objectsTitle">Tables</span>
+                        </div>
+                        <div class="qf-panel-body">
+                            <div class="qf-hint" id="objectsHint"></div>
+                            <div id="objectsList"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Editor -->
+                <div id="outputEditor" class="col-md-5 editor-panel">
+                    <div class="editor-header">
+                        <span class="editor-title">Output</span>
+                        <div class="editor-actions">
+                            <button title="Collapse" onclick="toggleEditor(codeMirrorOutput)"><i class="bi bi-dash-square icon-btn"></i></button>
+                            <button title="Expand" onclick="toggleEditor(codeMirrorOutput, true)"><i class="bi bi-plus-square icon-btn"></i></button>
+                            <div class="divider"></div>
+                            <button title="Download" onclick="downloadData(downloadFileName, false)"><i class="bi bi-download icon-btn"></i></button>
+                            <button title="Print" onclick="printData({ title: pageTitle, isInput: false, format: format })"><i class="bi bi-printer icon-btn"></i></button>
+                            <div class="divider"></div>
+                            <button class="btn-danger" title="Clear" data-undo-clear="Output cleared" onclick="clearInput(codeMirrorOutput)"><i class="bi bi-x-lg icon-btn"></i></button>
+                            <button title="Copy" data-shortcut="copy" onclick="copyToClipboard(codeMirrorOutput, 'copyOutputEditor')"><i class="bi bi-copy icon-btn" id="copyOutputEditor"></i></button>
+                            <button title="Fullscreen" onclick="toggleEditorFullScreen('outputEditor')"><i class="bi bi-arrows-fullscreen icon-btn"></i></button>
+                        </div>
+                    </div>
+
+                    <textarea class="editor-body" id="output" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"></textarea>
+
+                    <div class="editor-footer">
+                        <div class="status">
+                            <span>Ln <b id="outputCurrentLine">1</b></span>
+                            <span>Col <b id="outputCurrentColumn">1</b></span>
+                            <span>Lines <b id="outputTotalLines">1</b></span>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+
+        <!-- CodeMirror 5.65.21 -->
+        <script src="js/codemirror/codemirror.js"></script>
+        <script src="js/codemirror/active-line.js"></script>
+        <script src="js/codemirror/brace-fold.js"></script>
+        <script src="js/codemirror/foldcode.js"></script>
+        <script src="js/codemirror/foldgutter.js"></script>
+        <script src="js/codemirror/sql.js"></script>
+        <script src="js/codemirror/indent-fold.js"></script>
+        <script src="js/codemirror/matchbrackets.js"></script>
+        <script src="js/codemirror/closebrackets.js"></script>
+
+        <!-- sql-formatter 15.9.0 -->
+        <script src="js/sql-formatter.min.js"></script>
+
+        <div id="footer-container"></div>
+
+        <!-- Common JS -->
+        <script src="js/tool-help.js"></script>
+        <script src="js/storage.js"></script>
+        <script src="js/common.js"></script>
+        <script src="js/custom-dropdown.js"></script>
+        <script src="js/script.js"></script>
+        <script src="js/find-replace.js"></script>
+
+        <!-- Custom JS -->
+        <script>
+
+            // Elements
+            const format = "SQL";
+            const pageTitle = "Query Formatter";
+            const LANGUAGE_STORAGE_KEY = "query_language";
+            const KEYWORD_CASE_STORAGE_KEY = "query_keyword_case";
+            const INDENT_STORAGE_KEY = "query_indent";
+            const DEFAULT_LANGUAGE = "couchbase";
+
+            // Maps each saved option key to the key the Couchbase-only version of this page used.
+            const LEGACY_STORAGE_KEYS = { [KEYWORD_CASE_STORAGE_KEY]: "couchbase_keyword_case", [INDENT_STORAGE_KEY]: "couchbase_indent" };
+
+            // Reserved words and functions used for Couchbase highlighting and keyspace detection
+            const N1QL_KEYWORDS = "advise all alter analyze and any array as asc at begin between binary boolean break bucket build by call case cast cluster collate collection commit committed connect continue correlated cover create current cycle database dataset datastore declare decrement default delete derived desc describe distinct do drop each element else end escape every except exclude execute exists explain fetch filter first flatten flatten_keys flush following for force from fts function golang grant group groups gsi hash having if ignore ilike in include increment index infer inline inner insert intersect into is isolation javascript join key keys keyspace known language last left let letting level like limit lsm map mapping matched materialized maxvalue merge minvalue nest next nextval nl no not nth_value nulls number object offset on option options or order others outer over parse partition password path pool preceding prepare prev previous prevval primary private privilege probe procedure public range raw read realm recursive reduce rename replace respect restart restrict return returning revoke right role roles rollback row rows satisfies savepoint schema scope select self semi sequence set show some start statistics string system then ties to tran transaction trigger truncate unbounded under union unique unnest unset update upsert use user users using validate value valued values via view when where while window with within work xor";
+            const N1QL_ATOMS = "true false null missing";
+            const N1QL_FUNCTIONS = "abs array_agg array_append array_avg array_concat array_contains array_count array_distinct array_flatten array_ifnull array_insert array_intersect array_length array_max array_min array_position array_prepend array_put array_range array_remove array_repeat array_replace array_reverse array_sort array_star array_sum avg base64_decode base64_encode ceil coalesce concat contains count countn date_add_millis date_add_str date_diff_millis date_diff_str date_format_str date_part_millis date_part_str date_trunc_millis date_trunc_str decode_json encode_json encoded_size floor greatest ifmissing ifmissingornull ifnan ifnull initcap is_array is_atom is_boolean is_number is_object is_string isarray isatom isboolean isnumber isobject isstring least length lower ltrim max meta millis millis_to_str millis_to_utc min now_millis now_str now_tz now_utc nullif nvl nvl2 object_add object_concat object_length object_names object_pairs object_put object_remove object_values pairs position power regexp_contains regexp_like regexp_position regexp_replace repeat reverse round rtrim search search_meta search_score sign split sqrt str_to_millis str_to_utc substr sum suffixes title to_array to_atom to_boolean to_number to_object to_str to_string tokens trim trunc type typename upper uuid";
+            const KEYWORD_SET = toWordSet(N1QL_KEYWORDS);
+
+            // Words that end a table list or start a clause in the SQL languages, so they are never read as a table name or alias.
+            const SQL_RESERVED_WORDS = "all alter and any apply as asc between by cascade case check collate column constraint create cross current default delete desc distinct drop dumpfile else end except exists fetch for force foreign from full glob group having if ignore in index indexed inner insert intersect into is join key lateral left like limit match natural not null offset on only option or order outer outfile partition pivot primary qualify references regexp restrict returning right select set some straight_join table tablesample then to top union unique unpivot update use using values when where window with";
+
+            const NO_SPACE_AFTER = new Set(["(", "[", "{", ","]);
+            const NO_SPACE_BEFORE = new Set([")", "]", "}", ",", ";"]);
+            const ROLE_LABELS = { read: "Read", write: "Write", index: "Index" };
+
+            // Words that make a following path a table or keyspace, grouped by the role they give it.
+            const READ_WORDS = new Set(["JOIN", "STRAIGHT_JOIN", "APPLY", "NEST", "INFER", "REFERENCES"]);
+            const TABLE_VERBS = new Set(["CREATE", "ALTER", "DROP", "TRUNCATE", "TEMP", "TEMPORARY", "UNLOGGED", "VIRTUAL", "LOCK"]);
+            const INDEX_VERBS = new Set(["CREATE", "PRIMARY", "BUILD", "UNIQUE", "CLUSTERED", "NONCLUSTERED", "FULLTEXT", "SPATIAL", "DROP"]);
+            const SKIP_BEFORE_PATH = new Set(["IF", "NOT", "EXISTS", "ONLY", "LATERAL", "TABLE", "COLLECTION", "KEYSPACE"]);
+            const SUBQUERY_STARTS = new Set(["SELECT", "WITH", "VALUES"]);
+
+            // SQL Server words that start a new statement, which ends a DECLARE list that has no semicolon.
+            const STATEMENT_STARTS = new Set(["SELECT", "SET", "INSERT", "UPDATE", "DELETE", "MERGE", "IF", "WHILE", "BEGIN", "EXEC", "EXECUTE", "RETURN", "WITH", "PRINT", "DECLARE"]);
+
+            // Token rules that every language shares.
+            const WS_RULE = ["ws", /\s+/y];
+            const COMMENT_RULE = ["comment", /--[^\n]*|\/\*[\s\S]*?(?:\*\/|$)/y];
+            const WORD_RULE = ["word", /[A-Za-z_][\w$]*/y];
+            const NUMBER_RULE = ["number", /(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?/y];
+
+            const SQL_PARAM_HINT = "Numbers, <code>NULL</code>, <code>TRUE</code> and <code>FALSE</code> stay as typed, and text in single quotes is kept. Other text becomes a quoted string.";
+
+            // Settings for each query language, where token rules are tried in order at every position.
+            const QUERY_LANGUAGES = {
+                postgresql: {
+                    formatterLanguage: "postgresql",
+                    mime: "text/x-pgsql",
+                    fileName: "postgresql_query.sql",
+                    sample: "select u.id, u.email, count(o.id) as order_count, sum(o.total) filter (where o.status = 'paid') as paid_total from public.users u left join sales.orders o on o.user_id = u.id and o.created_at >= $1::date where u.country = $2 and u.tags @> array['beta'] group by u.id, u.email having count(o.id) > $3 order by paid_total desc nulls last limit 20",
+                    rules: [
+                        WS_RULE,
+                        COMMENT_RULE,
+                        ["string", /[Ee]'(?:[^'\\]|\\[\s\S]|'')*(?:'|$)|(?:[BbXxNn]|[Uu]&)?'(?:[^']|'')*(?:'|$)|\$([A-Za-z_]\w*)?\$[\s\S]*?(?:\$\1\$|$)/y],
+                        ["ident", /"(?:[^"]|"")*(?:"|$)/y],
+                        ["param", /\$\d+/y],
+                        WORD_RULE,
+                        NUMBER_RULE
+                    ],
+                    reserved: toSet(SQL_RESERVED_WORDS),
+                    partLabels: [["Table"], ["Schema", "Table"], ["Database", "Schema", "Table"]],
+                    objectsTitle: "Tables",
+                    objectName: "table",
+                    paramHint: SQL_PARAM_HINT
+                },
+                mssql: {
+                    formatterLanguage: "transactsql",
+                    mime: "text/x-mssql",
+                    fileName: "mssql_query.sql",
+                    sample: "select top 10 c.CustomerId, c.Name, sum(o.Total) as Total from [Sales].[dbo].[Customers] c with (nolock) inner join dbo.Orders o on o.CustomerId = c.CustomerId where o.OrderDate >= @StartDate and c.Region = @Region and o.Status <> N'Cancelled' group by c.CustomerId, c.Name order by Total desc",
+                    rules: [
+                        WS_RULE,
+                        COMMENT_RULE,
+                        ["string", /[Nn]?'(?:[^']|'')*(?:'|$)/y],
+                        ["ident", /\[(?:[^\]]|\]\])*(?:\]|$)|"(?:[^"]|"")*(?:"|$)/y],
+                        ["var", /@@\w+/y],
+                        ["param", /@[A-Za-z_]\w*/y],
+                        ["word", /#{0,2}[A-Za-z_][\w$#@]*/y],
+                        NUMBER_RULE
+                    ],
+                    reserved: toSet(SQL_RESERVED_WORDS),
+                    partLabels: [["Table"], ["Schema", "Table"], ["Database", "Schema", "Table"], ["Server", "Database", "Schema", "Table"]],
+                    objectsTitle: "Tables",
+                    objectName: "table",
+                    paramHint: "Numbers and <code>NULL</code> stay as typed, <code>TRUE</code> and <code>FALSE</code> become <code>1</code> and <code>0</code>, and text in single quotes is kept. Other text becomes a quoted string."
+                },
+                mysql: {
+                    formatterLanguage: "mysql",
+                    mime: "text/x-mysql",
+                    fileName: "mysql_query.sql",
+                    sample: "select p.id, p.name, c.name as category, p.price from shop.products p join shop.categories c on c.id = p.category_id where p.price between ? and ? and p.name like concat('%', ?, '%') and p.stock > 0 order by p.price limit 25",
+                    rules: [
+                        WS_RULE,
+                        ["comment", /#[^\n]*|--(?=\s|$)[^\n]*|\/\*[\s\S]*?(?:\*\/|$)/y],
+                        ["string", /[NnBbXx]?'(?:[^'\\]|\\[\s\S]|'')*(?:'|$)|"(?:[^"\\]|\\[\s\S]|"")*(?:"|$)/y],
+                        ["ident", /`(?:[^`]|``)*(?:`|$)/y],
+                        ["var", /@@?[\w.$]+/y],
+                        ["param", /\?/y],
+                        WORD_RULE,
+                        NUMBER_RULE
+                    ],
+                    reserved: toSet(SQL_RESERVED_WORDS),
+                    partLabels: [["Table"], ["Database", "Table"]],
+                    objectsTitle: "Tables",
+                    objectName: "table",
+                    paramHint: SQL_PARAM_HINT
+                },
+                sqlite: {
+                    formatterLanguage: "sqlite",
+                    mime: "text/x-sqlite",
+                    fileName: "sqlite_query.sql",
+                    sample: "select n.id, n.title, group_concat(t.name, ', ') as tags from notes n left join note_tags nt on nt.note_id = n.id left join main.tags t on t.id = nt.tag_id where n.updated_at > :since and n.archived = 0 and n.title like ?1 group by n.id order by n.updated_at desc limit 50",
+                    rules: [
+                        WS_RULE,
+                        COMMENT_RULE,
+                        ["string", /[Xx]?'(?:[^']|'')*(?:'|$)/y],
+                        ["ident", /"(?:[^"]|"")*(?:"|$)|\[[^\]]*(?:\]|$)|`(?:[^`]|``)*(?:`|$)/y],
+                        ["param", /\?\d*|[:@$][A-Za-z_]\w*/y],
+                        WORD_RULE,
+                        NUMBER_RULE
+                    ],
+                    reserved: toSet(SQL_RESERVED_WORDS),
+                    partLabels: [["Table"], ["Schema", "Table"]],
+                    objectsTitle: "Tables",
+                    objectName: "table",
+                    paramHint: SQL_PARAM_HINT
+                },
+                couchbase: {
+                    formatterLanguage: "n1ql",
+                    mime: "text/x-n1ql",
+                    fileName: "couchbase_query.sql",
+                    sample: "select a.name, a.country, ARRAY s.flight FOR s IN r.schedule WHEN s.day = $day END as flights from `travel-sample`.inventory.airline a join `travel-sample`.inventory.route r on r.airlineid = meta(a).id where a.country = $country and r.stops = 0 and ANY s IN r.schedule SATISFIES s.utc > @after END and a.iata is valued order by a.name limit 10",
+                    rules: [
+                        WS_RULE,
+                        COMMENT_RULE,
+                        ["string", /'(?:[^'\\]|\\[\s\S]|'')*(?:'|$)|"(?:[^"\\]|\\[\s\S]|"")*(?:"|$)/y],
+                        ["ident", /`(?:[^`]|``)*(?:`|$)/y],
+                        ["param", /[$@]\w+|\?/y],
+                        WORD_RULE,
+                        NUMBER_RULE
+                    ],
+                    reserved: toSet(N1QL_KEYWORDS),
+                    namespaces: new Set(["default", "system"]),
+                    skipNames: new Set(["gsi", "fts"]),
+                    caseSensitiveNames: true,
+                    partLabels: [["Bucket"], ["Part 1", "Part 2"], ["Bucket", "Scope", "Collection"]],
+                    partNotes: ["Or a collection, when the query context sets the bucket and scope.", "Not a full bucket.scope.collection path.", ""],
+                    objectsTitle: "Keyspaces",
+                    objectName: "keyspace",
+                    paramHint: "Values are read as JSON, such as <code>42</code>, <code>true</code>, <code>\"text\"</code> or <code>[\"a\"]</code>. Other text becomes a string."
+                }
+            };
+
+            // Turns a space-separated word list into a lookup object.
+            function toWordSet(words) {
+                return words.split(" ").reduce((set, word) => { set[word] = true; return set; }, {});
+            }
+
+            // Turns a space-separated word list into a Set.
+            function toSet(words) {
+                return new Set(words.split(" "));
+            }
+
+            CodeMirror.defineMIME("text/x-n1ql", {
+                name: "sql",
+                keywords: KEYWORD_SET,
+                atoms: toWordSet(N1QL_ATOMS),
+                client: toWordSet(N1QL_FUNCTIONS),
+                builtin: {},
+                dateSQL: {},
+                support: toWordSet("doubleQuote"),
+                hooks: {
+                    "`": stream => {
+                        let ch;
+                        while ((ch = stream.next()) != null) {
+                            if (ch === "`" && !stream.eat("`")) break;
+                        }
+                        return "variable-2";
+                    },
+                    "$": stream => stream.match(/^\w+/) ? "variable-3" : null,
+                    "@": stream => stream.match(/^\w+/) ? "variable-3" : null
+                }
+            });
+
+            const input = document.getElementById("input");
+            const output = document.getElementById("output");
+            const fileInput = document.getElementById("fileInput");
+            const languageSelect = document.getElementById("languageSelect");
+            const keywordCaseSelect = document.getElementById("keywordCaseSelect");
+            const indentSelect = document.getElementById("indentSelect");
+            const paramsContainer = document.getElementById("paramsContainer");
+            const paramsHint = document.getElementById("paramsHint");
+            const paramsList = document.getElementById("paramsList");
+            const objectsContainer = document.getElementById("objectsContainer");
+            const objectsTitle = document.getElementById("objectsTitle");
+            const objectsHint = document.getElementById("objectsHint");
+            const objectsList = document.getElementById("objectsList");
+
+            restoreSelect(languageSelect, LANGUAGE_STORAGE_KEY);
+            restoreSelect(keywordCaseSelect, KEYWORD_CASE_STORAGE_KEY);
+            restoreSelect(indentSelect, INDENT_STORAGE_KEY);
+            CustomDropdown.enhance(languageSelect);
+            CustomDropdown.enhance(keywordCaseSelect);
+            CustomDropdown.enhance(indentSelect);
+
+            const inputTotalLines = document.getElementById('inputTotalLines');
+            const inputCurrentLine = document.getElementById('inputCurrentLine');
+            const inputCurrentColumn = document.getElementById('inputCurrentColumn');
+
+            const outputTotalLines = document.getElementById('outputTotalLines');
+            const outputCurrentLine = document.getElementById('outputCurrentLine');
+            const outputCurrentColumn = document.getElementById('outputCurrentColumn');
+
+            const codeMirrorInput = createCodeMirrorEditor(input, format);
+            const codeMirrorOutput = createCodeMirrorEditor(output, format);
+
+            // The chosen language id and its settings, set by applyLanguage().
+            let languageId = DEFAULT_LANGUAGE;
+            let language = QUERY_LANGUAGES[DEFAULT_LANGUAGE];
+            let downloadFileName = language.fileName;
+
+            // Values typed for each parameter, kept by parameter key while the page is open.
+            const paramValues = {};
+            let shownParamSignature = null;
+            let objects = [];
+            let objectMarks = [];
+            let analyseTimer = null;
+
+            // Sets a select to its saved value and saves every later change.
+            function restoreSelect(select, storageKey) {
+                moveLegacyStorageValue(storageKey);
+                const saved = getStorageString(storageKey, null);
+                if ([...select.options].some(option => option.value === saved)) select.value = saved;
+                select.addEventListener("change", () => setStorageString(storageKey, select.value));
+            }
+
+            // Moves a value saved by the Couchbase-only version of this page to its new key.
+            function moveLegacyStorageValue(storageKey) {
+                const legacyKey = LEGACY_STORAGE_KEYS[storageKey];
+                const legacyValue = legacyKey ? getStorageString(legacyKey, null) : null;
+                if (legacyValue === null) return;
+                if (getStorageString(storageKey, null) === null) setStorageString(storageKey, legacyValue);
+                removeStorageItem(legacyKey);
+            }
+
+            // Switches the editor colours, sample, download name and centre panels to a query language.
+            function applyLanguage(id) {
+                languageId = QUERY_LANGUAGES[id] ? id : DEFAULT_LANGUAGE;
+                language = QUERY_LANGUAGES[languageId];
+                downloadFileName = language.fileName;
+                codeMirrorInput.setOption("mode", language.mime);
+                codeMirrorOutput.setOption("mode", language.mime);
+                paramsHint.innerHTML = language.paramHint;
+                objectsTitle.textContent = language.objectsTitle;
+                objectsHint.textContent = `Click a ${language.objectName} to select the next place it is used in the input.`;
+                shownParamSignature = null;
+                analyseInput();
+            }
+
+            // Loads a sample query for the chosen language into the input editor
+            function loadDummyData() {
+                codeMirrorInput.setValue(language.sample);
+            }
+
+            // Splits a query into tokens that keep their start and end offsets, using the chosen language's rules.
+            function lexQuery(text) {
+                const tokens = [];
+                let index = 0;
+                while (index < text.length) {
+                    let type = "punct";
+                    let end = index + 1;
+                    for (const [ruleType, regex] of language.rules) {
+                        regex.lastIndex = index;
+                        if (regex.test(text)) {
+                            type = ruleType;
+                            end = regex.lastIndex;
+                            break;
+                        }
+                    }
+                    tokens.push({ type, text: text.slice(index, end), start: index, end });
+                    index = end;
+                }
+                return tokens;
+            }
+
+            // Returns the options sql-formatter needs for the chosen language, keyword case and indent.
+            function getFormatOptions() {
+                const useTabs = indentSelect.value === "tab";
+                return { language: language.formatterLanguage, keywordCase: keywordCaseSelect.value, tabWidth: useTabs ? 2 : Number(indentSelect.value), useTabs };
+            }
+
+            // Formats a query with sql-formatter, and for Couchbase keeps the syntax that the library changes.
+            function formatQuery(text) {
+                if (languageId !== "couchbase") return sqlFormatter.format(text, getFormatOptions());
+
+                const tokens = lexQuery(text);
+                // Each swap below keeps the same length, so error line and column numbers still match the input.
+                const prepared = tokens.map(token => {
+                    if (token.type === "param" && token.text[0] === "@") return "$" + token.text.slice(1);
+                    if (token.type === "string") return escapeDoubledQuotes(token.text);
+                    return token.text;
+                }).join("");
+                return tidyFormattedQuery(sqlFormatter.format(prepared, getFormatOptions()), tokens);
+            }
+
+            // Turns doubled quotes inside a string such as 'it''s' into backslash escapes, which the library reads as one string.
+            function escapeDoubledQuotes(text) {
+                const quote = text[0];
+                return quote + text.slice(1, -1).replace(/\\[\s\S]|''|""/g, match => match === quote + quote ? "\\" + quote : match) + text.slice(-1);
+            }
+
+            // Puts back each original parameter and string, and removes the space the library adds after a namespace such as default:.
+            function tidyFormattedQuery(formatted, originalTokens) {
+                const tokens = lexQuery(formatted);
+                const originals = { param: originalTokens.filter(token => token.type === "param"), string: originalTokens.filter(token => token.type === "string") };
+                const canRestore = type => tokens.filter(token => token.type === type).length === originals[type].length;
+                const restore = { param: canRestore("param"), string: canRestore("string") };
+                const next = { param: 0, string: 0 };
+                return tokens.map((token, index) => {
+                    if (token.type === "param" || token.type === "string") return restore[token.type] ? originals[token.type][next[token.type]++].text : token.text;
+                    if (token.type === "ws" && isNamespaceGap(tokens, index)) return "";
+                    return token.text;
+                }).join("");
+            }
+
+            // Checks whether a whitespace token sits between a namespace colon and a keyspace name.
+            function isNamespaceGap(tokens, index) {
+                const name = tokens[index - 2];
+                const colon = tokens[index - 1];
+                const next = tokens[index + 1];
+                return !!(colon && colon.text === ":" && isNamespace(name) && next && (next.type === "word" || next.type === "ident"));
+            }
+
+            // Checks whether a token is a namespace name, such as default in Couchbase.
+            function isNamespace(token) {
+                return !!language.namespaces && language.namespaces.has(bareName(token));
+            }
+
+            // Returns a word or quoted name in lower case without its quotes, or null for any other token.
+            function bareName(token) {
+                if (!token) return null;
+                if (token.type === "word") return token.text.toLowerCase();
+                if (token.type === "ident") return unquoteIdent(token.text).toLowerCase();
+                return null;
+            }
+
+            // Removes the quotes around a quoted name and turns each doubled closing quote into one.
+            function unquoteIdent(text) {
+                const close = { "`": "`", "\"": "\"", "[": "]" }[text[0]];
+                if (!close) return text;
+                const inner = text.length > 1 && text.endsWith(close) ? text.slice(1, -1) : text.slice(1);
+                return inner.split(close + close).join(close);
+            }
+
+            // Puts the query on one line, drops plain comments, and keeps optimizer hints such as /*+ ... */.
+            function minifyQuery(text) {
+                formatQuery(text);
+                let result = "";
+                let previous = null;
+                let gap = false;
+                lexQuery(text).forEach(token => {
+                    const isHint = token.type === "comment" && token.text.startsWith("/*+");
+                    if (token.type === "ws" || (token.type === "comment" && !isHint)) {
+                        gap = previous !== null;
+                        return;
+                    }
+                    const tightAfter = previous && previous.type === "punct" && NO_SPACE_AFTER.has(previous.text);
+                    const tightBefore = token.type === "punct" && NO_SPACE_BEFORE.has(token.text);
+                    if (gap && !tightAfter && !tightBefore) result += " ";
+                    result += token.text;
+                    previous = token;
+                    gap = false;
+                });
+                return result;
+            }
+
+            // Formats or minifies the input query into the output editor
+            function processQuery(isBeautify = true) {
+                clearInput(codeMirrorOutput);
+
+                if (isInputBlank(codeMirrorInput)) return;
+                try {
+                    const query = codeMirrorInput.getValue();
+                    codeMirrorOutput.setValue(isBeautify ? formatQuery(query) : minifyQuery(query));
+                } catch (error) {
+                    console.log("Processing query error:", error.message);
+                    showQueryError(error);
+                }
+            }
+
+            // Shows a short parse error and moves the input cursor to the line and column it names.
+            function showQueryError(error) {
+                const firstLine = String(error && error.message || error).split("\n")[0];
+                const position = /line (\d+) column (\d+)/.exec(firstLine);
+                if (!/^Parse error/i.test(firstLine)) {
+                    showErrorToast("Invalid query");
+                    return;
+                }
+
+                let detail = firstLine.replace(/\s*at line \d+ column \d+\.?/, "");
+                detail = detail.includes("«EOF»")
+                    ? "the query ends too early"
+                    : detail.replace(/^Parse error at token:\s*/i, "unexpected ").replace(/^Parse error:\s*/i, "");
+
+                if (position) {
+                    detail += ` (line ${position[1]}, column ${position[2]})`;
+                    codeMirrorInput.focus();
+                    codeMirrorInput.setCursor({ line: Number(position[1]) - 1, ch: Number(position[2]) - 1 });
+                }
+                showToast("error", `Invalid query: ${detail}`, { duration: 6000 });
+            }
+
+            // Returns the lower-case names of SQL Server variables that the query declares with DECLARE, which are not parameters.
+            function findDeclaredNames(tokens) {
+                const declared = new Set();
+                let declaring = false;
+                let depth = 0;
+                let previous = null;
+                tokens.filter(token => token.type !== "ws" && token.type !== "comment").forEach(token => {
+                    const word = token.type === "word" ? token.text.toUpperCase() : "";
+                    if (token.text === "(") depth++;
+                    else if (token.text === ")") depth = Math.max(depth - 1, 0);
+                    else if (word === "DECLARE") declaring = true;
+                    else if (token.text === ";" || STATEMENT_STARTS.has(word)) declaring = false;
+                    else if (token.type === "param" && declaring && depth === 0 && previous && (previous.text === "," || previous.text.toUpperCase() === "DECLARE")) declared.add(token.text.toLowerCase());
+                    previous = token;
+                });
+                return declared;
+            }
+
+            // Returns a key for each parameter token, so that every spelling of the same parameter shares one key, or null for a declared variable.
+            function getParamKeys(tokens) {
+                const declared = languageId === "mssql" ? findDeclaredNames(tokens) : new Set();
+                let lastPosition = 0;
+                return tokens.filter(token => token.type === "param").map(token => {
+                    if (declared.has(token.text.toLowerCase())) return null;
+                    if (token.text === "?") return "#" + (++lastPosition);
+                    const name = token.text.slice(1);
+                    if (/^\d+$/.test(name)) {
+                        // In SQLite a plain ? takes the number after the largest ?NNN seen so far.
+                        if (languageId === "sqlite") lastPosition = Math.max(lastPosition, Number(name));
+                        return "#" + Number(name);
+                    }
+                    // Couchbase treats $name and @name as one parameter, and SQL Server names ignore case.
+                    if (languageId === "couchbase") return "@" + name;
+                    if (languageId === "mssql") return "@" + name.toLowerCase();
+                    return token.text;
+                });
+            }
+
+            // Lists each parameter once, with the spelling it first appears with.
+            function collectParams(tokens) {
+                const params = [];
+                const seen = new Set();
+                const paramTokens = tokens.filter(token => token.type === "param");
+                getParamKeys(tokens).forEach((key, index) => {
+                    if (key === null || seen.has(key)) return;
+                    seen.add(key);
+                    const text = paramTokens[index].text;
+                    params.push({ key, label: text === "?" ? `? (position ${key.slice(1)})` : text });
+                });
+                return params;
+            }
+
+            // Rebuilds the Parameters panel when the set of parameters changes.
+            function renderParams(params) {
+                const signature = params.map(param => param.key + "=" + param.label).join("|");
+                if (signature === shownParamSignature) return;
+                shownParamSignature = signature;
+
+                paramsContainer.style.display = params.length ? "flex" : "none";
+                paramsList.innerHTML = "";
+                params.forEach((param, index) => {
+                    const row = document.createElement("div");
+                    row.className = "qf-param-row";
+                    const label = document.createElement("label");
+                    label.htmlFor = `paramValue${index}`;
+                    label.textContent = param.label;
+                    const field = document.createElement("input");
+                    field.type = "text";
+                    field.id = `paramValue${index}`;
+                    field.spellcheck = false;
+                    field.autocomplete = "off";
+                    field.placeholder = "Value";
+                    field.value = paramValues[param.key] || "";
+                    field.addEventListener("input", () => { paramValues[param.key] = field.value; });
+                    row.append(label, field);
+                    paramsList.appendChild(row);
+                });
+            }
+
+            // Turns a typed value into a literal for the chosen language.
+            function toQueryLiteral(raw) {
+                return languageId === "couchbase" ? toN1qlLiteral(raw) : toSqlLiteral(raw);
+            }
+
+            // Turns a typed value into a Couchbase literal: JSON stays as typed, MISSING and single-quoted strings are kept, and other text becomes a string.
+            function toN1qlLiteral(raw) {
+                const value = raw.trim();
+                if (/^missing$/i.test(value)) return "MISSING";
+                if (/^'(?:[^'\\]|\\[\s\S]|'')*'$/.test(value)) return value;
+                try {
+                    JSON.parse(value);
+                    return value;
+                } catch (error) {
+                    return JSON.stringify(value);
+                }
+            }
+
+            // Turns a typed value into a SQL literal: numbers, NULL, booleans and single-quoted strings are kept, and other text becomes a quoted string.
+            function toSqlLiteral(raw) {
+                const value = raw.trim();
+                if (/^null$/i.test(value)) return "NULL";
+                // SQL Server has no TRUE or FALSE, so they become the bit values 1 and 0.
+                if (/^(?:true|false)$/i.test(value)) return languageId === "mssql" ? (/^t/i.test(value) ? "1" : "0") : value.toUpperCase();
+                if (/^[+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?$/.test(value)) return value;
+                if (value.length > 1 && value.startsWith("'") && value.endsWith("'")) return value;
+                // MySQL reads a backslash in a string as an escape, so it is doubled to keep it as typed.
+                const escaped = languageId === "mysql" ? value.replace(/\\/g, "\\\\") : value;
+                return "'" + escaped.replace(/'/g, "''") + "'";
+            }
+
+            // Writes the input query to the output with each filled parameter replaced by its value.
+            function fillParameters() {
+                if (isInputBlank(codeMirrorInput)) return;
+                const tokens = lexQuery(codeMirrorInput.getValue());
+                const keys = getParamKeys(tokens);
+                const allKeys = new Set(keys.filter(key => key !== null));
+                const filledKeys = [...allKeys].filter(key => (paramValues[key] || "").trim() !== "");
+                if (!filledKeys.length) {
+                    showInfoToast("Enter a value for at least one parameter");
+                    return;
+                }
+
+                let paramIndex = 0;
+                const filled = tokens.map(token => {
+                    if (token.type !== "param") return token.text;
+                    const value = paramValues[keys[paramIndex++]] || "";
+                    return value.trim() === "" ? token.text : toQueryLiteral(value);
+                }).join("");
+
+                clearInput(codeMirrorOutput);
+                try {
+                    codeMirrorOutput.setValue(formatQuery(filled));
+                } catch (error) {
+                    console.log("Filling parameters error:", error.message);
+                    showQueryError(error);
+                    return;
+                }
+                if (filledKeys.length < allKeys.size) showInfoToast(`Filled ${filledKeys.length} of ${allKeys.size} parameters`);
+            }
+
+            // Checks whether a token can be a table, schema or keyspace name.
+            function isObjectName(token, allowKeyword = false) {
+                if (!token) return false;
+                if (token.type === "ident") return true;
+                return token.type === "word" && (allowKeyword || !language.reserved.has(token.text.toLowerCase()));
+            }
+
+            // Reads a dotted object path, with a Couchbase namespace: prefix when present, that starts at a token index.
+            function readObjectPath(tokens, index, canBeCall) {
+                let namespace = null;
+                let k = index;
+                if (isNamespace(tokens[k]) && tokens[k + 1] && tokens[k + 1].text === ":") {
+                    namespace = tokens[k];
+                    k += 2;
+                }
+                if (!isObjectName(tokens[k])) return null;
+
+                const parts = [tokens[k]];
+                while (parts.length < language.partLabels.length && tokens[k + 1] && tokens[k + 1].text === "." && isObjectName(tokens[k + 2], true)) {
+                    parts.push(tokens[k + 2]);
+                    k += 2;
+                }
+                // A name followed by ( after FROM or JOIN is a function call, while INTO, REFERENCES and CREATE INDEX ON allow a ( after the name.
+                if (canBeCall && tokens[k + 1] && tokens[k + 1].text === "(") return null;
+                if (parts.length === 1 && language.skipNames && language.skipNames.has(bareName(parts[0]))) return null;
+
+                return { namespace, parts, start: (namespace || parts[0]).start, end: parts[parts.length - 1].end, next: k + 1 };
+            }
+
+            // Finds the tables or keyspaces that FROM, JOIN, INTO, UPDATE, MERGE, CREATE/ALTER/DROP TABLE, REFERENCES and CREATE INDEX ON refer to.
+            function findObjects(tokens) {
+                const sig = tokens.filter(token => token.type !== "ws" && token.type !== "comment");
+                const upper = token => token && token.type === "word" ? token.text.toUpperCase() : "";
+                const found = [];
+                // Each open bracket records whether it starts a subquery, so FROM inside EXTRACT(... FROM ...) is skipped.
+                const brackets = [];
+                let indexPending = false;
+                let mergeSeen = false;
+
+                for (let i = 0; i < sig.length; i++) {
+                    const text = sig[i].type === "punct" ? sig[i].text : "";
+                    if (text === ";") {
+                        indexPending = false;
+                        mergeSeen = false;
+                        brackets.length = 0;
+                        continue;
+                    }
+                    if (text === "(") {
+                        brackets.push(SUBQUERY_STARTS.has(upper(sig[i + 1])));
+                        continue;
+                    }
+                    if (text === ")") {
+                        brackets.pop();
+                        continue;
+                    }
+                    const word = upper(sig[i]);
+                    const previous = upper(sig[i - 1]);
+                    const inFunctionCall = brackets.length > 0 && !brackets[brackets.length - 1];
+                    let role = null;
+
+                    if (word === "MERGE") {
+                        mergeSeen = true;
+                        role = "write";
+                    }
+                    else if (word === "FROM" && previous !== "DISTINCT" && !inFunctionCall) role = previous === "DELETE" ? "write" : "read";
+                    else if (READ_WORDS.has(word)) role = "read";
+                    else if (word === "INTO") role = "write";
+                    else if (word === "UPDATE" && !["THEN", "KEY", "FOR"].includes(previous) && upper(sig[i + 1]) !== "STATISTICS") role = "write";
+                    else if (word === "TABLE" && TABLE_VERBS.has(previous)) role = "write";
+                    else if (word === "USING" && mergeSeen) role = "read";
+                    else if (word === "INDEX" && INDEX_VERBS.has(previous)) indexPending = true;
+                    else if (word === "ON" && indexPending) {
+                        indexPending = false;
+                        role = "index";
+                    }
+                    if (!role) continue;
+
+                    const canBeCall = role === "read" && word !== "REFERENCES";
+                    const allowsList = word === "FROM" || word === "TABLE";
+                    let j = i + 1;
+                    while (SKIP_BEFORE_PATH.has(upper(sig[j]))) j++;
+                    while (true) {
+                        const path = readObjectPath(sig, j, canBeCall);
+                        if (!path) break;
+                        found.push({ ...path, role });
+                        j = path.next;
+                        // FROM and DROP TABLE can list several names separated by commas, each with an optional alias.
+                        if (!allowsList) break;
+                        if (upper(sig[j]) === "AS") j++;
+                        if (isObjectName(sig[j])) j++;
+                        if (!sig[j] || sig[j].text !== ",") break;
+                        j++;
+                    }
+                }
+                return found;
+            }
+
+            // Returns the text of a name for grouping, where unquoted SQL names ignore case.
+            function nameKey(token) {
+                if (token.type === "ident") return unquoteIdent(token.text);
+                return language.caseSensitiveNames ? token.text : token.text.toLowerCase();
+            }
+
+            // Groups object uses by their full path.
+            function groupObjects(found) {
+                const groups = new Map();
+                found.forEach(use => {
+                    const names = use.parts.map(part => part.type === "ident" ? unquoteIdent(part.text) : part.text);
+                    const namespace = use.namespace ? (use.namespace.type === "ident" ? unquoteIdent(use.namespace.text) : use.namespace.text) : null;
+                    const key = (namespace ? namespace.toLowerCase() + ":" : "") + use.parts.map(nameKey).join(".");
+                    if (!groups.has(key)) {
+                        groups.set(key, { path: (use.namespace ? use.namespace.text + ":" : "") + use.parts.map(part => part.text).join("."), namespace, names, roles: new Set(), ranges: [], nextRange: 0 });
+                    }
+                    const group = groups.get(key);
+                    group.roles.add(use.role);
+                    group.ranges.push({ start: use.start, end: use.end });
+                });
+                return [...groups.values()];
+            }
+
+            // Returns the labels for the parts of an object path, and a note when a Couchbase path is not a full one.
+            function describeObject(group) {
+                const count = group.names.length;
+                return { labels: language.partLabels[count - 1], note: (language.partNotes || [])[count - 1] || "" };
+            }
+
+            // Rebuilds the Tables or Keyspaces panel and marks every name in the input editor.
+            function renderObjects(groups) {
+                objects = groups;
+                objectMarks.forEach(mark => mark.clear());
+                objectMarks = [];
+                groups.forEach(group => group.ranges.forEach(range => {
+                    objectMarks.push(codeMirrorInput.markText(codeMirrorInput.posFromIndex(range.start), codeMirrorInput.posFromIndex(range.end), { className: "cm-qf-object" }));
+                }));
+
+                objectsContainer.style.display = groups.length ? "flex" : "none";
+                objectsList.innerHTML = "";
+                groups.forEach((group, index) => {
+                    const { labels, note } = describeObject(group);
+                    const item = document.createElement("button");
+                    item.type = "button";
+                    item.className = "qf-object";
+                    item.title = "Select the next use in the input";
+
+                    const path = document.createElement("div");
+                    path.className = "qf-object-path";
+                    path.textContent = group.path;
+
+                    const parts = document.createElement("div");
+                    parts.className = "qf-object-parts";
+                    const partEntries = (group.namespace ? [["Namespace", group.namespace]] : []).concat(group.names.map((name, i) => [labels[i], name]));
+                    partEntries.forEach(([label, name]) => {
+                        const part = document.createElement("span");
+                        part.className = "qf-part";
+                        const bold = document.createElement("b");
+                        bold.textContent = label;
+                        part.append(bold, name);
+                        parts.appendChild(part);
+                    });
+
+                    const meta = document.createElement("div");
+                    meta.className = "qf-object-meta";
+                    const uses = group.ranges.length;
+                    meta.textContent = [...group.roles].map(role => ROLE_LABELS[role]).join(", ") + ` · ${uses} ${uses === 1 ? "use" : "uses"}`;
+
+                    item.append(path, parts, meta);
+                    if (note) {
+                        const noteLine = document.createElement("div");
+                        noteLine.className = "qf-object-note";
+                        noteLine.textContent = note;
+                        item.appendChild(noteLine);
+                    }
+                    item.addEventListener("click", () => selectObjectUse(index));
+                    objectsList.appendChild(item);
+                });
+            }
+
+            // Selects the next place an object is used in the input editor.
+            function selectObjectUse(index) {
+                const group = objects[index];
+                if (!group || !group.ranges.length) return;
+                const range = group.ranges[group.nextRange % group.ranges.length];
+                group.nextRange++;
+                const from = codeMirrorInput.posFromIndex(range.start);
+                const to = codeMirrorInput.posFromIndex(range.end);
+                codeMirrorInput.focus();
+                codeMirrorInput.setSelection(from, to);
+                codeMirrorInput.scrollIntoView({ from, to }, 80);
+            }
+
+            // Updates the Parameters and Tables or Keyspaces panels from the current input.
+            function analyseInput() {
+                const tokens = lexQuery(codeMirrorInput.getValue());
+                renderParams(collectParams(tokens));
+                renderObjects(groupObjects(findObjects(tokens)));
+            }
+
+            codeMirrorInput.on("change", () => {
+                clearTimeout(analyseTimer);
+                analyseTimer = setTimeout(analyseInput, 250);
+            });
+
+            // Clears the input, output and parameter values when the language changes, and offers Undo to bring back the old language and data.
+            languageSelect.addEventListener("change", () => {
+                const before = captureClearUndoState();
+                const savedLanguage = before.fields.find(saved => saved.el === languageSelect);
+                // The select already shows the new language, so the snapshot keeps the language that is still applied.
+                if (savedLanguage) savedLanguage.value = languageId;
+                const hadData = !isEditorEmpty(codeMirrorInput) || !isEditorEmpty(codeMirrorOutput) || Object.values(paramValues).some(value => value.trim() !== "");
+
+                clearQueryData();
+                applyLanguage(languageSelect.value);
+                if (hadData) showUndoToast("Query language changed, data cleared", () => restoreClearUndoState(before));
+            });
+
+            // Checks whether an editor holds only whitespace.
+            function isEditorEmpty(editor) {
+                return editor.getValue().trim() === "";
+            }
+
+            // Empties both editors and forgets every typed parameter value.
+            function clearQueryData() {
+                codeMirrorInput.setValue("");
+                codeMirrorOutput.setValue("");
+                Object.keys(paramValues).forEach(key => delete paramValues[key]);
+            }
+            applyLanguage(languageSelect.value);
+
+            setupEditors([
+                createEditorConfig(codeMirrorInput, inputTotalLines, inputCurrentLine, inputCurrentColumn),
+                createEditorConfig(codeMirrorOutput, outputTotalLines, outputCurrentLine, outputCurrentColumn)
+            ]);
+
+        </script>
+
+    </body>
+</html>

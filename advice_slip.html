@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Codexael Toolstack — Advice Slip</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta http-equiv="Content-Security-Policy" content="connect-src https://api.adviceslip.com; object-src 'none'; base-uri 'none'; form-action 'none'">
+
+        <!-- Metadata -->
+        <meta name="description" content="Get a random piece of life advice to keep or share.">
+        <meta name="author" content="Codexael">
+        <meta name="theme-color" content="#fff4e0" media="(prefers-color-scheme: light)">
+        <meta name="theme-color" content="#17140f" media="(prefers-color-scheme: dark)">
+
+        <!-- Open Graph -->
+        <meta property="og:title" content="Codexael Toolstack — Random Advice Slip">
+        <meta property="og:description" content="Get a random piece of life advice to keep or share.">
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="https://tools.codexael.com/advice_slip.html">
+        <meta property="og:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+        <meta property="og:image:width" content="1200">
+        <meta property="og:image:height" content="630">
+        <meta property="og:image:type" content="image/png">
+        <meta property="og:image:alt" content="Codexael Toolstack — Every tool is one key away">
+        <meta property="og:site_name" content="Codexael Toolstack">
+
+        <!-- Twitter Card -->
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="Codexael Toolstack — Random Advice Slip">
+        <meta name="twitter:description" content="Get a random piece of life advice to keep or share.">
+        <meta name="twitter:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+
+        <!-- Favicon / App Icon -->
+        <link rel="icon" type="image/svg+xml" href="assets/images/codexael_icon.svg">
+        <link rel="apple-touch-icon" href="assets/images/codexael_icon.svg">
+
+        <!-- Bootstrap 5.2.0-beta1 -->
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+
+        <!-- Bootstrap with Popper 5.2.0-beta1 -->
+        <script src="js/bootstrap.bundle.min.js"></script>
+
+        <!-- Bootstrap Icons 1.11.3 -->
+        <link rel="stylesheet" href="css/bootstrap-icons.min.css">
+
+        <!-- Google fonts -->
+        <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+        <!-- Custom CSS -->
+        <link rel="stylesheet" href="css/keycaps.css">
+
+        <style>
+            .advice-body {
+                flex: 1;
+                min-height: 0;
+                display: flex;
+                flex-direction: column;
+                gap: 18px;
+                padding: 24px 22px 28px;
+                overflow-y: auto;
+            }
+
+            .advice-body.loading .advice-card { opacity: 0.55; }
+
+            /* The advice sits on an orange slip with its slip number, keeping dark text in both themes. */
+            .advice-card {
+                position: relative;
+                display: flex;
+                flex-direction: column;
+                gap: 14px;
+                padding: 26px 26px 22px;
+                background: var(--orange);
+                color: #111111;
+                border: 3px solid var(--ink);
+                border-radius: 12px;
+                box-shadow: 4px 4px 0 var(--ink);
+            }
+
+            .slip-number {
+                align-self: flex-start;
+                padding: 2px 10px;
+                background: #111111;
+                color: #ffffff;
+                font-family: var(--display-font);
+                font-size: 0.75rem;
+                letter-spacing: 0.06em;
+            }
+
+            .advice-text {
+                margin: 0;
+                font-size: 1.3rem;
+                font-weight: 700;
+                line-height: 1.5;
+                overflow-wrap: anywhere;
+            }
+
+            .advice-text::before { content: "“"; }
+            .advice-text::after { content: "”"; }
+            .advice-text.plain::before,
+            .advice-text.plain::after { content: none; }
+
+            .advice-actions {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 12px;
+            }
+
+            /* Bootstrap btn hover and active states would hide the ink border without these values. */
+            .advice-actions .btn {
+                --bs-btn-hover-border-color: var(--ink);
+                --bs-btn-active-border-color: var(--ink);
+                width: auto;
+                flex: 0 1 auto;
+                margin-bottom: 0;
+            }
+
+            .advice-actions #newAdviceBtn {
+                flex: 1 1 200px;
+            }
+
+            .fact-meta {
+                font-size: 0.75rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.04em;
+            }
+
+            .privacy-note {
+                padding: 10px 12px;
+                border: 2px dashed var(--ink);
+                font-size: 0.75rem;
+                font-weight: 700;
+                line-height: 1.5;
+            }
+
+            @media (max-width: 480px) {
+                .advice-body {
+                    padding: 20px 16px 24px;
+                }
+
+                .advice-text {
+                    font-size: 1.1rem;
+                }
+
+                .advice-actions .btn,
+                .advice-actions #newAdviceBtn {
+                    flex: 1 1 100%;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <!-- Common layout -->
+        <div id="navbar-container"></div>
+
+        <div class="container-fluid tool-wrapper">
+            <div class="row">
+                <div class="col-md-8 offset-md-2">
+                    <div class="editor-panel">
+                        <div class="editor-header">
+                            <span class="editor-title">Advice Slip</span>
+                            <div class="editor-actions">
+                                <button title="New advice" id="headerNewBtn" onclick="loadAdvice()"><i class="bi bi-arrow-clockwise icon-btn"></i></button>
+                                <div class="divider"></div>
+                                <button title="Copy advice" data-shortcut="copy" onclick="copyAdvice(this)"><i class="bi bi-copy icon-btn"></i></button>
+                            </div>
+                        </div>
+
+                        <div class="editor-body advice-body invisible-scrollbars loading" id="adviceBody">
+
+                            <div class="advice-card" aria-live="polite">
+                                <span class="slip-number" id="slipNumber">ADVICE #…</span>
+                                <p class="advice-text plain" id="adviceText">Fetching some advice...</p>
+                            </div>
+
+                            <div class="advice-actions">
+                                <button class="btn action-btn-primary" id="newAdviceBtn" data-shortcut="run" onclick="loadAdvice()"><i class="bi bi-shuffle"></i> New advice</button>
+                                <button class="btn action-btn-ghost" onclick="copyAdvice()"><i class="bi bi-copy"></i> Copy</button>
+                                <button class="btn action-btn-ghost" onclick="shareAdvice()"><i class="bi bi-share"></i> Share</button>
+                            </div>
+
+                            <div class="fact-meta" id="adviceMeta">Advice seen this visit: 0</div>
+
+                            <div class="privacy-note">
+                                <i class="bi bi-info-circle"></i> Advice comes from <a href="https://api.adviceslip.com" target="_blank" rel="noopener noreferrer">Advice Slip</a>, a free public API. No data about you is sent with the request.
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <div id="footer-container"></div>
+
+        <!-- Common JS -->
+        <script src="js/tool-help.js"></script>
+        <script src="js/storage.js"></script>
+        <script src="js/common.js"></script>
+        <script src="js/script.js"></script>
+        <script src="js/api-client.js"></script>
+
+        <!-- Custom JS -->
+        <script>
+
+            const pageTitle = "Advice Slip";
+
+            const ADVICE_URL = "https://api.adviceslip.com/advice";
+            const ADVICE_MAX_BYTES = 2048;
+            const MAX_ATTEMPTS = 3;
+
+            // The service reuses its last answer for 2 seconds, so a repeat is retried after this pause.
+            const REPEAT_RETRY_DELAY_MS = 2100;
+
+            const adviceBody = document.getElementById("adviceBody");
+            const adviceText = document.getElementById("adviceText");
+            const slipNumber = document.getElementById("slipNumber");
+            const adviceMeta = document.getElementById("adviceMeta");
+            const newAdviceBtn = document.getElementById("newAdviceBtn");
+            const headerNewBtn = document.getElementById("headerNewBtn");
+
+            let currentAdvice = "";
+            let adviceCount = 0;
+            let adviceController = null;
+
+            // Waits for a pause and stops early when the request is cancelled.
+            function wait(ms, signal) {
+                return new Promise((resolve, reject) => {
+                    const timer = setTimeout(resolve, ms);
+                    signal.addEventListener("abort", () => {
+                        clearTimeout(timer);
+                        reject(new ApiError("Request was cancelled", "aborted"));
+                    }, { once: true });
+                });
+            }
+
+            // Fetches one advice slip and checks that the reply really holds one.
+            async function fetchAdvice(signal) {
+                const reply = await fetchPublicJson(ADVICE_URL, { serviceName: "The advice service", maxBytes: ADVICE_MAX_BYTES, signal });
+                const slip = reply?.slip;
+                if (!slip || typeof slip.advice !== "string" || !slip.advice.trim()) throw new ApiError("The advice service sent no advice", "invalid");
+                return { id: Number.isInteger(slip.id) ? slip.id : null, advice: slip.advice.trim() };
+            }
+
+            // Fetches advice and waits out the service's 2 second cache when it repeats the advice on screen.
+            async function fetchNewAdvice(signal) {
+                let slip = await fetchAdvice(signal);
+                for (let attempt = 1; slip.advice === currentAdvice && attempt < MAX_ATTEMPTS; attempt++) {
+                    await wait(REPEAT_RETRY_DELAY_MS, signal);
+                    slip = await fetchAdvice(signal);
+                }
+                return slip;
+            }
+
+            // Turns or clears the busy state on the card and both new advice buttons.
+            function setLoading(isLoading) {
+                adviceBody.classList.toggle("loading", isLoading);
+                newAdviceBtn.disabled = isLoading;
+                headerNewBtn.disabled = isLoading;
+            }
+
+            // Shows an advice slip with its number and updates the counter.
+            function showAdvice(slip) {
+                currentAdvice = slip.advice;
+                adviceCount++;
+                adviceText.textContent = slip.advice;
+                adviceText.classList.remove("plain");
+                slipNumber.textContent = slip.id ? `ADVICE #${slip.id}` : "ADVICE";
+                adviceMeta.textContent = `Advice seen this visit: ${adviceCount}`;
+            }
+
+            // Loads new advice and keeps the current advice on screen when the request fails.
+            async function loadAdvice() {
+                if (adviceController) adviceController.abort();
+
+                const controller = new AbortController();
+                adviceController = controller;
+                setLoading(true);
+
+                try {
+                    showAdvice(await fetchNewAdvice(controller.signal));
+                } catch (error) {
+                    // A request replaced by a newer one ends quietly.
+                    if (error.kind === "aborted") return;
+
+                    showErrorToast(error.message);
+                    if (!currentAdvice) {
+                        adviceText.textContent = error.kind === "offline"
+                            ? "You are offline. Advice will load when your connection comes back."
+                            : `${error.message}. Click New advice to try again.`;
+                    }
+                } finally {
+                    if (adviceController === controller) {
+                        adviceController = null;
+                        setLoading(false);
+                    }
+                }
+            }
+
+            function copyText(text, btn) {
+                if (isBlank(text, "Nothing to copy")) return;
+                navigator.clipboard.writeText(text).then(() => {
+                    showSuccessToast("Copied to clipboard");
+                    if (btn) {
+                        const icon = btn.querySelector("i");
+                        const original = icon.className;
+                        icon.className = "bi bi-check-lg";
+                        setTimeout(() => icon.className = original, 1000);
+                    }
+                }).catch(() => showErrorToast("Could not copy, your browser blocked the clipboard"));
+            }
+
+            function copyAdvice(btn) {
+                copyText(currentAdvice, btn);
+            }
+
+            // Uses the device share sheet when available and falls back to copying the advice with a link.
+            function shareAdvice() {
+                if (isBlank(currentAdvice, "Nothing to share")) return;
+                const shareText = `💡 "${currentAdvice}"`;
+                if (navigator.share) {
+                    navigator.share({ title: "Advice Slip", text: shareText, url: location.href }).catch(() => {});
+                } else {
+                    copyText(`${shareText}\n${location.href}`);
+                }
+            }
+
+            loadAdvice();
+
+            // Advice is loaded again when the connection comes back and nothing is on screen yet.
+            window.addEventListener("online", () => {
+                if (!currentAdvice && !adviceController) loadAdvice();
+            });
+        </script>
+
+    </body>
+</html>

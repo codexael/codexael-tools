@@ -1,0 +1,86 @@
+/* Markdown editor page styles that sit on top of the keycaps design system. */
+
+/* The preview panel wears a cyan header so the two panels read as separate keys. */
+#outputEditor {
+    --panel-c: var(--cyan);
+    height: var(--panel-h);
+}
+
+/* The preview frame fills the panel below the header and scrolls on its own. */
+#previewFrame {
+    display: block;
+    flex: 1;
+    width: 100%;
+    min-height: 0;
+    border: 0;
+    background: var(--paper);
+}
+
+/* Each toolbar group gets an ink tag as its title. */
+.md-toolbar-label {
+    display: table;
+    margin: 4px auto 10px;
+    padding: 2px 10px;
+    background: var(--ink);
+    color: var(--bg);
+    font-family: var(--display-font);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+}
+
+.md-toolbar-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+/* Toolbar buttons are small keycaps that sink into their shadow when pressed. */
+.md-toolbar-btn {
+    width: 36px;
+    height: 36px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    background: var(--paper);
+    color: var(--ink);
+    border: 2.5px solid var(--ink);
+    border-radius: 8px;
+    box-shadow: 0 2px 0 var(--ink);
+    font-size: 1rem;
+    cursor: pointer;
+    transition: transform 0.08s, box-shadow 0.08s, background-color 0.12s;
+}
+
+.md-toolbar-btn:hover {
+    transform: translateY(1px);
+    box-shadow: 0 1px 0 var(--ink);
+    background: var(--c, var(--yellow));
+    color: #111111;
+}
+
+.md-toolbar-btn:active {
+    transform: translateY(2px);
+    box-shadow: 0 0 0 var(--ink);
+}
+
+/* Each toolbar group lights up in its own palette colour on hover. */
+.md-toolbar-grid ~ .md-toolbar-grid { --c: var(--pink); }
+.md-toolbar-grid ~ .md-toolbar-grid ~ .md-toolbar-grid { --c: var(--lilac); }
+.md-toolbar-grid ~ .md-toolbar-grid ~ .md-toolbar-grid ~ .md-toolbar-grid { --c: var(--lime); }
+
+/* On wide screens the side panels shrink a little so their hard shadows do not touch the middle keys. */
+@media (min-width: 768px) {
+    #inputEditor,
+    #outputEditor {
+        flex: 0 0 calc(41.6667% - 12px);
+        max-width: calc(41.6667% - 12px);
+    }
+
+    .converter-action-panel {
+        flex: 0 0 calc(16.6667% + 24px);
+        max-width: calc(16.6667% + 24px);
+        padding: 6px 22px 12px 18px;
+    }
+}

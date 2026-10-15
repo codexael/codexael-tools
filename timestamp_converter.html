@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Codexael Toolstack — Timestamp Converter</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+        <!-- Metadata -->
+        <meta name="description" content="Convert epoch timestamps to dates and back, in any timezone.">
+        <meta name="author" content="Codexael">
+        <meta name="theme-color" content="#fff4e0" media="(prefers-color-scheme: light)">
+        <meta name="theme-color" content="#17140f" media="(prefers-color-scheme: dark)">
+
+        <!-- Open Graph -->
+        <meta property="og:title" content="Codexael Toolstack — Unix Timestamp Converter">
+        <meta property="og:description" content="Convert epoch timestamps to dates and back, in any timezone.">
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="https://tools.codexael.com/timestamp_converter.html">
+        <meta property="og:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+        <meta property="og:image:width" content="1200">
+        <meta property="og:image:height" content="630">
+        <meta property="og:image:type" content="image/png">
+        <meta property="og:image:alt" content="Codexael Toolstack — Unix Timestamp Converter">
+        <meta property="og:site_name" content="Codexael Toolstack">
+
+        <!-- Twitter Card -->
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="Codexael Toolstack — Unix Timestamp Converter">
+        <meta name="twitter:description" content="Convert epoch timestamps to dates and back, in any timezone.">
+        <meta name="twitter:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+
+        <!-- Favicon / App Icon -->
+        <link rel="icon" type="image/svg+xml" href="assets/images/codexael_icon.svg">
+        <link rel="apple-touch-icon" href="assets/images/codexael_icon.svg">
+
+        <!-- Bootstrap 5.2.0-beta1 -->
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+
+        <!-- Bootstrap with Popper 5.2.0-beta1 -->
+        <script src="js/bootstrap.bundle.min.js"></script>
+
+        <!-- Bootstrap Icons 1.11.3 -->
+        <link rel="stylesheet" href="css/bootstrap-icons.min.css">
+
+        <!-- Google fonts -->
+        <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+        <!-- Custom CSS -->
+        <link rel="stylesheet" href="css/keycaps.css">
+
+        <style>
+            .ts-body {
+                padding: 24px 22px 28px;
+                display: flex;
+                flex-direction: column;
+                gap: 22px;
+                overflow-y: auto;
+                flex: 1;
+                min-height: 0;
+            }
+
+            .ts-section {
+                display: flex;
+                flex-direction: column;
+                gap: 14px;
+            }
+
+            /* Each section gets its own card colour. */
+            .ts-section:nth-of-type(1) { --c: var(--cyan); }
+            .ts-section:nth-of-type(2) { --c: var(--lilac); }
+            .ts-section:nth-of-type(3) { --c: var(--orange); }
+
+            /* Section titles are black label strips like the home page categories. */
+            .ts-section-title {
+                align-self: flex-start;
+                padding: 3px 10px;
+                background: var(--ink);
+                color: var(--bg);
+                font-family: var(--display-font);
+                font-size: 0.9rem;
+                line-height: 1.4;
+                text-transform: uppercase;
+            }
+
+            .ts-divider {
+                margin: 0;
+                border: 0;
+                border-top: 3px dashed var(--ink);
+                color: var(--ink);
+                opacity: 1;
+            }
+
+            .ts-row {
+                display: flex;
+                align-items: center;
+                gap: 14px;
+                flex-wrap: wrap;
+            }
+
+            .ts-grow {
+                flex: 1 1 220px;
+                min-width: 0;
+                margin-bottom: 0;
+            }
+
+            .ts-select {
+                flex: 1 1 0;
+                min-width: 0;
+                margin-bottom: 0;
+            }
+
+            .ts-zone-pair {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+            }
+
+            /* The swap key spins half a turn when hovered. */
+            .ts-zone-swap-btn {
+                flex-shrink: 0;
+                width: 44px;
+                height: 44px;
+                display: grid;
+                place-items: center;
+                padding: 0;
+                background: var(--pink);
+                color: #111111;
+                border: 3px solid var(--ink);
+                border-radius: 10px;
+                box-shadow: 0 2.5px 0 var(--ink);
+                font-size: 1.1rem;
+                transition: transform 0.15s, box-shadow 0.08s;
+            }
+
+            .ts-zone-swap-btn:hover {
+                transform: translateY(1px) rotate(180deg);
+                box-shadow: 0 1.5px 0 var(--ink);
+            }
+
+            .ts-zone-swap-btn:active {
+                transform: translateY(2.5px) rotate(180deg);
+                box-shadow: 0 0 0 var(--ink);
+            }
+
+            /* The live clock reads like a black LCD sticker with lime digits. */
+            .ts-clock {
+                align-self: flex-start;
+                max-width: 100%;
+                padding: 8px 16px;
+                background: #111111;
+                color: var(--lime);
+                border: 4px solid var(--ink);
+                box-shadow: 3px 3px 0 var(--c);
+                font-family: var(--mono-font);
+                font-size: clamp(1.3rem, 5vw, 2rem);
+                font-weight: 700;
+                letter-spacing: 0.04em;
+                line-height: 1.3;
+                overflow-wrap: anywhere;
+                transform: rotate(-1.5deg);
+            }
+
+            .ts-field-label {
+                margin-bottom: 4px;
+                font-size: 0.72rem;
+                font-weight: 700;
+                text-transform: uppercase;
+            }
+
+            .ts-date-fields {
+                display: flex;
+                gap: 2px 14px;
+                flex-wrap: wrap;
+            }
+
+            .ts-date-field {
+                display: flex;
+                flex-direction: column;
+                flex: 1 1 80px;
+                min-width: 70px;
+            }
+
+            /* Result blocks are chunky coloured cards with dashed rows like a receipt. */
+            .ts-info-grid {
+                display: flex;
+                flex-direction: column;
+                padding: 6px 16px;
+                background: var(--c);
+                color: #111111;
+                border: 4px solid var(--ink);
+                box-shadow: 4px 4px 0 var(--ink);
+            }
+
+            .ts-info-row {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 10px;
+                min-height: 44px;
+                padding: 6px 0;
+                font-size: 0.85rem;
+            }
+
+            .ts-info-row + .ts-info-row {
+                border-top: 2px dashed #111111;
+            }
+
+            .ts-info-row .ts-info-label {
+                flex-shrink: 0;
+                font-size: 0.75rem;
+                font-weight: 700;
+                text-transform: uppercase;
+            }
+
+            .ts-info-row .ts-info-value {
+                display: flex;
+                align-items: center;
+                justify-content: flex-end;
+                gap: 8px;
+                min-width: 0;
+                font-family: var(--mono-font);
+                font-weight: 700;
+                text-align: right;
+                overflow-wrap: anywhere;
+            }
+
+            /* Copy buttons are tiny white keycaps that sink when pressed. */
+            .ts-copy-btn {
+                flex-shrink: 0;
+                width: 30px;
+                height: 30px;
+                display: grid;
+                place-items: center;
+                padding: 0;
+                background: #ffffff;
+                color: #111111;
+                border: 2.5px solid #111111;
+                border-radius: 7px;
+                box-shadow: 0 1.5px 0 #111111;
+                font-size: 0.8rem;
+                transition: transform 0.08s, box-shadow 0.08s, background-color 0.12s;
+            }
+
+            .ts-copy-btn:hover {
+                background: var(--yellow);
+                transform: translateY(0.5px);
+                box-shadow: 0 1px 0 #111111;
+            }
+
+            .ts-copy-btn:active {
+                transform: translateY(1.5px);
+                box-shadow: 0 0 0 #111111;
+            }
+
+            /* The Now and Use below buttons are small yellow keycaps. */
+            .ts-inline-btn {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                padding: 9px 14px;
+                background: var(--yellow);
+                color: #111111;
+                border: 3px solid var(--ink);
+                border-radius: 10px;
+                box-shadow: 0 2.5px 0 var(--ink);
+                font-size: 0.82rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                white-space: nowrap;
+                transition: transform 0.08s, box-shadow 0.08s;
+            }
+
+            .ts-inline-btn:hover {
+                transform: translateY(1px);
+                box-shadow: 0 1.5px 0 var(--ink);
+            }
+
+            .ts-inline-btn:active {
+                transform: translateY(2.5px);
+                box-shadow: 0 0 0 var(--ink);
+            }
+
+            @media (max-width: 480px) {
+                .ts-body {
+                    padding: 20px 14px 24px;
+                }
+
+                .ts-zone-pair {
+                    flex-direction: column;
+                    align-items: stretch;
+                }
+
+                .ts-zone-pair .ts-select {
+                    flex: none;
+                }
+
+                .ts-zone-swap-btn {
+                    align-self: center;
+                }
+
+                .ts-info-grid {
+                    box-shadow: 3px 3px 0 var(--ink);
+                }
+
+                .ts-info-row {
+                    flex-direction: column;
+                    align-items: flex-start;
+                    gap: 4px;
+                }
+
+                .ts-info-row .ts-info-value {
+                    justify-content: flex-start;
+                    text-align: left;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <!-- Common layout -->
+        <div id="navbar-container"></div>
+
+        <div class="container-fluid tool-wrapper">
+            <div class="row">
+                <div class="col-md-10 offset-md-1">
+                    <div class="editor-panel">
+                        <div class="editor-header">
+                            <span class="editor-title">Timestamp Converter</span>
+                            <div class="editor-actions">
+                                <button class="btn-danger" title="Clear" data-undo-clear onclick="clearAll()"><i class="bi bi-x-lg icon-btn"></i></button>
+                            </div>
+                        </div>
+
+                        <div class="editor-body ts-body invisible-scrollbars">
+
+                            <!-- Current Time -->
+                            <div class="ts-section">
+                                <span class="ts-section-title">Current Time</span>
+
+                                <div class="ts-row">
+                                    <select class="form-control ts-select" id="currentRegionSelect"></select>
+                                    <button class="ts-inline-btn" onclick="useCurrentInConverter()" title="Send this region's current timestamp to the converter below"><i class="bi bi-arrow-down-circle"></i> Use below</button>
+                                </div>
+
+                                <div class="ts-clock" id="currentFormatted">&mdash;</div>
+
+                                <div class="ts-info-grid">
+                                    <div class="ts-info-row">
+                                        <span class="ts-info-label">Epoch (seconds)</span>
+                                        <span class="ts-info-value">
+                                            <span id="currentEpochSec">&mdash;</span>
+                                            <button class="ts-copy-btn" title="Copy" onclick="copyFieldText('currentEpochSec', this)"><i class="bi bi-copy icon-btn"></i></button>
+                                        </span>
+                                    </div>
+                                    <div class="ts-info-row">
+                                        <span class="ts-info-label">Epoch (milliseconds)</span>
+                                        <span class="ts-info-value">
+                                            <span id="currentEpochMs">&mdash;</span>
+                                            <button class="ts-copy-btn" title="Copy" onclick="copyFieldText('currentEpochMs', this)"><i class="bi bi-copy icon-btn"></i></button>
+                                        </span>
+                                    </div>
+                                    <div class="ts-info-row">
+                                        <span class="ts-info-label">UTC offset</span>
+                                        <span class="ts-info-value" id="currentOffset">&mdash;</span>
+                                    </div>
+                                    <div class="ts-info-row">
+                                        <span class="ts-info-label">Daylight saving</span>
+                                        <span class="ts-info-value" id="currentDst">&mdash;</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <hr class="ts-divider">
+
+                            <!-- Timestamp -> Date & Time -->
+                            <div class="ts-section">
+                                <span class="ts-section-title">Timestamp &rarr; Date &amp; Time</span>
+
+                                <div class="ts-row">
+                                    <div class="input-stepper ts-grow">
+                                        <button type="button" data-step="dec" title="Decrease"><i class="bi bi-dash"></i></button>
+                                        <div class="stepper-divider"></div>
+                                        <input type="number" id="epochInput" placeholder="Enter a Unix timestamp...">
+                                        <div class="stepper-divider"></div>
+                                        <button type="button" data-step="inc" title="Increase"><i class="bi bi-plus"></i></button>
+                                    </div>
+
+                                    <div class="segmented-control btn-group" role="group" aria-label="Epoch unit">
+                                        <input type="radio" name="epochUnit" id="epochUnitSec" value="s" checked>
+                                        <label for="epochUnitSec">Seconds</label>
+
+                                        <input type="radio" name="epochUnit" id="epochUnitMs" value="ms">
+                                        <label for="epochUnitMs">Milliseconds</label>
+                                    </div>
+
+                                    <button class="ts-inline-btn" onclick="setEpochNow()" title="Load the current timestamp"><i class="bi bi-clock"></i> Now</button>
+                                </div>
+
+                                <div class="ts-zone-pair">
+                                    <select class="form-control ts-select" id="epochZoneA"></select>
+                                    <button class="ts-zone-swap-btn" onclick="swapEpochZones()" title="Swap zones"><i class="bi bi-arrow-left-right"></i></button>
+                                    <select class="form-control ts-select" id="epochZoneB"></select>
+                                </div>
+
+                                <div class="ts-info-grid">
+                                    <div class="ts-info-row">
+                                        <span class="ts-info-label" id="epochZoneALabel">Zone A</span>
+                                        <span class="ts-info-value">
+                                            <span id="epochZoneADate">&mdash;</span>
+                                            <button class="ts-copy-btn" title="Copy" onclick="copyFieldText('epochZoneADate', this)"><i class="bi bi-copy icon-btn"></i></button>
+                                        </span>
+                                    </div>
+                                    <div class="ts-info-row">
+                                        <span class="ts-info-label">Offset / DST</span>
+                                        <span class="ts-info-value" id="epochZoneAMeta">&mdash;</span>
+                                    </div>
+
+                                    <div class="ts-info-row">
+                                        <span class="ts-info-label" id="epochZoneBLabel">Zone B</span>
+                                        <span class="ts-info-value">
+                                            <span id="epochZoneBDate">&mdash;</span>
+                                            <button class="ts-copy-btn" title="Copy" onclick="copyFieldText('epochZoneBDate', this)"><i class="bi bi-copy icon-btn"></i></button>
+                                        </span>
+                                    </div>
+                                    <div class="ts-info-row">
+                                        <span class="ts-info-label">Offset / DST</span>
+                                        <span class="ts-info-value" id="epochZoneBMeta">&mdash;</span>
+                                    </div>
+
+                                    <div class="ts-info-row">
+                                        <span class="ts-info-label">UTC</span>
+                                        <span class="ts-info-value">
+                                            <span id="epochUtc">&mdash;</span>
+                                            <button class="ts-copy-btn" title="Copy" onclick="copyFieldText('epochUtc', this)"><i class="bi bi-copy icon-btn"></i></button>
+                                        </span>
+                                    </div>
+                                    <div class="ts-info-row">
+                                        <span class="ts-info-label">ISO 8601</span>
+                                        <span class="ts-info-value">
+                                            <span id="epochIso">&mdash;</span>
+                                            <button class="ts-copy-btn" title="Copy" onclick="copyFieldText('epochIso', this)"><i class="bi bi-copy icon-btn"></i></button>
+                                        </span>
+                                    </div>
+                                    <div class="ts-info-row">
+                                        <span class="ts-info-label">RFC 2822 (UTC)</span>
+                                        <span class="ts-info-value">
+                                            <span id="epochRfc">&mdash;</span>
+                                            <button class="ts-copy-btn" title="Copy" onclick="copyFieldText('epochRfc', this)"><i class="bi bi-copy icon-btn"></i></button>
+                                        </span>
+                                    </div>
+                                    <div class="ts-info-row">
+                                        <span class="ts-info-label">Relative</span>
+                                        <span class="ts-info-value" id="epochRelative">&mdash;</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <hr class="ts-divider">
+
+                            <!-- Date & Time -> Timestamp -->
+                            <div class="ts-section">
+                                <span class="ts-section-title">Date &amp; Time &rarr; Timestamp</span>
+
+                                <div class="ts-date-fields">
+                                    <div class="ts-date-field">
+                                        <span class="ts-field-label">Year</span>
+                                        <input type="number" class="input-cyan" id="dateYear" placeholder="YYYY">
+                                    </div>
+                                    <div class="ts-date-field">
+                                        <span class="ts-field-label">Month</span>
+                                        <input type="number" class="input-cyan" id="dateMonth" min="1" max="12" placeholder="MM">
+                                    </div>
+                                    <div class="ts-date-field">
+                                        <span class="ts-field-label">Day</span>
+                                        <input type="number" class="input-cyan" id="dateDay" min="1" max="31" placeholder="DD">
+                                    </div>
+                                    <div class="ts-date-field">
+                                        <span class="ts-field-label">Hour</span>
+                                        <input type="number" class="input-cyan" id="dateHour" min="0" max="23" placeholder="HH">
+                                    </div>
+                                    <div class="ts-date-field">
+                                        <span class="ts-field-label">Minutes</span>
+                                        <input type="number" class="input-cyan" id="dateMinute" min="0" max="59" placeholder="mm">
+                                    </div>
+                                    <div class="ts-date-field">
+                                        <span class="ts-field-label">Seconds</span>
+                                        <input type="number" class="input-cyan" id="dateSecond" min="0" max="59" placeholder="ss">
+                                    </div>
+                                    <div class="ts-date-field">
+                                        <span class="ts-field-label">Milliseconds</span>
+                                        <input type="number" class="input-cyan" id="dateMillis" min="0" max="999" placeholder="ms">
+                                    </div>
+                                </div>
+
+                                <div class="ts-row">
+                                    <select class="form-control ts-select" id="dateZone"></select>
+                                    <button class="ts-inline-btn" onclick="setDateNow()" title="Load the current date and time"><i class="bi bi-clock"></i> Now</button>
+                                </div>
+
+                                <div class="ts-info-grid">
+                                    <div class="ts-info-row">
+                                        <span class="ts-info-label">Epoch (seconds)</span>
+                                        <span class="ts-info-value">
+                                            <span id="dateResultSec">&mdash;</span>
+                                            <button class="ts-copy-btn" title="Copy" onclick="copyFieldText('dateResultSec', this)"><i class="bi bi-copy icon-btn"></i></button>
+                                        </span>
+                                    </div>
+                                    <div class="ts-info-row">
+                                        <span class="ts-info-label">Epoch (milliseconds)</span>
+                                        <span class="ts-info-value">
+                                            <span id="dateResultMs">&mdash;</span>
+                                            <button class="ts-copy-btn" title="Copy" onclick="copyFieldText('dateResultMs', this)"><i class="bi bi-copy icon-btn"></i></button>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <div id="footer-container"></div>
+
+        <!-- Common JS -->
+        <script src="js/tool-help.js"></script>
+        <script src="js/storage.js"></script>
+        <script src="js/common.js"></script>
+        <script src="js/custom-dropdown.js"></script>
+        <script src="js/custom-input.js"></script>
+        <script src="js/script.js"></script>
+
+        <!-- Custom JS -->
+        <script>
+
+            const DASH = "—";
+
+            // Curated fallback list used only when the browser doesn't support Intl.supportedValuesOf.
+            const FALLBACK_TIMEZONES = [
+                "UTC", "Pacific/Midway", "Pacific/Honolulu", "America/Anchorage", "America/Los_Angeles",
+                "America/Denver", "America/Chicago", "America/New_York", "America/Sao_Paulo",
+                "America/Argentina/Buenos_Aires", "Atlantic/Azores", "Europe/London", "Europe/Lisbon",
+                "Europe/Paris", "Europe/Berlin", "Europe/Madrid", "Europe/Rome", "Europe/Athens",
+                "Europe/Helsinki", "Europe/Moscow", "Africa/Cairo", "Africa/Johannesburg", "Africa/Lagos",
+                "Africa/Nairobi", "Asia/Jerusalem", "Asia/Dubai", "Asia/Karachi", "Asia/Kolkata",
+                "Asia/Dhaka", "Asia/Bangkok", "Asia/Jakarta", "Asia/Shanghai", "Asia/Singapore",
+                "Asia/Hong_Kong", "Asia/Tokyo", "Asia/Seoul", "Australia/Perth", "Australia/Adelaide",
+                "Australia/Sydney", "Pacific/Guam", "Pacific/Auckland", "Pacific/Fiji"
+            ];
+
+            const currentRegionSelect = document.getElementById("currentRegionSelect");
+
+            const epochInput = document.getElementById("epochInput");
+            const epochZoneA = document.getElementById("epochZoneA");
+            const epochZoneB = document.getElementById("epochZoneB");
+
+            const dateZone = document.getElementById("dateZone");
+            const dateYear = document.getElementById("dateYear");
+            const dateMonth = document.getElementById("dateMonth");
+            const dateDay = document.getElementById("dateDay");
+            const dateHour = document.getElementById("dateHour");
+            const dateMinute = document.getElementById("dateMinute");
+            const dateSecond = document.getElementById("dateSecond");
+            const dateMillis = document.getElementById("dateMillis");
+
+            // Returns every IANA zone the browser knows about, or the curated fallback list.
+            function getAllTimeZones() {
+                try {
+                    if (typeof Intl.supportedValuesOf === "function") {
+                        const zones = Intl.supportedValuesOf("timeZone");
+                        if (Array.isArray(zones) && zones.length) return zones;
+                    }
+                } catch (error) { /* fall through to the fallback list below */ }
+                return FALLBACK_TIMEZONES;
+            }
+
+            // Reads a zone's wall-clock date and time parts for a given absolute instant.
+            function getZonedDateParts(date, timeZone) {
+                const raw = new Intl.DateTimeFormat("en-US", {
+                    timeZone, hourCycle: "h23",
+                    year: "numeric", month: "2-digit", day: "2-digit",
+                    hour: "2-digit", minute: "2-digit", second: "2-digit"
+                }).formatToParts(date).reduce((acc, p) => {
+                    if (p.type !== "literal") acc[p.type] = p.value;
+                    return acc;
+                }, {});
+
+                return {
+                    year: Number(raw.year), month: Number(raw.month), day: Number(raw.day),
+                    hour: raw.hour === "24" ? 0 : Number(raw.hour),
+                    minute: Number(raw.minute), second: Number(raw.second)
+                };
+            }
+
+            // Returns how far a zone's wall clock is from UTC, in milliseconds, at a given instant.
+            function getTimeZoneOffsetMs(date, timeZone) {
+                const p = getZonedDateParts(date, timeZone);
+                const asUTC = Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute, p.second);
+                return asUTC - date.getTime();
+            }
+
+            // Converts a wall-clock date/time entered for a given zone into an absolute epoch in milliseconds.
+            function zonedTimeToEpochMs(y, mo, d, h, mi, s, ms, timeZone) {
+                let guess = Date.UTC(y, mo - 1, d, h, mi, s, ms);
+                for (let i = 0; i < 2; i++) {
+                    const offset = getTimeZoneOffsetMs(new Date(guess), timeZone);
+                    guess = Date.UTC(y, mo - 1, d, h, mi, s, ms) - offset;
+                }
+                return guess;
+            }
+
+            // Formats an absolute instant as "YYYY-MM-DD HH:mm:ss" in the given zone.
+            function formatInZone(epochMs, timeZone) {
+                const p = getZonedDateParts(new Date(epochMs), timeZone);
+                const pad = n => String(n).padStart(2, "0");
+                return `${p.year}-${pad(p.month)}-${pad(p.day)} ${pad(p.hour)}:${pad(p.minute)}:${pad(p.second)}`;
+            }
+
+            // Formats a UTC offset in minutes as "+05:30" style text.
+            function formatOffset(totalMinutes) {
+                const sign = totalMinutes < 0 ? "-" : "+";
+                const abs = Math.abs(totalMinutes);
+                const hh = String(Math.floor(abs / 60)).padStart(2, "0");
+                const mm = String(abs % 60).padStart(2, "0");
+                return `${sign}${hh}:${mm}`;
+            }
+
+            // Reports whether a zone is currently observing daylight saving time, using January/July as reference points.
+            function getDstInfo(epochMs, timeZone) {
+                const year = new Date(epochMs).getUTCFullYear();
+                const janOffset = getTimeZoneOffsetMs(new Date(Date.UTC(year, 0, 1)), timeZone);
+                const julOffset = getTimeZoneOffsetMs(new Date(Date.UTC(year, 6, 1)), timeZone);
+                if (janOffset === julOffset) return "No DST observed";
+
+                const curOffset = getTimeZoneOffsetMs(new Date(epochMs), timeZone);
+                const standardOffset = Math.min(janOffset, julOffset);
+                return curOffset > standardOffset ? "DST active" : "Standard time";
+            }
+
+            // Builds a human-friendly "x ago" / "in x" string for an absolute instant relative to now.
+            function relativeTimeString(epochMs) {
+                const diffSec = Math.round((epochMs - Date.now()) / 1000);
+                const rtf = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
+                const units = [
+                    ["year", 31557600], ["month", 2629800], ["week", 604800],
+                    ["day", 86400], ["hour", 3600], ["minute", 60], ["second", 1]
+                ];
+
+                for (const [unit, secondsInUnit] of units) {
+                    if (Math.abs(diffSec) >= secondsInUnit) return rtf.format(Math.round(diffSec / secondsInUnit), unit);
+                }
+                return rtf.format(0, "second");
+            }
+
+            // Builds the shared, offset-labeled timezone option list used by every dropdown on the page.
+            function buildTimezoneOptions() {
+                const zones = new Set(getAllTimeZones());
+                zones.add("UTC");
+                const now = new Date();
+
+                const options = [];
+                zones.forEach(zone => {
+                    let offsetMin;
+                    try { offsetMin = Math.round(getTimeZoneOffsetMs(now, zone) / 60000); }
+                    catch (error) { return; }
+                    options.push({ id: zone, offsetMin, label: `(UTC${formatOffset(offsetMin)}) ${zone.replace(/_/g, " ")}` });
+                });
+
+                options.sort((a, b) => a.offsetMin - b.offsetMin || a.id.localeCompare(b.id));
+                return options;
+            }
+
+            const TZ_OPTIONS = buildTimezoneOptions();
+            const LOCAL_ZONE = TZ_OPTIONS.some(opt => opt.id === Intl.DateTimeFormat().resolvedOptions().timeZone)
+                ? Intl.DateTimeFormat().resolvedOptions().timeZone
+                : "UTC";
+
+            function populateZoneSelect(select, defaultId) {
+                select.innerHTML = TZ_OPTIONS.map(opt => `<option value="${opt.id}">${opt.label}</option>`).join("");
+                select.value = TZ_OPTIONS.some(opt => opt.id === defaultId) ? defaultId : "UTC";
+            }
+
+            function copyText(text, btn) {
+                if (isBlank(text, "Nothing to copy")) return;
+                navigator.clipboard.writeText(text).then(() => {
+                    showSuccessToast("Copied to clipboard");
+                    if (btn) {
+                        const icon = btn.querySelector("i");
+                        const original = icon.className;
+                        icon.className = "bi bi-check-lg";
+                        setTimeout(() => icon.className = original, 1000);
+                    }
+                });
+            }
+
+            function copyFieldText(elementId, btn) {
+                const value = document.getElementById(elementId).textContent;
+                if (value === DASH) { showInfoToast("Nothing to copy"); return; }
+                copyText(value, btn);
+            }
+
+            // Refreshes the live "Current Time" clock for whichever region is selected.
+            function updateCurrentTime() {
+                const now = Date.now();
+                const zone = currentRegionSelect.value;
+
+                document.getElementById("currentEpochSec").textContent = Math.floor(now / 1000);
+                document.getElementById("currentEpochMs").textContent = now;
+                document.getElementById("currentFormatted").textContent = formatInZone(now, zone);
+
+                const offsetMin = Math.round(getTimeZoneOffsetMs(new Date(now), zone) / 60000);
+                document.getElementById("currentOffset").textContent = `UTC${formatOffset(offsetMin)}`;
+                document.getElementById("currentDst").textContent = getDstInfo(now, zone);
+            }
+
+            // Loads the selected region's current epoch seconds into the Timestamp -> Date converter.
+            function useCurrentInConverter() {
+                document.getElementById("epochUnitSec").checked = true;
+                epochInput.value = Math.floor(Date.now() / 1000);
+                epochZoneA.value = currentRegionSelect.value;
+                CustomDropdown.refresh(epochZoneA);
+                convertTimestampToDate();
+                showSuccessToast("Current timestamp loaded into the converter");
+            }
+
+            function setEpochNow() {
+                const unit = document.querySelector('input[name="epochUnit"]:checked').value;
+                epochInput.value = unit === "s" ? Math.floor(Date.now() / 1000) : Date.now();
+                convertTimestampToDate();
+            }
+
+            function swapEpochZones() {
+                const a = epochZoneA.value;
+                epochZoneA.value = epochZoneB.value;
+                epochZoneB.value = a;
+                CustomDropdown.refresh(epochZoneA);
+                CustomDropdown.refresh(epochZoneB);
+                convertTimestampToDate();
+            }
+
+            function setEpochResults(epochMs) {
+                const zoneA = epochZoneA.value;
+                const zoneB = epochZoneB.value;
+                document.getElementById("epochZoneALabel").textContent = zoneA.replace(/_/g, " ");
+                document.getElementById("epochZoneBLabel").textContent = zoneB.replace(/_/g, " ");
+
+                if (epochMs === null) {
+                    ["epochZoneADate", "epochZoneAMeta", "epochZoneBDate", "epochZoneBMeta", "epochUtc", "epochIso", "epochRfc", "epochRelative"]
+                        .forEach(id => document.getElementById(id).textContent = DASH);
+                    return;
+                }
+
+                const date = new Date(epochMs);
+
+                document.getElementById("epochZoneADate").textContent = formatInZone(epochMs, zoneA);
+                document.getElementById("epochZoneAMeta").textContent = `UTC${formatOffset(Math.round(getTimeZoneOffsetMs(date, zoneA) / 60000))} — ${getDstInfo(epochMs, zoneA)}`;
+
+                document.getElementById("epochZoneBDate").textContent = formatInZone(epochMs, zoneB);
+                document.getElementById("epochZoneBMeta").textContent = `UTC${formatOffset(Math.round(getTimeZoneOffsetMs(date, zoneB) / 60000))} — ${getDstInfo(epochMs, zoneB)}`;
+
+                document.getElementById("epochUtc").textContent = `${formatInZone(epochMs, "UTC")} UTC`;
+                document.getElementById("epochIso").textContent = date.toISOString();
+                document.getElementById("epochRfc").textContent = date.toUTCString();
+                document.getElementById("epochRelative").textContent = relativeTimeString(epochMs);
+            }
+
+            function convertTimestampToDate() {
+                const raw = epochInput.value.trim();
+                if (raw === "" || isNaN(Number(raw))) { setEpochResults(null); return; }
+
+                const unit = document.querySelector('input[name="epochUnit"]:checked').value;
+                const epochMs = unit === "s" ? Number(raw) * 1000 : Number(raw);
+
+                setEpochResults(isFinite(epochMs) ? epochMs : null);
+            }
+
+            function setDateResults(epochMs) {
+                document.getElementById("dateResultSec").textContent = epochMs === null ? DASH : Math.floor(epochMs / 1000);
+                document.getElementById("dateResultMs").textContent = epochMs === null ? DASH : epochMs;
+            }
+
+            function convertDateToTimestamp() {
+                const y = parseInt(dateYear.value, 10);
+                const mo = parseInt(dateMonth.value, 10);
+                const d = parseInt(dateDay.value, 10);
+
+                if (!y || !mo || !d) { setDateResults(null); return; }
+
+                const h = parseInt(dateHour.value, 10) || 0;
+                const mi = parseInt(dateMinute.value, 10) || 0;
+                const s = parseInt(dateSecond.value, 10) || 0;
+                const ms = parseInt(dateMillis.value, 10) || 0;
+
+                const epochMs = zonedTimeToEpochMs(y, mo, d, h, mi, s, ms, dateZone.value);
+                setDateResults(isFinite(epochMs) ? epochMs : null);
+            }
+
+            function setDateNow() {
+                const p = getZonedDateParts(new Date(), dateZone.value);
+                dateYear.value = p.year;
+                dateMonth.value = p.month;
+                dateDay.value = p.day;
+                dateHour.value = p.hour;
+                dateMinute.value = p.minute;
+                dateSecond.value = p.second;
+                dateMillis.value = new Date().getMilliseconds();
+                convertDateToTimestamp();
+            }
+
+            function clearAll() {
+                epochInput.value = "";
+                setEpochResults(null);
+
+                ["dateYear", "dateMonth", "dateDay", "dateHour", "dateMinute", "dateSecond", "dateMillis"]
+                    .forEach(id => document.getElementById(id).value = "");
+                setDateResults(null);
+            }
+
+            epochInput.addEventListener("input", convertTimestampToDate);
+            document.querySelectorAll('input[name="epochUnit"]').forEach(radio => radio.addEventListener("change", convertTimestampToDate));
+            epochZoneA.addEventListener("change", convertTimestampToDate);
+            epochZoneB.addEventListener("change", convertTimestampToDate);
+
+            [dateYear, dateMonth, dateDay, dateHour, dateMinute, dateSecond, dateMillis]
+                .forEach(el => el.addEventListener("input", convertDateToTimestamp));
+            dateZone.addEventListener("change", convertDateToTimestamp);
+
+            currentRegionSelect.addEventListener("change", updateCurrentTime);
+
+            populateZoneSelect(currentRegionSelect, LOCAL_ZONE);
+            populateZoneSelect(epochZoneA, LOCAL_ZONE);
+            populateZoneSelect(epochZoneB, "UTC");
+            populateZoneSelect(dateZone, LOCAL_ZONE);
+
+            CustomDropdown.enhance(currentRegionSelect, { search: true });
+            CustomDropdown.enhance(epochZoneA, { search: true });
+            CustomDropdown.enhance(epochZoneB, { search: true });
+            CustomDropdown.enhance(dateZone, { search: true });
+
+            updateCurrentTime();
+            setInterval(updateCurrentTime, 1000);
+
+            setEpochNow();
+            setDateNow();
+        </script>
+
+    </body>
+</html>

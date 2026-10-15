@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Codexael Toolstack — Useless Facts</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta http-equiv="Content-Security-Policy" content="connect-src https://uselessfacts.jsph.pl; object-src 'none'; base-uri 'none'; form-action 'none'">
+
+        <!-- Metadata -->
+        <meta name="description" content="Weird, wonderful and totally useless facts, plus a new fact every day.">
+        <meta name="author" content="Codexael">
+        <meta name="theme-color" content="#fff4e0" media="(prefers-color-scheme: light)">
+        <meta name="theme-color" content="#17140f" media="(prefers-color-scheme: dark)">
+
+        <!-- Open Graph -->
+        <meta property="og:title" content="Codexael Toolstack — Random Useless Facts">
+        <meta property="og:description" content="Weird, wonderful and totally useless facts, plus a new fact every day.">
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="https://tools.codexael.com/useless_facts.html">
+        <meta property="og:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+        <meta property="og:image:width" content="1200">
+        <meta property="og:image:height" content="630">
+        <meta property="og:image:type" content="image/png">
+        <meta property="og:image:alt" content="Codexael Toolstack — Random Useless Facts">
+        <meta property="og:site_name" content="Codexael Toolstack">
+
+        <!-- Twitter Card -->
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="Codexael Toolstack — Random Useless Facts">
+        <meta name="twitter:description" content="Weird, wonderful and totally useless facts, plus a new fact every day.">
+        <meta name="twitter:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+
+        <!-- Favicon / App Icon -->
+        <link rel="icon" type="image/svg+xml" href="assets/images/codexael_icon.svg">
+        <link rel="apple-touch-icon" href="assets/images/codexael_icon.svg">
+
+        <!-- Bootstrap 5.2.0-beta1 -->
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+
+        <!-- Bootstrap with Popper 5.2.0-beta1 -->
+        <script src="js/bootstrap.bundle.min.js"></script>
+
+        <!-- Bootstrap Icons 1.11.3 -->
+        <link rel="stylesheet" href="css/bootstrap-icons.min.css">
+
+        <!-- Google fonts -->
+        <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+        <!-- Custom CSS -->
+        <link rel="stylesheet" href="css/keycaps.css">
+
+        <style>
+            .useless-body {
+                flex: 1;
+                min-height: 0;
+                display: flex;
+                flex-direction: column;
+                gap: 18px;
+                padding: 24px 22px 28px;
+                overflow-y: auto;
+            }
+
+            .useless-body.loading .fact-card { opacity: 0.55; }
+
+            /* The fact sits on an orange card that keeps dark text in both themes. */
+            .fact-card {
+                display: flex;
+                align-items: center;
+                gap: 18px;
+                padding: 20px 22px 20px 18px;
+                background: var(--orange);
+                color: #111111;
+                border: 3px solid var(--ink);
+                border-radius: 12px;
+                box-shadow: 4px 4px 0 var(--ink);
+            }
+
+            .fact-card .fact-icon {
+                flex: none;
+                width: 56px;
+                height: 56px;
+                display: grid;
+                place-items: center;
+                background: #ffffff;
+                border: 3px solid #111111;
+                border-radius: 50%;
+                font-size: 1.7rem;
+            }
+
+            .fact-content {
+                flex: 1;
+                min-width: 0;
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .fact-kind {
+                align-self: flex-start;
+                padding: 2px 10px;
+                background: #111111;
+                color: #ffffff;
+                font-family: var(--display-font);
+                font-size: 0.72rem;
+                letter-spacing: 0.06em;
+            }
+
+            .fact-text {
+                margin: 0;
+                font-size: 1.15rem;
+                font-weight: 700;
+                line-height: 1.5;
+                overflow-wrap: anywhere;
+            }
+
+            .fact-source {
+                font-size: 0.75rem;
+                font-weight: 700;
+                overflow-wrap: anywhere;
+            }
+
+            .fact-actions {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 12px;
+            }
+
+            /* Bootstrap btn hover and active states would hide the ink border without these values. */
+            .fact-actions .btn {
+                --bs-btn-hover-border-color: var(--ink);
+                --bs-btn-active-border-color: var(--ink);
+                width: auto;
+                flex: 0 1 auto;
+                margin-bottom: 0;
+            }
+
+            .fact-actions #newFactBtn {
+                flex: 1 1 200px;
+            }
+
+            .fact-meta {
+                font-size: 0.75rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.04em;
+            }
+
+            .privacy-note {
+                padding: 10px 12px;
+                border: 2px dashed var(--ink);
+                font-size: 0.75rem;
+                font-weight: 700;
+                line-height: 1.5;
+            }
+
+            @media (max-width: 480px) {
+                .useless-body {
+                    padding: 20px 16px 24px;
+                }
+
+                .fact-card {
+                    flex-direction: column;
+                    align-items: flex-start;
+                }
+
+                .fact-actions .btn,
+                .fact-actions #newFactBtn {
+                    flex: 1 1 100%;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <!-- Common layout -->
+        <div id="navbar-container"></div>
+
+        <div class="container-fluid tool-wrapper">
+            <div class="row">
+                <div class="col-md-8 offset-md-2">
+                    <div class="editor-panel">
+                        <div class="editor-header">
+                            <span class="editor-title">Useless Facts</span>
+                            <div class="editor-actions">
+                                <button title="New random fact" id="headerNewBtn" onclick="loadFact('random')"><i class="bi bi-arrow-clockwise icon-btn"></i></button>
+                                <div class="divider"></div>
+                                <button title="Copy fact" data-shortcut="copy" onclick="copyFact(this)"><i class="bi bi-copy icon-btn"></i></button>
+                            </div>
+                        </div>
+
+                        <div class="editor-body useless-body invisible-scrollbars loading" id="uselessBody">
+
+                            <div class="fact-card" aria-live="polite">
+                                <div class="fact-icon" aria-hidden="true">🤷</div>
+                                <div class="fact-content">
+                                    <span class="fact-kind" id="factKind">RANDOM FACT</span>
+                                    <p class="fact-text" id="factText">Fetching a useless fact...</p>
+                                    <span class="fact-source" id="factSource" hidden></span>
+                                </div>
+                            </div>
+
+                            <div class="fact-actions">
+                                <button class="btn action-btn-primary" id="newFactBtn" data-shortcut="run" onclick="loadFact('random')"><i class="bi bi-shuffle"></i> Random fact</button>
+                                <button class="btn action-btn-ghost" id="todayBtn" onclick="loadFact('today')"><i class="bi bi-calendar-day"></i> Fact of the day</button>
+                                <button class="btn action-btn-ghost" onclick="copyFact()"><i class="bi bi-copy"></i> Copy</button>
+                                <button class="btn action-btn-ghost" onclick="shareFact()"><i class="bi bi-share"></i> Share</button>
+                            </div>
+
+                            <div class="fact-meta" id="factMeta">Facts seen this visit: 0</div>
+
+                            <div class="privacy-note">
+                                <i class="bi bi-info-circle"></i> Facts come from <a href="https://uselessfacts.jsph.pl" target="_blank" rel="noopener noreferrer">Useless Facts</a>, a free public API. No data about you is sent with the request.
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <div id="footer-container"></div>
+
+        <!-- Common JS -->
+        <script src="js/tool-help.js"></script>
+        <script src="js/storage.js"></script>
+        <script src="js/common.js"></script>
+        <script src="js/script.js"></script>
+        <script src="js/api-client.js"></script>
+
+        <!-- Custom JS -->
+        <script>
+
+            const pageTitle = "Useless Facts";
+
+            const FACT_URLS = {
+                random: "https://uselessfacts.jsph.pl/api/v2/facts/random?language=en",
+                today: "https://uselessfacts.jsph.pl/api/v2/facts/today?language=en"
+            };
+            const FACT_LABELS = { random: "RANDOM FACT", today: "FACT OF THE DAY" };
+            const FACT_MAX_BYTES = 4096;
+            const MAX_ATTEMPTS = 3;
+
+            const uselessBody = document.getElementById("uselessBody");
+            const factKind = document.getElementById("factKind");
+            const factText = document.getElementById("factText");
+            const factSource = document.getElementById("factSource");
+            const factMeta = document.getElementById("factMeta");
+            const fetchButtons = ["newFactBtn", "todayBtn", "headerNewBtn"].map(id => document.getElementById(id));
+
+            let currentFact = "";
+            let factCount = 0;
+            let factController = null;
+
+            // Fetches one fact and checks that the reply really holds one.
+            async function fetchFact(kind, signal) {
+                const reply = await fetchPublicJson(FACT_URLS[kind], { serviceName: "The useless facts service", maxBytes: FACT_MAX_BYTES, signal });
+                if (!reply || typeof reply.text !== "string" || !reply.text.trim()) throw new ApiError("The useless facts service sent no fact", "invalid");
+
+                // The service writes some apostrophes as backticks, so they are shown as normal apostrophes.
+                const text = reply.text.trim().replace(/`/g, "’");
+                const source = typeof reply.source === "string" ? reply.source.trim() : "";
+                return { text, source };
+            }
+
+            // Fetches a random fact and asks again a few times when it repeats the fact on screen.
+            async function fetchNewFact(kind, signal) {
+                let fact = await fetchFact(kind, signal);
+                for (let attempt = 1; kind === "random" && fact.text === currentFact && attempt < MAX_ATTEMPTS; attempt++) {
+                    fact = await fetchFact(kind, signal);
+                }
+                return fact;
+            }
+
+            // Turns or clears the busy state on the card and every fetch button.
+            function setLoading(isLoading) {
+                uselessBody.classList.toggle("loading", isLoading);
+                fetchButtons.forEach(button => button.disabled = isLoading);
+            }
+
+            // Shows a fact with its label and source and updates the counter.
+            function showFact(kind, fact) {
+                currentFact = fact.text;
+                factCount++;
+                factKind.textContent = FACT_LABELS[kind];
+                factText.textContent = fact.text;
+                factSource.textContent = fact.source ? `Source: ${fact.source}` : "";
+                factSource.hidden = !fact.source;
+                factMeta.textContent = `Facts seen this visit: ${factCount}`;
+            }
+
+            // Loads a random fact or the fact of the day and keeps the current fact when the request fails.
+            async function loadFact(kind) {
+                if (factController) factController.abort();
+
+                const controller = new AbortController();
+                factController = controller;
+                setLoading(true);
+
+                try {
+                    showFact(kind, await fetchNewFact(kind, controller.signal));
+                } catch (error) {
+                    // A request replaced by a newer one ends quietly.
+                    if (error.kind === "aborted") return;
+
+                    showErrorToast(error.message);
+                    if (!currentFact) {
+                        factText.textContent = error.kind === "offline"
+                            ? "You are offline. A fact will load when your connection comes back."
+                            : `${error.message}. Click Random fact to try again.`;
+                    }
+                } finally {
+                    if (factController === controller) {
+                        factController = null;
+                        setLoading(false);
+                    }
+                }
+            }
+
+            function copyText(text, btn) {
+                if (isBlank(text, "Nothing to copy")) return;
+                navigator.clipboard.writeText(text).then(() => {
+                    showSuccessToast("Copied to clipboard");
+                    if (btn) {
+                        const icon = btn.querySelector("i");
+                        const original = icon.className;
+                        icon.className = "bi bi-check-lg";
+                        setTimeout(() => icon.className = original, 1000);
+                    }
+                }).catch(() => showErrorToast("Could not copy, your browser blocked the clipboard"));
+            }
+
+            function copyFact(btn) {
+                copyText(currentFact, btn);
+            }
+
+            // Uses the device share sheet when available and falls back to copying the fact with a link.
+            function shareFact() {
+                if (isBlank(currentFact, "Nothing to share")) return;
+                const shareText = `🤷 ${currentFact}`;
+                if (navigator.share) {
+                    navigator.share({ title: "Useless Facts", text: shareText, url: location.href }).catch(() => {});
+                } else {
+                    copyText(`${shareText}\n${location.href}`);
+                }
+            }
+
+            loadFact("random");
+
+            // A fact is loaded again when the connection comes back and nothing is on screen yet.
+            window.addEventListener("online", () => {
+                if (!currentFact && !factController) loadFact("random");
+            });
+        </script>
+
+    </body>
+</html>

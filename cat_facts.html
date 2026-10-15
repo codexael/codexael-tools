@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Codexael Toolstack — Cat Facts</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta http-equiv="Content-Security-Policy" content="connect-src https://catfact.ninja https://api.thecatapi.com; img-src 'self' data: https://cdn2.thecatapi.com; object-src 'none'; base-uri 'none'; form-action 'none'">
+
+        <!-- Metadata -->
+        <meta name="description" content="A cute cat photo and a fun cat fact with every click.">
+        <meta name="author" content="Codexael">
+        <meta name="theme-color" content="#fff4e0" media="(prefers-color-scheme: light)">
+        <meta name="theme-color" content="#17140f" media="(prefers-color-scheme: dark)">
+
+        <!-- Open Graph -->
+        <meta property="og:title" content="Codexael Toolstack — Random Cat Facts & Photos 🐱">
+        <meta property="og:description" content="A cute cat photo and a fun cat fact with every click.">
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="https://tools.codexael.com/cat_facts.html">
+        <meta property="og:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+        <meta property="og:image:width" content="1200">
+        <meta property="og:image:height" content="630">
+        <meta property="og:image:type" content="image/png">
+        <meta property="og:image:alt" content="Codexael Toolstack — Random Cat Facts & Photos 🐱">
+        <meta property="og:site_name" content="Codexael Toolstack">
+
+        <!-- Twitter Card -->
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="Codexael Toolstack — Random Cat Facts & Photos 🐱">
+        <meta name="twitter:description" content="A cute cat photo and a fun cat fact with every click.">
+        <meta name="twitter:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+
+        <!-- Favicon / App Icon -->
+        <link rel="icon" type="image/svg+xml" href="assets/images/codexael_icon.svg">
+        <link rel="apple-touch-icon" href="assets/images/codexael_icon.svg">
+
+        <!-- Bootstrap 5.2.0-beta1 -->
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+
+        <!-- Bootstrap with Popper 5.2.0-beta1 -->
+        <script src="js/bootstrap.bundle.min.js"></script>
+
+        <!-- Bootstrap Icons 1.11.3 -->
+        <link rel="stylesheet" href="css/bootstrap-icons.min.css">
+
+        <!-- Google fonts -->
+        <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+        <!-- Custom CSS -->
+        <link rel="stylesheet" href="css/keycaps.css">
+
+        <style>
+            .cat-body {
+                flex: 1;
+                min-height: 0;
+                display: flex;
+                flex-direction: column;
+                gap: 18px;
+                padding: 24px 22px 28px;
+                overflow-y: auto;
+            }
+
+            .cat-body.loading .fact-card,
+            .cat-body.loading .photo-frame { opacity: 0.55; }
+
+            /* The fact sits on an orange card that keeps dark text in both themes. */
+            .fact-card {
+                display: flex;
+                align-items: center;
+                gap: 18px;
+                padding: 20px 22px 20px 18px;
+                background: var(--orange);
+                color: #111111;
+                border: 3px solid var(--ink);
+                border-radius: 12px;
+                box-shadow: 4px 4px 0 var(--ink);
+            }
+
+            .fact-card .fact-icon {
+                flex: none;
+                width: 56px;
+                height: 56px;
+                display: grid;
+                place-items: center;
+                background: #ffffff;
+                border: 3px solid #111111;
+                border-radius: 50%;
+                font-size: 1.7rem;
+            }
+
+            .fact-text {
+                flex: 1;
+                min-width: 0;
+                margin: 0;
+                font-size: 1.05rem;
+                font-weight: 700;
+                line-height: 1.5;
+                overflow-wrap: anywhere;
+            }
+
+            /* The cat icon gives a small wiggle each time a new fact arrives. */
+            .fact-card.fresh .fact-icon { animation: cat-wiggle 0.45s ease; }
+
+            @keyframes cat-wiggle {
+                25% { transform: rotate(-12deg); }
+                75% { transform: rotate(12deg); }
+            }
+
+            @media (prefers-reduced-motion: reduce) {
+                .fact-card.fresh .fact-icon { animation: none; }
+            }
+
+            /* The frame shrinks to the photo's own size and stays centred. */
+            .photo-frame {
+                align-self: center;
+                width: fit-content;
+                max-width: 100%;
+                overflow: hidden;
+                background: var(--paper);
+                border: 3px solid var(--ink);
+                border-radius: 12px;
+                box-shadow: 4px 4px 0 var(--ink);
+            }
+
+            .photo-frame img {
+                display: block;
+                max-width: 100%;
+                max-height: 420px;
+                width: auto;
+                height: auto;
+            }
+
+            /* Before the first photo arrives the frame holds a fixed-size message. */
+            .photo-message {
+                width: 280px;
+                max-width: 100%;
+                min-height: 180px;
+                display: grid;
+                place-items: center;
+                margin: 0;
+                padding: 16px 20px;
+                font-size: 0.85rem;
+                font-weight: 700;
+                text-align: center;
+            }
+
+            .cat-actions {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 12px;
+            }
+
+            /* Bootstrap btn hover and active states would hide the ink border without these values. */
+            .cat-actions .btn {
+                --bs-btn-hover-border-color: var(--ink);
+                --bs-btn-active-border-color: var(--ink);
+                width: auto;
+                flex: 0 1 auto;
+                margin-bottom: 0;
+            }
+
+            .cat-actions #newCatBtn {
+                flex: 1 1 200px;
+            }
+
+            .fact-meta {
+                font-size: 0.75rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.04em;
+            }
+
+            .privacy-note {
+                padding: 10px 12px;
+                border: 2px dashed var(--ink);
+                font-size: 0.75rem;
+                font-weight: 700;
+                line-height: 1.5;
+            }
+
+            @media (max-width: 480px) {
+                .cat-body {
+                    padding: 20px 16px 24px;
+                }
+
+                .photo-frame img {
+                    max-height: 300px;
+                }
+
+                .fact-card {
+                    flex-direction: column;
+                    align-items: flex-start;
+                }
+
+                .cat-actions .btn,
+                .cat-actions #newCatBtn {
+                    flex: 1 1 100%;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <!-- Common layout -->
+        <div id="navbar-container"></div>
+
+        <div class="container-fluid tool-wrapper">
+            <div class="row">
+                <div class="col-md-8 offset-md-2">
+                    <div class="editor-panel">
+                        <div class="editor-header">
+                            <span class="editor-title">Cat Facts</span>
+                            <div class="editor-actions">
+                                <button title="New cat" id="headerNewBtn" onclick="loadCat()"><i class="bi bi-arrow-clockwise icon-btn"></i></button>
+                                <div class="divider"></div>
+                                <button title="Copy fact" data-shortcut="copy" onclick="copyFact(this)"><i class="bi bi-copy icon-btn"></i></button>
+                            </div>
+                        </div>
+
+                        <div class="editor-body cat-body invisible-scrollbars loading" id="catBody">
+
+                            <div class="fact-card" id="factCard" aria-live="polite">
+                                <div class="fact-icon" aria-hidden="true">🐱</div>
+                                <p class="fact-text" id="factText">Fetching a cat fact and photo...</p>
+                            </div>
+
+                            <div class="photo-frame" id="photoFrame">
+                                <p class="photo-message" id="photoMessage">The photo appears here together with the fact.</p>
+                            </div>
+
+                            <div class="cat-actions">
+                                <button class="btn action-btn-primary" id="newCatBtn" data-shortcut="run" onclick="loadCat()"><i class="bi bi-shuffle"></i> New cat</button>
+                                <button class="btn action-btn-ghost" onclick="copyFact()"><i class="bi bi-copy"></i> Copy fact</button>
+                                <button class="btn action-btn-ghost" onclick="shareCat()"><i class="bi bi-share"></i> Share</button>
+                                <button class="btn action-btn-ghost" onclick="openPhoto()"><i class="bi bi-box-arrow-up-right"></i> Open photo</button>
+                            </div>
+
+                            <div class="fact-meta" id="factMeta">Facts seen this visit: 0</div>
+
+                            <div class="privacy-note">
+                                <i class="bi bi-info-circle"></i> Facts come from <a href="https://catfact.ninja" target="_blank" rel="noopener noreferrer">catfact.ninja</a> and photos from <a href="https://thecatapi.com" target="_blank" rel="noopener noreferrer">TheCatAPI</a>, two free public APIs. No data about you is sent with the requests.
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <div id="footer-container"></div>
+
+        <!-- Common JS -->
+        <script src="js/tool-help.js"></script>
+        <script src="js/storage.js"></script>
+        <script src="js/common.js"></script>
+        <script src="js/script.js"></script>
+        <script src="js/api-client.js"></script>
+
+        <!-- Custom JS -->
+        <script>
+
+            const pageTitle = "Cat Facts";
+
+            const FACT_URL = "https://catfact.ninja/fact";
+            const PHOTO_URL = "https://api.thecatapi.com/v1/images/search";
+            const PHOTO_HOST = "cdn2.thecatapi.com";
+            const FACT_MAX_BYTES = 4096;
+            const PHOTO_MAX_BYTES = 2048;
+            const PHOTO_LOAD_TIMEOUT_MS = 15000;
+            const MAX_ATTEMPTS = 3;
+
+            const catBody = document.getElementById("catBody");
+            const factCard = document.getElementById("factCard");
+            const factText = document.getElementById("factText");
+            const factMeta = document.getElementById("factMeta");
+            const photoFrame = document.getElementById("photoFrame");
+            const photoMessage = document.getElementById("photoMessage");
+            const newCatBtn = document.getElementById("newCatBtn");
+            const headerNewBtn = document.getElementById("headerNewBtn");
+
+            let currentFact = "";
+            let currentPhoto = "";
+            let factCount = 0;
+            let catController = null;
+
+            // Fetches one fact and checks that the reply really holds one.
+            async function fetchFact(signal) {
+                const reply = await fetchPublicJson(FACT_URL, { serviceName: "The cat fact service", maxBytes: FACT_MAX_BYTES, signal });
+                if (!reply || typeof reply.fact !== "string" || !reply.fact.trim()) throw new ApiError("The cat fact service sent no fact", "invalid");
+                return reply.fact.trim();
+            }
+
+            // Fetches a fact and asks again a few times when it repeats the fact on screen.
+            async function fetchNewFact(signal) {
+                let fact = await fetchFact(signal);
+                for (let attempt = 1; fact === currentFact && attempt < MAX_ATTEMPTS; attempt++) {
+                    fact = await fetchFact(signal);
+                }
+                return fact;
+            }
+
+            // Returns the photo address only when it is an image file on TheCatAPI's image server.
+            function pickPhotoUrl(reply) {
+                const address = Array.isArray(reply) ? reply[0]?.url : null;
+                if (typeof address !== "string") return null;
+
+                let url;
+                try {
+                    url = new URL(address);
+                } catch {
+                    return null;
+                }
+                if (url.protocol !== "https:" || url.hostname !== PHOTO_HOST) return null;
+                if (!/\.(jpe?g|png|gif|webp)$/i.test(url.pathname)) return null;
+                return url.href;
+            }
+
+            // Downloads a photo in the background and resolves with an image element that is ready to show.
+            function preloadPhoto(url, signal) {
+                return new Promise((resolve, reject) => {
+                    const img = new Image();
+                    const timer = setTimeout(() => fail(new ApiError("The cat photo took too long to load", "timeout")), PHOTO_LOAD_TIMEOUT_MS);
+                    const onAbort = () => fail(new ApiError("Request was cancelled", "aborted"));
+
+                    function finish() {
+                        clearTimeout(timer);
+                        signal.removeEventListener("abort", onAbort);
+                    }
+
+                    function fail(error) {
+                        finish();
+                        img.onload = img.onerror = null;
+                        img.src = "";
+                        reject(error);
+                    }
+
+                    img.onload = async () => {
+                        // Decoding first means the photo paints in the same frame as the fact.
+                        try { await img.decode(); } catch { /* A photo that loaded can still be shown. */ }
+                        if (signal.aborted) return;
+                        finish();
+                        resolve(img);
+                    };
+                    img.onerror = () => fail(new ApiError(navigator.onLine ? "The cat photo could not load" : "You are offline", navigator.onLine ? "network" : "offline"));
+
+                    if (signal.aborted) return onAbort();
+                    signal.addEventListener("abort", onAbort, { once: true });
+                    img.alt = "A random cat";
+                    img.referrerPolicy = "no-referrer";
+                    img.src = url;
+                });
+            }
+
+            // Finds a usable photo and downloads it, trying another photo when one fails to load.
+            async function fetchReadyPhoto(signal) {
+                let lastError = new ApiError("The cat photo service sent no usable photo", "invalid");
+                for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+                    const reply = await fetchPublicJson(PHOTO_URL, { serviceName: "The cat photo service", maxBytes: PHOTO_MAX_BYTES, signal });
+                    const url = pickPhotoUrl(reply);
+                    if (!url || url === currentPhoto) continue;
+
+                    try {
+                        return await preloadPhoto(url, signal);
+                    } catch (error) {
+                        if (error.kind === "aborted" || error.kind === "offline") throw error;
+                        lastError = error;
+                    }
+                }
+                throw lastError;
+            }
+
+            // Turns or clears the busy state on the cards and both new cat buttons.
+            function setLoading(isLoading) {
+                catBody.classList.toggle("loading", isLoading);
+                newCatBtn.disabled = isLoading;
+                headerNewBtn.disabled = isLoading;
+            }
+
+            // Swaps in the new fact and photo in the same step so they always appear together.
+            function showCat(fact, img) {
+                currentFact = fact;
+                currentPhoto = img.src;
+                factCount++;
+                factText.textContent = fact;
+                factMeta.textContent = `Facts seen this visit: ${factCount}`;
+                photoFrame.replaceChildren(img);
+
+                // Removing and re-adding the class restarts the wiggle animation.
+                factCard.classList.remove("fresh");
+                void factCard.offsetWidth;
+                factCard.classList.add("fresh");
+            }
+
+            // Loads a fact and a photo at the same time and shows them only when both are ready.
+            async function loadCat() {
+                if (catController) catController.abort();
+
+                const controller = new AbortController();
+                catController = controller;
+                setLoading(true);
+
+                // When one part fails the other is cancelled, because a fact or photo is never shown alone.
+                const stopOnFailure = promise => promise.catch(error => {
+                    controller.abort("failed");
+                    throw error;
+                });
+
+                const [factResult, photoResult] = await Promise.allSettled([
+                    stopOnFailure(fetchNewFact(controller.signal)),
+                    stopOnFailure(fetchReadyPhoto(controller.signal))
+                ]);
+
+                // A request replaced by a newer one ends quietly.
+                if (catController !== controller) return;
+                catController = null;
+                setLoading(false);
+
+                if (factResult.status === "fulfilled" && photoResult.status === "fulfilled") {
+                    showCat(factResult.value, photoResult.value);
+                    return;
+                }
+
+                // The part that failed first is reported, and the part it cancelled is ignored.
+                const error = [factResult, photoResult]
+                    .filter(result => result.status === "rejected" && result.reason.kind !== "aborted")
+                    .map(result => result.reason)[0] || new ApiError("Could not load a cat", "network");
+                showErrorToast(error.message);
+
+                // The last good pair stays on screen, and only an empty page shows the problem.
+                if (!currentFact) {
+                    factText.textContent = error.kind === "offline"
+                        ? "You are offline. A cat will load when your connection comes back."
+                        : `${error.message}. Click New cat to try again.`;
+                    photoMessage.textContent = "No photo yet.";
+                }
+            }
+
+            function copyText(text, btn) {
+                if (isBlank(text, "Nothing to copy")) return;
+                navigator.clipboard.writeText(text).then(() => {
+                    showSuccessToast("Copied to clipboard");
+                    if (btn) {
+                        const icon = btn.querySelector("i");
+                        const original = icon.className;
+                        icon.className = "bi bi-check-lg";
+                        setTimeout(() => icon.className = original, 1000);
+                    }
+                }).catch(() => showErrorToast("Could not copy, your browser blocked the clipboard"));
+            }
+
+            function copyFact(btn) {
+                copyText(currentFact, btn);
+            }
+
+            // Uses the device share sheet when available and falls back to copying the fact with a link.
+            function shareCat() {
+                if (isBlank(currentFact, "Nothing to share")) return;
+                const shareText = `🐱 ${currentFact}`;
+                if (navigator.share) {
+                    navigator.share({ title: "Cat Facts", text: shareText, url: location.href }).catch(() => {});
+                } else {
+                    copyText(`${shareText}\n${location.href}`);
+                }
+            }
+
+            // Opens the full-size photo in a new tab.
+            function openPhoto() {
+                if (isBlank(currentPhoto, "No photo to open")) return;
+                window.open(currentPhoto, "_blank", "noopener,noreferrer");
+            }
+
+            loadCat();
+
+            // A cat is loaded again when the connection comes back and nothing is on screen yet.
+            window.addEventListener("online", () => {
+                if (!currentFact && !catController) loadCat();
+            });
+        </script>
+
+    </body>
+</html>

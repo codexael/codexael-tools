@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Codexael Toolstack — Regex Tester</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+        <!-- Metadata -->
+        <meta name="description" content="Build and test regular expressions and see matches as you type.">
+        <meta name="author" content="Codexael">
+        <meta name="theme-color" content="#fff4e0" media="(prefers-color-scheme: light)">
+        <meta name="theme-color" content="#17140f" media="(prefers-color-scheme: dark)">
+
+        <!-- Open Graph -->
+        <meta property="og:title" content="Codexael Toolstack — Regex Tester with Live Highlighting">
+        <meta property="og:description" content="Build and test regular expressions and see matches as you type.">
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="https://tools.codexael.com/regex_tester.html">
+        <meta property="og:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+        <meta property="og:image:width" content="1200">
+        <meta property="og:image:height" content="630">
+        <meta property="og:image:type" content="image/png">
+        <meta property="og:image:alt" content="Codexael Toolstack — Regex Tester with Live Highlighting">
+        <meta property="og:site_name" content="Codexael Toolstack">
+
+        <!-- Twitter Card -->
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="Codexael Toolstack — Regex Tester with Live Highlighting">
+        <meta name="twitter:description" content="Build and test regular expressions and see matches as you type.">
+        <meta name="twitter:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+
+        <!-- Favicon / App Icon -->
+        <link rel="icon" type="image/svg+xml" href="assets/images/codexael_icon.svg">
+        <link rel="apple-touch-icon" href="assets/images/codexael_icon.svg">
+
+        <!-- Bootstrap 5.2.0-beta1 -->
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+
+        <!-- Bootstrap with Popper 5.2.0-beta1 -->
+        <script src="js/bootstrap.bundle.min.js"></script>
+
+        <!-- Bootstrap Icons 1.11.3 -->
+        <link rel="stylesheet" href="css/bootstrap-icons.min.css">
+
+        <!-- CodeMirror 5.65.21 -->
+        <link rel="stylesheet" href="css/codemirror/codemirror.css">
+
+        <!-- Google fonts -->
+        <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+        <!-- Custom CSS -->
+        <link rel="stylesheet" href="css/find-replace.css">
+        <link rel="stylesheet" href="css/keycaps.css">
+        <link rel="stylesheet" href="css/regex_tester.css">
+    </head>
+    <body>
+        <!-- Common layout -->
+        <div id="navbar-container"></div>
+
+        <div class="container-fluid tool-wrapper">
+            <div class="row g-3 g-md-0 gx-md-3 gx-0">
+
+                <!-- Left: Test String -->
+                <div id="inputEditor" class="col-md-5 editor-panel">
+                    <div class="editor-header">
+                        <span class="editor-title">Test String</span>
+                        <div class="editor-actions">
+                            <button title="Load Dummy Data" onclick="loadDummyData()"><i class="bi bi-file-earmark-text icon-btn"></i></button>
+                            <div class="divider"></div>
+                            <button title="Download" onclick="downloadData('regex_tester.txt')"><i class="bi bi-download icon-btn"></i></button>
+                            <button title="Print" onclick="printData({ title: pageTitle })"><i class="bi bi-printer icon-btn"></i></button>
+                            <div class="divider"></div>
+                            <button class="btn-danger" title="Clear" data-undo-clear onclick="clearAllInputs()"><i class="bi bi-x-lg icon-btn"></i></button>
+                            <button title="Copy" onclick="copyToClipboard(codeMirrorInput, 'copyInputEditor')"><i class="bi bi-copy icon-btn" id="copyInputEditor"></i></button>
+                            <button title="Fullscreen" onclick="toggleEditorFullScreen('inputEditor')"><i class="bi bi-arrows-fullscreen icon-btn"></i></button>
+                        </div>
+                    </div>
+
+                    <textarea class="editor-body" id="input" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off" placeholder="Type or paste text to test your pattern against..."></textarea>
+
+                    <div class="editor-footer">
+                        <div class="status">
+                            <span>Ln <b id="inputCurrentLine">1</b></span>
+                            <span>Col <b id="inputCurrentColumn">1</b></span>
+                            <span>Lines <b id="inputTotalLines">1</b></span>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Center Actions -->
+                <div class="col-md-2 center-col action-panel text-center invisible-scrollbars">
+                    <div class="center-actions-wrapper">
+                        <div class="center-actions-label">Pattern Library</div>
+                        <select class="form-select action-select" id="libSelect" onchange="applyLibraryPattern()"></select>
+                        <div class="lib-desc" id="libDesc"></div>
+                    </div>
+
+                    <div class="center-actions-wrapper">
+                        <div class="center-actions-label">Pattern</div>
+                        <input type="text" id="patternInput" class="input-cyan" title="Build or enter a regex pattern..." placeholder="Build or enter a regex pattern..." oninput="runRegexTest(); onPatternManualEdit();" spellcheck="false" autocomplete="off">
+                        <div class="regex-error-msg" id="regexError"></div>
+                    </div>
+
+                    <div class="center-actions-wrapper">
+                        <div class="center-actions-label">Flags</div>
+                        <div class="flag-group">
+                            <div class="flag-toggle">
+                                <input class="regex-flag" type="checkbox" id="flag-g" checked>
+                                <label for="flag-g" title="global">g</label>
+                            </div>
+                            <div class="flag-toggle">
+                                <input class="regex-flag" type="checkbox" id="flag-m" checked>
+                                <label for="flag-m" title="multiline">m</label>
+                            </div>
+                            <div class="flag-toggle">
+                                <input class="regex-flag" type="checkbox" id="flag-i">
+                                <label for="flag-i" title="insensitive">i</label>
+                            </div>
+                            <div class="flag-toggle">
+                                <input class="regex-flag" type="checkbox" id="flag-s">
+                                <label for="flag-s" title="dot-all">s</label>
+                            </div>
+                            <div class="flag-toggle">
+                                <input class="regex-flag" type="checkbox" id="flag-u">
+                                <label for="flag-u" title="unicode">u</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="center-actions-separator"></div>
+
+                    <div class="center-actions-wrapper text-start" id="builderContainer"></div>
+
+                    <div class="center-actions-separator"></div>
+
+                    <div class="center-actions-wrapper">
+                        <div class="center-actions-label">Code Snippet Language</div>
+                        <select class="form-select action-select" id="languageSelect" onchange="updateSnippet()"></select>
+                    </div>
+                </div>
+
+                <!-- Right: Output -->
+                <div id="outputEditor" class="col-md-5 editor-panel">
+                    <div class="editor-header">
+                        <span class="editor-title output-tabs">
+                            <button class="output-tab active" id="tabMatches" onclick="switchOutputTab('matches')">Matches<span class="badge-count badge-none" id="matchBadge">0 matches</span></button>
+                            <button class="output-tab" id="tabSnippet" onclick="switchOutputTab('snippet')">Code Snippet</button>
+                        </span>
+                        <div class="editor-actions">
+                            <button title="Download" onclick="downloadOutput()"><i class="bi bi-download icon-btn"></i></button>
+                            <button title="Print" onclick="printOutput()"><i class="bi bi-printer icon-btn"></i></button>
+                            <div class="divider"></div>
+                            <button class="btn-danger" title="Clear" data-undo-clear="Pattern cleared" onclick="clearPattern()"><i class="bi bi-x-lg icon-btn"></i></button>
+                            <button title="Copy" data-shortcut="copy" onclick="copyOutput()"><i class="bi bi-copy icon-btn" id="copyOutputEditor"></i></button>
+                            <button title="Fullscreen" onclick="toggleEditorFullScreen('outputEditor')"><i class="bi bi-arrows-fullscreen icon-btn"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="editor-body preview-body match-body invisible-scrollbars" id="matchList">
+                        <div class="no-matches"><i class="bi bi-regex"></i>Enter a pattern to see matches</div>
+                    </div>
+
+                    <div class="editor-body preview-body snippet-body invisible-scrollbars" id="snippetBody" style="display:none;">
+                        <pre class="snippet-pre"><code id="snippetCode"></code></pre>
+                    </div>
+
+                    <div class="editor-footer">
+                        <div class="status" id="matchFooter">
+                            <span>Matches <b id="matchCountFooter">0</b></span>
+                            <span>Groups <b id="groupCountFooter">0</b></span>
+                        </div>
+                        <div class="status" id="snippetFooter" style="display:none;">
+                            <span>Language <b id="snippetLangFooter">JavaScript</b></span>
+                            <span>Chars <b id="snippetCharFooter">0</b></span>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+
+        <!-- CodeMirror 5.65.21 -->
+        <script src="js/codemirror/codemirror.js"></script>
+        <script src="js/codemirror/active-line.js"></script>
+
+        <div id="footer-container"></div>
+
+        <!-- Common JS -->
+        <script src="js/tool-help.js"></script>
+        <script src="js/storage.js"></script>
+        <script src="js/common.js"></script>
+        <script src="js/custom-dropdown.js"></script>
+        <script src="js/script.js"></script>
+        <script src="js/find-replace.js"></script>
+
+        <!-- Custom JS -->
+        <script>
+
+            // Elements
+            const pageTitle = "Regex Tester";
+            const MAX_MATCHES = 5000;
+
+            // Sample test string used to populate the input editor for quick testing
+            const DUMMY_TEST_STRING = `Contact us at support@example.com or visit https://www.example.com for more info.
+Office hours: 09:00 to 17:30, Monday to Friday.
+Our server IP is 192.168.1.1 and the ticket was opened on 2026-07-30.
+Call us at (555) 123-4567 or check out #Toolstack on social media.
+Brand color: #1a2b3c.`;
+
+            const input = document.getElementById("input");
+            const patternInput = document.getElementById("patternInput");
+            const regexError = document.getElementById("regexError");
+            const matchList = document.getElementById("matchList");
+            const matchBadge = document.getElementById("matchBadge");
+            const matchCountFooter = document.getElementById("matchCountFooter");
+            const groupCountFooter = document.getElementById("groupCountFooter");
+            const matchFooter = document.getElementById("matchFooter");
+            const snippetFooter = document.getElementById("snippetFooter");
+            const snippetBody = document.getElementById("snippetBody");
+            const snippetCode = document.getElementById("snippetCode");
+            const snippetLangFooter = document.getElementById("snippetLangFooter");
+            const snippetCharFooter = document.getElementById("snippetCharFooter");
+            const libSelect = document.getElementById("libSelect");
+            const libDesc = document.getElementById("libDesc");
+            const languageSelect = document.getElementById("languageSelect");
+            const builderContainer = document.getElementById("builderContainer");
+
+            const inputTotalLines = document.getElementById('inputTotalLines');
+            const inputCurrentLine = document.getElementById('inputCurrentLine');
+            const inputCurrentColumn = document.getElementById('inputCurrentColumn');
+
+            const codeMirrorInput = createCodeMirrorEditor(input);
+
+            setupEditors([
+                createEditorConfig(codeMirrorInput, inputTotalLines, inputCurrentLine, inputCurrentColumn)
+            ]);
+
+            let matchMarks = [];
+            let lastMatches = [];
+            let selectedMatchIndex = null;
+            let activeOutputTab = 'matches';
+
+            // Ready-made patterns for the library dropdown, grouped by category
+            const REGEX_LIBRARY = [
+                { category: "Web", name: "Email Address", pattern: "[\\w.+-]+@[\\w-]+\\.[a-zA-Z]{2,}", flags: "g", desc: "Matches standard email addresses, e.g. name@example.com." },
+                { category: "Web", name: "URL", pattern: "https?:\\/\\/[\\w.-]+(?:\\.[a-zA-Z]{2,})+(?:[\\/\\w.~:?#\\[\\]@!$&'()*+,;=%-]*)?", flags: "g", desc: "Matches HTTP/HTTPS URLs." },
+                { category: "Web", name: "IPv4 Address", pattern: "\\b(?:(?:25[0-5]|2[0-4]\\d|1?\\d?\\d)\\.){3}(?:25[0-5]|2[0-4]\\d|1?\\d?\\d)\\b", flags: "g", desc: "Matches IPv4 addresses from 0.0.0.0 to 255.255.255.255." },
+                { category: "Web", name: "IPv6 Address", pattern: "\\b(?:[A-Fa-f0-9]{1,4}:){7}[A-Fa-f0-9]{1,4}\\b", flags: "g", desc: "Matches full-form IPv6 addresses." },
+                { category: "Web", name: "Domain Name", pattern: "\\b(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,}\\b", flags: "g", desc: "Matches domain names, e.g. example.com." },
+                { category: "Web", name: "Hashtag", pattern: "#[a-zA-Z0-9_]+", flags: "g", desc: "Matches hashtags, e.g. #Toolstack." },
+                { category: "Format", name: "Date (YYYY-MM-DD)", pattern: "\\b\\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\\d|3[01])\\b", flags: "g", desc: "Matches ISO dates, e.g. 2026-07-08." },
+                { category: "Format", name: "Date (MM/DD/YYYY)", pattern: "\\b(?:0[1-9]|1[0-2])\\/(?:0[1-9]|[12]\\d|3[01])\\/\\d{4}\\b", flags: "g", desc: "Matches US-style dates, e.g. 07/08/2026." },
+                { category: "Format", name: "Time (24-hour)", pattern: "\\b([01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d)?\\b", flags: "g", desc: "Matches 24-hour times, e.g. 14:35 or 14:35:09." },
+                { category: "Format", name: "Hex Color", pattern: "#(?:[0-9a-fA-F]{3}){1,2}\\b", flags: "g", desc: "Matches hex color codes, e.g. #fff or #1a2b3c." },
+                { category: "Format", name: "Slug", pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$", flags: "", desc: "Matches URL-friendly slugs, e.g. my-blog-post." },
+                { category: "Format", name: "Phone Number (US)", pattern: "\\(?\\d{3}\\)?[-.\\s]?\\d{3}[-.\\s]?\\d{4}", flags: "g", desc: "Matches US phone numbers in common formats." },
+                { category: "Security", name: "Strong Password", pattern: "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^\\w\\s]).{8,}$", flags: "", desc: "Requires 8+ characters with upper, lower, digit and symbol." },
+                { category: "Security", name: "Username", pattern: "^[a-zA-Z0-9_]{3,16}$", flags: "", desc: "Matches usernames: 3-16 letters, digits or underscores." },
+                { category: "Security", name: "Credit Card Number", pattern: "\\b\\d{4}[- ]?\\d{4}[- ]?\\d{4}[- ]?\\d{4}\\b", flags: "g", desc: "Matches 16-digit card numbers, with optional separators." },
+                { category: "Security", name: "ZIP Code (US)", pattern: "\\b\\d{5}(?:-\\d{4})?\\b", flags: "g", desc: "Matches US ZIP codes, e.g. 12345 or 12345-6789." },
+                { category: "Misc", name: "HTML Tag", pattern: "<\\/?[a-zA-Z][a-zA-Z0-9]*(?:\\s[^<>]*)?\\/?>", flags: "g", desc: "Matches opening, closing and self-closing HTML tags." },
+                { category: "Misc", name: "Whitespace Trim", pattern: "^\\s+|\\s+$", flags: "g", desc: "Matches leading and trailing whitespace." },
+                { category: "Misc", name: "Decimal Number", pattern: "-?\\d+(?:\\.\\d+)?", flags: "g", desc: "Matches integers and decimals, e.g. -3.14." },
+                { category: "Misc", name: "Alphanumeric Only", pattern: "^[a-zA-Z0-9]+$", flags: "", desc: "Matches strings containing only letters and digits." }
+            ];
+
+            // Quick-insert building blocks, grouped for the builder panel
+            const BUILDER_GROUPS = [
+                { label: "Anchors", tokens: [
+                    { symbol: "^", title: "Start of line", insert: "^" },
+                    { symbol: "$", title: "End of line", insert: "$" },
+                    { symbol: "\\b", title: "Word boundary", insert: "\\b" },
+                    { symbol: "\\B", title: "Non-word boundary", insert: "\\B" }
+                ]},
+                { label: "Character Classes", tokens: [
+                    { symbol: ".", title: "Any character", insert: "." },
+                    { symbol: "\\d", title: "Digit", insert: "\\d" },
+                    { symbol: "\\D", title: "Non-digit", insert: "\\D" },
+                    { symbol: "\\w", title: "Word character", insert: "\\w" },
+                    { symbol: "\\W", title: "Non-word character", insert: "\\W" },
+                    { symbol: "\\s", title: "Whitespace", insert: "\\s" },
+                    { symbol: "\\S", title: "Non-whitespace", insert: "\\S" },
+                    { symbol: "[abc]", title: "Any of a, b, c", insert: "[abc]", offset: 1, length: 3 },
+                    { symbol: "[^abc]", title: "Not a, b, or c", insert: "[^abc]", offset: 2, length: 3 }
+                ]},
+                { label: "Quantifiers", tokens: [
+                    { symbol: "*", title: "0 or more", insert: "*" },
+                    { symbol: "+", title: "1 or more", insert: "+" },
+                    { symbol: "?", title: "0 or 1", insert: "?" },
+                    { symbol: "{n,m}", title: "Between n and m", insert: "{2,4}", offset: 1, length: 3 }
+                ]},
+                { label: "Groups", tokens: [
+                    { symbol: "( )", title: "Capture group", insert: "()", offset: 1 },
+                    { symbol: "(?: )", title: "Non-capture group", insert: "(?:)", offset: 3 },
+                    { symbol: "(?<n>)", title: "Named group", insert: "(?<name>)", offset: 3, length: 4 },
+                    { symbol: "|", title: "Alternation (or)", insert: "|" },
+                    { symbol: "(?= )", title: "Lookahead", insert: "(?=)", offset: 3 },
+                    { symbol: "(?! )", title: "Negative lookahead", insert: "(?!)", offset: 3 }
+                ]}
+            ];
+
+            // Supported output languages for the generated code snippet
+            const LANGUAGES = [
+                { id: "javascript", label: "JavaScript", ext: "js", build: buildJsSnippet },
+                { id: "python", label: "Python", ext: "py", build: buildPythonSnippet },
+                { id: "java", label: "Java", ext: "java", build: buildJavaSnippet },
+                { id: "csharp", label: "C#", ext: "cs", build: buildCSharpSnippet },
+                { id: "php", label: "PHP", ext: "php", build: buildPhpSnippet },
+                { id: "go", label: "Go", ext: "go", build: buildGoSnippet }
+            ];
+
+            populateLibrarySelect();
+            populateLanguageSelect();
+            CustomDropdown.enhance(libSelect, { search: true });
+            CustomDropdown.enhance(languageSelect);
+            populateBuilder();
+
+            codeMirrorInput.on("change", runRegexTest);
+            document.querySelectorAll('.regex-flag').forEach(checkbox => checkbox.addEventListener('change', runRegexTest));
+
+            // Builds the flags string from the checked flag checkboxes
+            function getActiveFlags() {
+                return ['g', 'i', 'm', 's', 'u']
+                    .filter(f => document.getElementById('flag-' + f).checked)
+                    .join('');
+            }
+
+            // Sets the checked state of every flag checkbox from a flags string
+            function setActiveFlags(flags) {
+                ['g', 'i', 'm', 's', 'u'].forEach(f => document.getElementById('flag-' + f).checked = flags.includes(f));
+            }
+
+            // Fills the pattern library dropdown, grouped into optgroups by category
+            function populateLibrarySelect() {
+                const placeholder = document.createElement('option');
+                placeholder.value = "";
+                placeholder.textContent = "Select a pattern...";
+                libSelect.appendChild(placeholder);
+
+                const groups = {};
+                REGEX_LIBRARY.forEach((item, index) => {
+                    if (!groups[item.category]) {
+                        groups[item.category] = document.createElement('optgroup');
+                        groups[item.category].label = item.category;
+                        libSelect.appendChild(groups[item.category]);
+                    }
+                    const option = document.createElement('option');
+                    option.value = index;
+                    option.textContent = item.name;
+                    groups[item.category].appendChild(option);
+                });
+            }
+
+            // Applies the selected library pattern to the pattern field, flags and description
+            function applyLibraryPattern() {
+                if (libSelect.value === "") {
+                    libDesc.textContent = "";
+                    return;
+                }
+                const item = REGEX_LIBRARY[libSelect.value];
+                patternInput.value = item.pattern;
+                setActiveFlags(item.flags);
+                libDesc.textContent = item.desc;
+                runRegexTest();
+            }
+
+            // Deselects the library entry once the user hand-edits the pattern
+            function onPatternManualEdit() {
+                libSelect.value = "";
+                CustomDropdown.refresh(libSelect);
+                libDesc.textContent = "";
+            }
+
+            // Renders the token builder buttons for every group
+            function populateBuilder() {
+                BUILDER_GROUPS.forEach(group => {
+                    const label = document.createElement('div');
+                    label.className = 'token-group-label';
+                    label.textContent = group.label;
+                    builderContainer.appendChild(label);
+
+                    const grid = document.createElement('div');
+                    grid.className = 'token-grid';
+                    group.tokens.forEach(token => {
+                        const button = document.createElement('button');
+                        button.type = 'button';
+                        button.className = 'token-btn';
+                        button.title = token.title;
+                        button.textContent = token.symbol;
+                        button.onclick = () => insertToken(token.insert, token.offset, token.length);
+                        grid.appendChild(button);
+                    });
+                    builderContainer.appendChild(grid);
+                });
+            }
+
+            // Inserts a builder token at the current cursor position, replacing any selection
+            function insertToken(text, offset, length) {
+                const start = patternInput.selectionStart ?? patternInput.value.length;
+                const end = patternInput.selectionEnd ?? start;
+                const value = patternInput.value;
+
+                patternInput.value = value.slice(0, start) + text + value.slice(end);
+                onPatternManualEdit();
+
+                const cursor = start + (offset ?? text.length);
+                patternInput.focus();
+                patternInput.setSelectionRange(cursor, cursor + (length ?? 0));
+                runRegexTest();
+            }
+
+            // Fills the code snippet language dropdown
+            function populateLanguageSelect() {
+                LANGUAGES.forEach(lang => {
+                    const option = document.createElement('option');
+                    option.value = lang.id;
+                    option.textContent = lang.label;
+                    languageSelect.appendChild(option);
+                });
+            }
+
+            // Escapes an unescaped delimiter character for string/regex-literal embedding
+            function escapeDelimiter(pattern, delimiter) {
+                return pattern.replace(new RegExp('(^|[^\\\\])(' + delimiter + ')', 'g'), '$1\\$2');
+            }
+
+            function buildJsSnippet(pattern, flags) {
+                const escaped = escapeDelimiter(pattern, '/');
+                return `const pattern = /${escaped}/${flags};\n\nconst text = "your string here";\nconst matches = text.match(pattern);\nconsole.log(matches);`;
+            }
+
+            function buildPythonSnippet(pattern, flags) {
+                const pyFlags = [];
+                if (flags.includes('i')) pyFlags.push('re.IGNORECASE');
+                if (flags.includes('m')) pyFlags.push('re.MULTILINE');
+                if (flags.includes('s')) pyFlags.push('re.DOTALL');
+                const flagsArg = pyFlags.length ? `, ${pyFlags.join(' | ')}` : '';
+                const quote = pattern.includes('"') ? "'" : '"';
+                return `import re\n\npattern = re.compile(${quote}${pattern}${quote}${flagsArg})\ntext = "your string here"\nmatches = pattern.findall(text)\nprint(matches)`;
+            }
+
+            function buildJavaSnippet(pattern, flags) {
+                const javaFlags = [];
+                if (flags.includes('i')) javaFlags.push('Pattern.CASE_INSENSITIVE');
+                if (flags.includes('m')) javaFlags.push('Pattern.MULTILINE');
+                if (flags.includes('s')) javaFlags.push('Pattern.DOTALL');
+                const flagsArg = javaFlags.length ? `, ${javaFlags.join(' | ')}` : '';
+                const escaped = pattern.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+                return `import java.util.regex.*;\n\nPattern pattern = Pattern.compile("${escaped}"${flagsArg});\nMatcher matcher = pattern.matcher("your string here");\nwhile (matcher.find()) {\n    System.out.println(matcher.group());\n}`;
+            }
+
+            function buildCSharpSnippet(pattern, flags) {
+                const csFlags = [];
+                if (flags.includes('i')) csFlags.push('RegexOptions.IgnoreCase');
+                if (flags.includes('m')) csFlags.push('RegexOptions.Multiline');
+                if (flags.includes('s')) csFlags.push('RegexOptions.Singleline');
+                const flagsArg = csFlags.length ? `, ${csFlags.join(' | ')}` : '';
+                const escaped = pattern.replace(/"/g, '""');
+                return `using System.Text.RegularExpressions;\n\nvar regex = new Regex(@"${escaped}"${flagsArg});\nvar matches = regex.Matches("your string here");\nforeach (Match m in matches) {\n    Console.WriteLine(m.Value);\n}`;
+            }
+
+            function buildPhpSnippet(pattern, flags) {
+                const phpFlags = flags.replace(/g/g, '');
+                const escaped = escapeDelimiter(pattern, '/');
+                return `$pattern = '/${escaped}/${phpFlags}';\n$text = "your string here";\npreg_match_all($pattern, $text, $matches);\nprint_r($matches);`;
+            }
+
+            function buildGoSnippet(pattern, flags) {
+                const goFlags = ['i', 'm', 's'].filter(f => flags.includes(f)).join('');
+                const prefix = goFlags ? `(?${goFlags})` : '';
+                return `package main\n\nimport (\n\t"fmt"\n\t"regexp"\n)\n\nfunc main() {\n\tre := regexp.MustCompile(\`${prefix}${pattern}\`)\n\tmatches := re.FindAllString("your string here", -1)\n\tfmt.Println(matches)\n}`;
+            }
+
+            // Regenerates the code snippet for the currently selected language
+            function updateSnippet() {
+                const pattern = patternInput.value;
+                const flags = getActiveFlags();
+                const lang = LANGUAGES.find(l => l.id === languageSelect.value) || LANGUAGES[0];
+                const code = pattern ? lang.build(pattern, flags) : '// Enter a pattern to generate code';
+
+                snippetCode.textContent = code;
+                snippetLangFooter.textContent = lang.label;
+                snippetCharFooter.textContent = code.length;
+            }
+
+            // Switches the output panel between the Matches and Code Snippet tabs
+            function switchOutputTab(tab) {
+                activeOutputTab = tab;
+                document.getElementById('tabMatches').classList.toggle('active', tab === 'matches');
+                document.getElementById('tabSnippet').classList.toggle('active', tab === 'snippet');
+                matchList.style.display = tab === 'matches' ? '' : 'none';
+                snippetBody.style.display = tab === 'snippet' ? '' : 'none';
+                matchFooter.style.display = tab === 'matches' ? '' : 'none';
+                snippetFooter.style.display = tab === 'snippet' ? '' : 'none';
+                if (tab === 'snippet') updateSnippet();
+            }
+
+            // Clears previously highlighted matches from the test string editor
+            function clearMatchMarks() {
+                matchMarks.forEach(mark => mark.clear());
+                matchMarks = [];
+            }
+
+            // Collects all matches for the given regex against the text, guarding against zero-length infinite loops
+            function collectMatches(re, text) {
+                const flags = re.flags.includes('g') ? re.flags : re.flags + 'g';
+                const reGlobal = new RegExp(re.source, flags);
+                const matches = [];
+                let match;
+
+                while ((match = reGlobal.exec(text)) !== null) {
+                    matches.push({ value: match[0], index: match.index, groups: match.slice(1), namedGroups: match.groups });
+                    if (match[0].length === 0) reGlobal.lastIndex++;
+                    if (!re.flags.includes('g') || matches.length >= MAX_MATCHES) break;
+                }
+
+                return matches;
+            }
+
+            // Runs the current pattern against the test string, highlighting and listing matches
+            function runRegexTest() {
+                const pattern = patternInput.value;
+                const text = codeMirrorInput.getValue();
+
+                clearMatchMarks();
+                patternInput.classList.remove('is-invalid');
+                regexError.classList.remove('visible');
+
+                if (!pattern) {
+                    lastMatches = [];
+                    renderMatchList(null);
+                    updateMatchBadge(null);
+                    updateSnippet();
+                    return;
+                }
+
+                let re;
+                try {
+                    re = new RegExp(pattern, getActiveFlags());
+                } catch (error) {
+                    patternInput.classList.add('is-invalid');
+                    regexError.textContent = error.message;
+                    regexError.classList.add('visible');
+                    lastMatches = [];
+                    renderMatchList('error');
+                    updateMatchBadge('error');
+                    updateSnippet();
+                    return;
+                }
+
+                const matches = collectMatches(re, text);
+                lastMatches = matches;
+                selectedMatchIndex = matches.length ? 0 : null;
+
+                applyMatchMarks();
+                renderMatchList(matches);
+                updateMatchBadge(matches.length);
+                updateSnippet();
+            }
+
+            // (Re)creates the highlight marks for every match, giving the selected match a distinct style
+            function applyMatchMarks() {
+                clearMatchMarks();
+                lastMatches.forEach((match, i) => {
+                    if (match.value.length === 0) return;
+                    const from = codeMirrorInput.posFromIndex(match.index);
+                    const to = codeMirrorInput.posFromIndex(match.index + match.value.length);
+                    const className = 'cm-regex-match' + (i === selectedMatchIndex ? ' cm-regex-match-selected' : '');
+                    matchMarks.push(codeMirrorInput.markText(from, to, { className }));
+                });
+            }
+
+            // Escapes HTML special characters for safe rendering
+            function escapeHtml(value) {
+                return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            }
+
+            // Renders the list of matches (or a placeholder state) into the matches panel
+            function renderMatchList(matches) {
+                let totalGroups = 0;
+
+                if (matches === null) {
+                    matchList.innerHTML = '<div class="no-matches"><i class="bi bi-regex"></i>Enter a pattern to see matches</div>';
+                } else if (matches === 'error') {
+                    matchList.innerHTML = '<div class="no-matches match-error"><i class="bi bi-exclamation-circle"></i>Invalid regex pattern</div>';
+                } else if (!matches.length) {
+                    matchList.innerHTML = '<div class="no-matches"><i class="bi bi-search"></i>No matches found</div>';
+                } else {
+                    matchList.innerHTML = matches.map((match, i) => {
+                        let groupsHtml = '';
+                        if (match.groups.length && match.groups.some(g => g !== undefined)) {
+                            totalGroups += match.groups.length;
+                            groupsHtml = match.groups.map((group, gi) => {
+                                const named = match.namedGroups ? Object.entries(match.namedGroups).find(([, value]) => value === group) : null;
+                                const label = named ? named[0] : `Group ${gi + 1}`;
+                                const value = group !== undefined ? escapeHtml(group) : '<em style="opacity:0.5;font-style:normal;">undefined</em>';
+                                return `<div class="group-row"><span class="group-label">${label}</span><span class="group-val">${value}</span></div>`;
+                            }).join('');
+                            groupsHtml = `<div class="match-groups">${groupsHtml}</div>`;
+                        }
+
+                        const value = escapeHtml(match.value) || '<em style="opacity:0.5;font-style:normal;">empty match</em>';
+                        return `
+                        <div class="match-item${i === selectedMatchIndex ? ' active' : ''}" data-index="${i}">
+                            <div class="match-val">${value}</div>
+                            <div class="match-meta">Match ${i + 1} &middot; index ${match.index}&ndash;${match.index + match.value.length}</div>
+                            ${groupsHtml}
+                        </div>`;
+                    }).join('');
+                }
+
+                groupCountFooter.textContent = totalGroups;
+                matchCountFooter.textContent = matches && matches !== 'error' ? matches.length : 0;
+            }
+
+            // Selects and reveals the given match inside the test string editor
+            function selectMatch(index) {
+                const match = lastMatches[index];
+                if (!match) return;
+
+                const from = codeMirrorInput.posFromIndex(match.index);
+                const to = codeMirrorInput.posFromIndex(match.index + match.value.length);
+
+                selectedMatchIndex = index;
+                applyMatchMarks();
+                codeMirrorInput.setCursor(from);
+                codeMirrorInput.scrollIntoView({ from, to }, 80);
+                codeMirrorInput.focus();
+
+                matchList.querySelectorAll('.match-item.active').forEach(el => el.classList.remove('active'));
+                matchList.querySelector(`.match-item[data-index="${index}"]`)?.classList.add('active');
+            }
+
+            matchList.addEventListener('click', (event) => {
+                const item = event.target.closest('.match-item');
+                if (item) selectMatch(parseInt(item.dataset.index, 10));
+            });
+
+            // Updates the match count badge shown next to the panel title
+            function updateMatchBadge(count) {
+                matchBadge.classList.remove('badge-ok', 'badge-none', 'badge-err');
+                if (count === null) {
+                    matchBadge.classList.add('badge-none');
+                    matchBadge.textContent = '0 matches';
+                } else if (count === 'error') {
+                    matchBadge.classList.add('badge-err');
+                    matchBadge.textContent = 'Invalid';
+                } else if (count > 0) {
+                    matchBadge.classList.add('badge-ok');
+                    matchBadge.textContent = `${count} match${count > 1 ? 'es' : ''}`;
+                } else {
+                    matchBadge.classList.add('badge-none');
+                    matchBadge.textContent = '0 matches';
+                }
+            }
+
+            // Builds a plain-text summary of the current matches, for copy/download/print
+            function buildMatchesText() {
+                if (!lastMatches.length) return '';
+                return lastMatches.map((match, i) => {
+                    let text = `Match ${i + 1} (index ${match.index}-${match.index + match.value.length}): ${match.value}`;
+                    match.groups.forEach((group, gi) => {
+                        if (group !== undefined) text += `\n  Group ${gi + 1}: ${group}`;
+                    });
+                    return text;
+                }).join('\n\n');
+            }
+
+            // Returns the text of whichever output tab (Matches or Code Snippet) is active
+            function getActiveOutputText() {
+                return activeOutputTab === 'snippet' ? snippetCode.textContent : buildMatchesText();
+            }
+
+            // Copies the active output tab's content to the clipboard
+            function copyOutput() {
+                const text = getActiveOutputText();
+                if (isBlank(text, "Nothing to copy")) return;
+                navigator.clipboard.writeText(text).then(() => {
+                    const icon = document.getElementById('copyOutputEditor');
+                    icon.className = 'bi bi-check-lg icon-btn';
+                    setTimeout(() => icon.className = 'bi bi-copy icon-btn', 1000);
+                    showSuccessToast(activeOutputTab === 'snippet' ? "Snippet copied to clipboard" : "Matches copied to clipboard");
+                });
+            }
+
+            // Downloads the active output tab's content as a file
+            function downloadOutput() {
+                const text = getActiveOutputText();
+                if (isBlank(text, "Nothing to download")) return;
+                const lang = LANGUAGES.find(l => l.id === languageSelect.value) || LANGUAGES[0];
+                const fileName = activeOutputTab === 'snippet' ? `regex_snippet.${lang.ext}` : "regex_matches.txt";
+
+                const blob = new Blob([text], { type: "text/plain" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = fileName;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
+
+            // Prints the active output tab's content
+            function printOutput() {
+                printData({ title: pageTitle, value: getActiveOutputText() });
+            }
+
+            // Clears the pattern, flags, library selection and highlighted matches
+            function clearPattern() {
+                patternInput.value = "";
+                patternInput.classList.remove('is-invalid');
+                regexError.classList.remove('visible');
+                libSelect.value = "";
+                CustomDropdown.refresh(libSelect);
+                libDesc.textContent = "";
+                document.getElementById('flag-g').checked = true;
+                document.getElementById('flag-m').checked = true;
+                document.getElementById('flag-i').checked = false;
+                document.getElementById('flag-s').checked = false;
+                document.getElementById('flag-u').checked = false;
+                runRegexTest();
+            }
+
+            // Loads sample text into the test string editor
+            function loadDummyData() {
+                codeMirrorInput.setValue(DUMMY_TEST_STRING);
+            }
+
+            // Clears the test string, pattern and matches
+            function clearAllInputs() {
+                clearInput(codeMirrorInput);
+                clearPattern();
+            }
+        </script>
+
+    </body>
+</html>

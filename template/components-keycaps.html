@@ -1,0 +1,1483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Codexael Toolstack — Keycaps Components</title>
+    <link rel="icon" href="../assets/images/favicon.png">
+    <link rel="stylesheet" href="../css/bootstrap-icons.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #fff4e0;
+            --ink: #111111;
+            --paper: #ffffff;
+            --yellow: #ffd23f;
+            --pink: #ff6fb5;
+            --cyan: #3bceac;
+            --blue: #4d7cfe;
+            --orange: #ff8a3d;
+            --lilac: #b69cff;
+            --lime: #c6f432;
+            --red: #ff5a4e;
+        }
+        * { box-sizing: border-box; }
+        html, body { overflow-x: hidden; }
+        body {
+            margin: 0;
+            background-color: var(--bg);
+            background-image: radial-gradient(var(--ink) 1px, transparent 1px);
+            background-size: 22px 22px;
+            color: var(--ink);
+            font-family: "Space Mono", monospace;
+        }
+        body.no-scroll { overflow: hidden; }
+        a { color: inherit; text-decoration: none; }
+        button, input, textarea, select { font: inherit; color: inherit; }
+        button { cursor: pointer; }
+        :focus-visible { outline: 4px solid var(--blue); outline-offset: 4px; }
+        .sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+        .wrap { max-width: 1160px; margin: 0 auto; padding: 24px 16px 80px; }
+
+        /* Top bar. */
+        .top { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
+        .brand { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+        .logo { font-family: "Archivo Black", sans-serif; font-size: 1.4rem; background: var(--yellow); border: 3px solid var(--ink); box-shadow: 4px 4px 0 var(--ink); padding: 4px 12px; transform: rotate(-2deg); }
+        .sub { font-weight: 700; font-size: .85rem; }
+        .links { display: flex; gap: 12px; flex-wrap: wrap; }
+        .navkey { border: 3px solid var(--ink); background: var(--c, var(--lime)); padding: 6px 12px; font-weight: 700; box-shadow: 4px 4px 0 var(--ink); transition: transform .08s, box-shadow .08s; display: inline-flex; gap: 6px; align-items: center; }
+        .navkey:hover { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--ink); }
+        .navkey:active { transform: translate(4px, 4px); box-shadow: 0 0 0 var(--ink); }
+
+        .intro { margin: 40px 0 30px; }
+        .intro h1 { font-family: "Archivo Black", sans-serif; font-size: clamp(2.2rem, 7vw, 4.6rem); line-height: .95; margin: 0; letter-spacing: -.02em; text-transform: uppercase; }
+        .intro h1 .hl { background: var(--pink); padding: 0 10px; border: 3px solid var(--ink); display: inline-block; transform: rotate(1.5deg); box-shadow: 6px 6px 0 var(--ink); }
+        .intro p { max-width: 60ch; margin: 20px 0 0; }
+
+        /* Showcase grid and sections. */
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr)); gap: 30px; }
+        .demo { background: var(--paper); border: 4px solid var(--ink); box-shadow: 8px 8px 0 var(--ink); padding: 20px; min-width: 0; }
+        .demo.wide { grid-column: 1 / -1; }
+        .demo-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px 12px; flex-wrap: wrap; border-bottom: 3px dashed var(--ink); padding-bottom: 10px; margin-bottom: 18px; }
+        .demo h2 { font-family: "Archivo Black", sans-serif; font-weight: 400; font-size: 1.2rem; margin: 0; text-transform: uppercase; }
+        .demo h2 .n { display: inline-block; background: var(--ink); color: var(--bg); padding: 0 6px; margin-right: 6px; font-size: .9rem; }
+        .cap { font-family: "Space Mono", monospace; font-size: .72rem; background: var(--bg); border: 2px solid var(--ink); padding: 1px 6px; overflow-wrap: anywhere; }
+        .row { display: flex; flex-wrap: wrap; gap: 18px; align-items: center; }
+        .stack { display: grid; gap: 16px; }
+        .note { font-size: .78rem; margin: 14px 0 0; }
+        .out { font-weight: 700; font-size: .85rem; }
+
+        /* Shared sticker look. */
+        .stk { display: inline-block; background: var(--c, var(--yellow)); border: 3px solid var(--ink); box-shadow: 3px 3px 0 var(--ink); padding: 2px 8px; font-weight: 700; font-size: .75rem; text-transform: uppercase; transform: rotate(-3deg); }
+
+        /* 1. Primary keycap button. */
+        .btn { position: relative; display: inline-flex; align-items: center; gap: 8px; font-family: "Archivo Black", sans-serif; font-size: 1rem; text-transform: uppercase; background: var(--c, var(--yellow)); border: 4px solid var(--ink); border-radius: 12px; padding: 10px 18px; box-shadow: 6px 6px 0 var(--ink); transition: transform .08s, box-shadow .08s; }
+        .btn:hover { transform: translate(2px, 2px); box-shadow: 4px 4px 0 var(--ink); }
+        .btn:active, .btn.pressed { transform: translate(6px, 6px); box-shadow: 0 0 0 var(--ink); }
+        .btn:disabled, .btn[aria-disabled="true"] { background: #ddd; color: #777; cursor: not-allowed; transform: none; box-shadow: 6px 6px 0 #999; border-color: #999; }
+        .btn.is-loading { cursor: progress; transform: translate(3px, 3px); box-shadow: 3px 3px 0 var(--ink); }
+        .btn .spin { display: none; animation: rot .8s linear infinite; }
+        .btn.is-loading .spin { display: inline-block; }
+        .btn-sm { font-size: .8rem; padding: 6px 12px; box-shadow: 4px 4px 0 var(--ink); border-width: 3px; }
+        .btn-sm:hover { box-shadow: 2px 2px 0 var(--ink); }
+        .btn-sm:active { transform: translate(4px, 4px); }
+        @keyframes rot { to { transform: rotate(360deg); } }
+
+        /* 2. Secondary button with a sticker. */
+        .btn-sec { background: var(--paper); }
+        .btn-sec .stk { position: absolute; top: -14px; right: -12px; font-family: "Space Mono", monospace; font-size: .65rem; padding: 1px 6px; transform: rotate(9deg); box-shadow: 2px 2px 0 var(--ink); }
+
+        /* 3. Icon button keycap. */
+        .ibtn { position: relative; width: 70px; height: 70px; display: grid; place-items: center; background: var(--c, var(--paper)); border: 4px solid var(--ink); border-radius: 14px; box-shadow: 0 7px 0 var(--ink); transition: transform .08s, box-shadow .08s; font-size: 1.6rem; }
+        .ibtn::before { content: ""; position: absolute; inset: 5px 5px 9px; border: 2px solid rgba(0, 0, 0, .12); border-radius: 9px; pointer-events: none; }
+        .ibtn:hover { transform: translateY(2px); box-shadow: 0 5px 0 var(--ink); }
+        .ibtn:active, .ibtn.pressed { transform: translateY(7px); box-shadow: 0 0 0 var(--ink); }
+        .ibtn .legend { position: absolute; top: 4px; right: 6px; font: 700 .6rem "Space Mono", monospace; }
+        .ibtn:disabled { background: #ddd; color: #888; border-color: #999; box-shadow: 0 7px 0 #999; transform: none; cursor: not-allowed; }
+
+        /* 4. Textbox. */
+        .field { display: grid; gap: 6px; }
+        .field > label, .lbl { font-family: "Archivo Black", sans-serif; font-size: .85rem; text-transform: uppercase; }
+        .input { width: 100%; border: 4px solid var(--ink); background: var(--paper); padding: 10px 12px; font: 700 1rem "Space Mono", monospace; box-shadow: 5px 5px 0 var(--ink); outline: 0; transition: background .12s, transform .08s, box-shadow .08s; border-radius: 0; }
+        .input:focus { background: var(--lime); transform: translate(2px, 2px); box-shadow: 3px 3px 0 var(--ink); }
+        .input:focus-visible { outline: 4px solid var(--blue); outline-offset: 4px; }
+        .input[aria-invalid="true"] { border-color: var(--red); box-shadow: 5px 5px 0 var(--red); }
+        .input:disabled { background: #eee; color: #888; border-color: #999; box-shadow: 5px 5px 0 #999; cursor: not-allowed; }
+        .hint { font-size: .75rem; }
+        .err { justify-self: start; background: var(--red); color: var(--paper); margin-top: 6px; }
+        .err[hidden] { display: none; }
+
+        /* 5. Receipt-paper textarea. */
+        .receipt-wrap { filter: drop-shadow(3px 0 0 var(--ink)) drop-shadow(-3px 0 0 var(--ink)) drop-shadow(0 3px 0 var(--ink)) drop-shadow(0 -3px 0 var(--ink)) drop-shadow(6px 6px 0 var(--ink)); margin: 3px 9px 12px 3px; }
+        .receipt { background: var(--paper); padding: 14px 14px 30px; transition: background .12s; }
+        .receipt:focus-within { background: #f4ffd2; }
+        .receipt-head { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; font-weight: 700; font-size: .78rem; border-bottom: 2px dashed var(--ink); padding-bottom: 6px; margin-bottom: 4px; }
+        .receipt textarea { display: block; width: 100%; min-height: 174px; resize: vertical; border: 0; outline: 0; padding: 6px 4px 0; line-height: 28px; font: 400 .95rem/28px "Space Mono", monospace; white-space: pre; overflow: auto; background: linear-gradient(transparent 27px, #c9d3e0 27px) 0 6px / 100% 28px local; }
+        .receipt textarea:focus, .receipt textarea:focus-visible { outline: 0; }
+
+        /* Editor gutter, match highlights and shortcut keys. */
+        .ed-keys { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 6px; }
+        .ed-key { display: inline-flex; align-items: center; gap: 6px; border: 2px solid var(--ink); border-radius: 6px; background: var(--paper); padding: 1px 7px; font-size: .7rem; font-weight: 700; box-shadow: 0 3px 0 var(--ink); transition: transform .08s, box-shadow .08s; }
+        .ed-key kbd { font: inherit; background: var(--yellow); border: 2px solid var(--ink); border-radius: 4px; padding: 0 4px; }
+        .ed-key:hover { transform: translateY(1px); box-shadow: 0 2px 0 var(--ink); }
+        .ed-key:active, .ed-key.pressed { transform: translateY(3px); box-shadow: 0 0 0 var(--ink); background: var(--yellow); }
+        .ed { --gw: 32px; position: relative; padding-left: var(--gw); }
+        .ed-gutter { position: absolute; top: 0; bottom: 0; left: 0; width: var(--gw); margin: 0; padding: 6px 6px 40px 0; overflow: hidden; text-align: right; font: 700 .72rem/28px "Space Mono", monospace; color: #8a8a8a; border-right: 2px dashed var(--ink); user-select: none; }
+        .ed-gutter b { color: var(--ink); background: var(--yellow); padding: 0 3px; }
+        .ed-main { position: relative; }
+        .ed-hl { position: absolute; inset: 0; margin: 0; padding: 6px 40px 40px 4px; overflow: hidden; white-space: pre; font: 400 .95rem/28px "Space Mono", monospace; color: transparent; pointer-events: none; mix-blend-mode: multiply; }
+        .ed-hl mark { color: transparent; background: var(--yellow); }
+        .ed-hl mark.cur { background: var(--pink); box-shadow: 0 0 0 2px var(--ink); }
+
+        /* Find, replace and go-to bars. */
+        .fbar { display: grid; gap: 6px; margin: 2px 0 8px; padding: 8px; background: var(--bg); border: 3px solid var(--ink); box-shadow: 3px 3px 0 var(--ink); }
+        .fbar[hidden], .fbar-row[hidden] { display: none; }
+        .fbar-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+        .fbar-row .lbl { font-size: .72rem; }
+        .fin { flex: 1 1 110px; min-width: 0; border: 3px solid var(--ink); border-radius: 0; background: var(--paper); padding: 3px 8px; font: 700 .82rem "Space Mono", monospace; outline: 0; }
+        .fin:focus { background: var(--lime); }
+        .fin[aria-invalid="true"] { border-color: var(--red); background: #ffe1de; }
+        .fkey { min-width: 30px; height: 30px; padding: 0 8px; display: inline-grid; place-items: center; border: 3px solid var(--ink); border-radius: 7px; background: var(--paper); font-weight: 700; font-size: .72rem; text-transform: uppercase; box-shadow: 0 3px 0 var(--ink); transition: transform .08s, box-shadow .08s; }
+        #f-case { text-transform: none; }
+        .fkey:hover { transform: translateY(1px); box-shadow: 0 2px 0 var(--ink); }
+        .fkey:active, .fkey[aria-pressed="true"] { transform: translateY(3px); box-shadow: 0 0 0 var(--ink); background: var(--yellow); }
+        .fkey:disabled { color: #999; border-color: #999; box-shadow: 0 3px 0 #999; transform: none; cursor: not-allowed; }
+        .fkey:focus-visible, .ed-key:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
+        .fcount { font-size: .72rem; font-weight: 700; min-width: 5ch; text-align: center; }
+        .fcount.none { background: var(--red); color: var(--paper); padding: 0 4px; }
+        .receipt-foot { display: flex; justify-content: space-between; font-size: .75rem; font-weight: 700; border-top: 2px dashed var(--ink); padding-top: 6px; margin-top: 6px; }
+        .count.warn { background: var(--red); color: var(--paper); padding: 0 6px; transform: rotate(-3deg); display: inline-block; }
+
+        /* 6. Dropdown with stacked keycap options. */
+        .dd { position: relative; display: inline-block; width: min(260px, 100%); }
+        .dd-btn { width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 10px; background: var(--paper); border: 4px solid var(--ink); border-radius: 12px; padding: 10px 14px; font-weight: 700; box-shadow: 0 6px 0 var(--ink); transition: transform .08s, box-shadow .08s; text-align: left; }
+        .dd-btn:hover { transform: translateY(2px); box-shadow: 0 4px 0 var(--ink); }
+        .dd.open .dd-btn { transform: translateY(6px); box-shadow: 0 0 0 var(--ink); background: var(--yellow); }
+        .dd-btn .bi-caret-down-fill { transition: transform .15s; }
+        .dd.open .dd-btn .bi-caret-down-fill { transform: rotate(180deg); }
+        .dd-btn:disabled { background: #eee; color: #888; border-color: #999; box-shadow: 0 6px 0 #999; transform: none; cursor: not-allowed; }
+        .dd-list { position: absolute; top: calc(100% + 14px); left: 0; width: 100%; margin: 0; padding: 0; list-style: none; z-index: 20; display: grid; gap: 4px; }
+        .dd-list[hidden] { display: none; }
+        .dd-list li { --r: -1deg; display: flex; align-items: center; gap: 8px; background: var(--c, var(--paper)); border: 3px solid var(--ink); border-radius: 10px; padding: 8px 12px; font-weight: 700; box-shadow: 0 5px 0 var(--ink); cursor: pointer; transform: translateX(calc(var(--i) * 4px)) rotate(var(--r)); animation: drop .22s calc(var(--i) * 45ms) both cubic-bezier(.3, 1.6, .5, 1); outline: 0; }
+        .dd-list li:nth-child(even) { --r: 1deg; }
+        .dd-list li:hover, .dd-list li:focus { transform: translate(calc(var(--i) * 4px), 4px) rotate(var(--r)); box-shadow: 0 1px 0 var(--ink); }
+        .dd-list li:focus-visible { outline: 4px solid var(--blue); outline-offset: 3px; }
+        .dd-list li .bi-check-lg { margin-left: auto; visibility: hidden; }
+        .dd-list li[aria-selected="true"] .bi-check-lg { visibility: visible; }
+        @keyframes drop { from { opacity: 0; transform: translateY(-22px) rotate(-6deg); } }
+
+        /* 6B. Searchable dropdown. */
+        .dd.cb { width: 100%; }
+        .cb-box { display: flex; align-items: center; gap: 8px; background: var(--paper); border: 4px solid var(--ink); border-radius: 12px; padding: 0 6px 0 12px; box-shadow: 0 6px 0 var(--ink); transition: transform .08s, box-shadow .08s, background .12s; }
+        .cb-box:focus-within { background: var(--lime); }
+        .cb.open .cb-box { transform: translateY(6px); box-shadow: 0 0 0 var(--ink); background: var(--yellow); }
+        .cb-box:has(.cb-input:focus-visible) { outline: 4px solid var(--blue); outline-offset: 4px; }
+        .cb-input { flex: 1; min-width: 0; border: 0; background: transparent; padding: 10px 0; font-weight: 700; outline: 0; }
+        .cb-input::placeholder { color: #666; }
+        .cb-toggle { border: 0; background: transparent; padding: 6px; display: grid; place-items: center; }
+        .cb-toggle .bi { transition: transform .15s; }
+        .cb.open .cb-toggle .bi { transform: rotate(180deg); }
+        .cb-list { max-height: 292px; overflow-y: auto; overscroll-behavior: contain; padding: 6px 14px 12px 8px; }
+        .cb-list li { transform: rotate(var(--r)); }
+        .cb-list li:hover, .cb-list li.active { transform: translateY(4px) rotate(var(--r)); box-shadow: 0 1px 0 var(--ink); }
+        .cb-list li.active { outline: 3px solid var(--blue); outline-offset: 2px; }
+        .cb-list mark { background: var(--ink); color: var(--paper); padding: 0 2px; }
+        .cb-list .cb-empty, .cb-list .cb-empty:hover { background: var(--paper); border-style: dashed; box-shadow: none; transform: none; cursor: default; }
+
+        /* 7. Checkbox with a stamp. */
+        .check { position: relative; display: inline-flex; align-items: center; gap: 12px; font-weight: 700; cursor: pointer; }
+        .check .box { width: 34px; height: 34px; flex: none; border: 4px solid var(--ink); background: var(--paper); box-shadow: 4px 4px 0 var(--ink); display: grid; place-items: center; transition: transform .08s, box-shadow .08s; }
+        .check:hover .box { transform: translate(1px, 1px); box-shadow: 3px 3px 0 var(--ink); }
+        .check input:checked + .box { background: var(--yellow); }
+        .check input:checked + .box::after { content: "✓"; font-family: "Archivo Black", sans-serif; font-size: 1.6rem; line-height: 1; color: var(--red); transform: rotate(-12deg); animation: stamp .28s cubic-bezier(.2, 1.8, .5, 1) both; }
+        .check input:focus-visible + .box { outline: 4px solid var(--blue); outline-offset: 4px; }
+        .check input:disabled + .box { background: #eee; border-color: #999; box-shadow: 4px 4px 0 #999; }
+        .check input:disabled ~ span:last-child { color: #888; }
+        .check:has(input:disabled) { cursor: not-allowed; }
+        @keyframes stamp { from { transform: scale(2.6) rotate(-30deg); opacity: 0; } }
+
+        /* 8. Radio keycaps. */
+        fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+        legend { font-family: "Archivo Black", sans-serif; font-size: .85rem; text-transform: uppercase; margin-bottom: 12px; padding: 0; }
+        .rkeys { display: flex; flex-wrap: wrap; gap: 12px; }
+        .rk { position: relative; cursor: pointer; }
+        .rk span { display: grid; place-items: center; min-width: 58px; height: 58px; padding: 0 12px; background: var(--c); border: 4px solid var(--ink); border-radius: 12px; font-family: "Archivo Black", sans-serif; font-size: 1.1rem; box-shadow: 0 7px 0 var(--ink); transition: transform .08s, box-shadow .08s; }
+        .rk:hover span { transform: translateY(2px); box-shadow: 0 5px 0 var(--ink); }
+        .rk input:checked + span { transform: translateY(7px); box-shadow: 0 0 0 var(--ink), inset 0 4px 0 rgba(0, 0, 0, .25); }
+        .rk input:focus-visible + span { outline: 4px solid var(--blue); outline-offset: 4px; }
+        .rk input:disabled + span { background: #ddd; color: #888; border-color: #999; box-shadow: 0 7px 0 #999; }
+        .rk:has(input:disabled) { cursor: not-allowed; }
+
+        /* 9. Rocker light switch. */
+        .rocker { position: relative; display: inline-flex; align-items: center; gap: 14px; cursor: pointer; font-weight: 700; }
+        .rk-body { display: inline-grid; grid-template-columns: 1fr 1fr; border: 4px solid var(--ink); border-radius: 10px; overflow: hidden; background: var(--ink); gap: 3px; box-shadow: 6px 6px 0 var(--ink); transform: perspective(300px) rotateY(-12deg); transition: transform .15s; }
+        .rk-body b { font-family: "Archivo Black", sans-serif; font-weight: 400; padding: 10px 14px; background: #e9e9e9; color: #777; box-shadow: inset 0 -6px 0 rgba(0, 0, 0, .18); transition: background .15s, box-shadow .15s, color .15s; }
+        .rocker input:not(:checked) + .rk-body .off { background: var(--pink); color: var(--ink); box-shadow: inset 0 6px 0 rgba(0, 0, 0, .25); }
+        .rocker input:checked + .rk-body { transform: perspective(300px) rotateY(12deg); }
+        .rocker input:checked + .rk-body .on { background: var(--lime); color: var(--ink); box-shadow: inset 0 6px 0 rgba(0, 0, 0, .25); }
+        .rocker input:focus-visible + .rk-body { outline: 4px solid var(--blue); outline-offset: 5px; }
+        .rocker input:disabled + .rk-body { opacity: .5; }
+        .rocker:has(input:disabled) { cursor: not-allowed; color: #888; }
+        .bulb { font-size: 2rem; transition: color .15s, text-shadow .15s; }
+        .bulb.lit { color: #e8b800; text-shadow: 0 0 14px var(--yellow); }
+
+        /* 10. Folder tabs. */
+        .tabs-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: flex-end; padding: 0 6px; }
+        .tab { position: relative; z-index: 0; flex: 0 1 auto; min-width: 0; font-family: "Archivo Black", sans-serif; font-size: .85rem; text-transform: uppercase; background: var(--c); border: 4px solid var(--ink); border-bottom: 0; border-radius: 12px 12px 0 0; padding: 8px 14px 10px; margin-bottom: -4px; transform: translateY(5px); transition: transform .1s; }
+        .tab:hover { transform: translateY(2px); }
+        .tab[aria-selected="true"] { z-index: 2; transform: none; padding-bottom: 14px; }
+        .tab:focus-visible { outline-offset: -8px; outline-width: 3px; }
+        .tab-panel { position: relative; z-index: 1; background: var(--c); border: 4px solid var(--ink); border-radius: 0 12px 12px 12px; box-shadow: 6px 6px 0 var(--ink); padding: 18px; min-height: 130px; }
+        .tab-panel h3 { font-family: "Archivo Black", sans-serif; font-weight: 400; margin: 0 0 8px; }
+        .tab-panel p { margin: 0; }
+
+        /* 11. Labels and highlighter. */
+        .tags { display: flex; flex-wrap: wrap; gap: 14px 12px; align-items: center; }
+        .tags .stk:nth-child(even) { transform: rotate(2deg); }
+        .pill { display: inline-flex; align-items: center; gap: 6px; border: 3px solid var(--ink); border-radius: 999px; padding: 2px 10px; font-weight: 700; font-size: .78rem; background: var(--c, var(--paper)); }
+        .count-badge { position: relative; }
+        .count-badge .stk { position: absolute; top: -12px; right: -14px; background: var(--red); color: var(--paper); padding: 0 6px; transform: rotate(8deg); font-size: .7rem; }
+        .marker { background: linear-gradient(100deg, transparent 2%, var(--c, var(--yellow)) 4%, var(--c, var(--yellow)) 96%, transparent 98%) 0 70% / 100% 60% no-repeat; padding: 0 4px; font-weight: 700; }
+        .scribble { line-height: 1.9; margin: 16px 0 0; }
+
+        /* 12. Hazard modals. */
+        .overlay { position: fixed; inset: 0; z-index: 50; background: rgba(17, 17, 17, .55); display: grid; place-items: center; padding: 16px; }
+        .overlay[hidden] { display: none; }
+        .modal { width: min(520px, 100%); max-height: calc(100vh - 32px); overflow: auto; background: var(--paper); border: 5px solid var(--ink); box-shadow: 12px 12px 0 var(--ink); }
+        .modal.shake { animation: shake .5s both; }
+        .hazard { height: 34px; border-bottom: 5px solid var(--ink); background: repeating-linear-gradient(-45deg, var(--yellow) 0 18px, var(--ink) 18px 36px); }
+        .modal.ok .hazard { background: repeating-linear-gradient(-45deg, var(--lime) 0 18px, var(--ink) 18px 36px); }
+        .modal-body { padding: 22px; }
+        .modal-body h2 { font-family: "Archivo Black", sans-serif; font-weight: 400; font-size: clamp(1.6rem, 6vw, 2.4rem); margin: 0 0 10px; line-height: 1; }
+        .modal-body h2 .stk { font-size: 1.1rem; vertical-align: middle; }
+        .modal-actions { display: flex; gap: 16px; flex-wrap: wrap; justify-content: flex-end; margin-top: 22px; }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 15% { transform: translateX(-14px) rotate(-1.5deg); } 30% { transform: translateX(12px) rotate(1deg); } 45% { transform: translateX(-9px); } 60% { transform: translateX(7px); } 75% { transform: translateX(-3px); } }
+
+        /* 13. Slap-on toasts. */
+        .toasts { position: fixed; right: 16px; bottom: 16px; z-index: 60; display: grid; gap: 12px; justify-items: end; width: min(340px, calc(100% - 32px)); pointer-events: none; }
+        .slap { pointer-events: auto; display: flex; align-items: center; gap: 10px; width: 100%; background: var(--c, var(--yellow)); border: 4px solid var(--ink); box-shadow: 6px 6px 0 var(--ink); padding: 10px 12px; font-weight: 700; transform: rotate(-2deg); animation: slap .4s cubic-bezier(.2, 1.4, .5, 1) both; }
+        .slap:nth-child(even) { transform: rotate(1.5deg); }
+        .slap i { font-size: 1.3rem; }
+        .slap span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+        .slap-x { border: 3px solid var(--ink); background: var(--paper); width: 30px; height: 30px; display: grid; place-items: center; padding: 0; font-weight: 700; flex: none; }
+        .slap.out { animation: unslap .25s ease-in both; }
+        .slap { flex-wrap: wrap; }
+        .slap-acts { flex-basis: 100%; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-top: 2px; padding-top: 8px; border-top: 3px dashed var(--ink); }
+        .slap-act { border: 3px solid var(--ink); background: var(--paper); padding: 3px 10px; font-weight: 700; font-size: .75rem; text-transform: uppercase; box-shadow: 3px 3px 0 var(--ink); transition: transform .08s, box-shadow .08s; }
+        .slap-act:hover { transform: translate(1px, 1px); box-shadow: 2px 2px 0 var(--ink); }
+        .slap-act:active { transform: translate(3px, 3px); box-shadow: 0 0 0 var(--ink); }
+        .slap-act.primary { background: var(--ink); color: var(--paper); }
+        .slap-act:focus-visible, .slap-x:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
+        @keyframes slap { 0% { opacity: 0; transform: scale(1.3) rotate(-10deg); } 60% { opacity: 1; transform: scale(.94) rotate(3deg); } 80% { transform: scale(1.03) rotate(-3deg); } }
+        @keyframes unslap { to { opacity: 0; transform: translateY(30px) rotate(6deg) scale(.9); } }
+
+        /* 14. Tooltip speech bubble. */
+        .tip { position: relative; display: inline-block; }
+        .bubble { display: none; position: absolute; left: 50%; bottom: calc(100% + 16px); transform: translateX(-50%); width: max-content; max-width: 210px; background: var(--paper); border: 3px solid var(--ink); box-shadow: 5px 5px 0 var(--ink); padding: 8px 10px; font-size: .78rem; font-weight: 700; z-index: 30; animation: pop .15s both; }
+        .bubble::after { content: ""; position: absolute; left: calc(50% - 8px); top: 100%; width: 14px; height: 14px; background: var(--paper); border: 3px solid var(--ink); border-top: 0; border-left: 0; transform: translateY(-6px) rotate(45deg); }
+        .tip.below .bubble { bottom: auto; top: calc(100% + 18px); }
+        .tip.below .bubble::after { top: auto; bottom: 100%; transform: translateY(8px) rotate(-135deg); }
+        .tip:hover .bubble, .tip:focus-within .bubble { display: block; }
+        .tip.hush .bubble { display: none; }
+        @keyframes pop { from { opacity: 0; transform: translateX(-50%) translateY(6px) scale(.9); } }
+
+        /* 15. Ruler slider. */
+        .slider { --half: 21px; display: grid; gap: 8px; }
+        .slider-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+        .slider output { font-family: "Archivo Black", sans-serif; background: var(--yellow); border: 3px solid var(--ink); box-shadow: 3px 3px 0 var(--ink); padding: 2px 10px; transform: rotate(3deg); min-width: 56px; text-align: center; }
+        .range { -webkit-appearance: none; appearance: none; width: 100%; height: 22px; margin: 10px 0 0; border: 4px solid var(--ink); border-radius: 12px; background: linear-gradient(90deg, var(--c, var(--pink)) var(--p, 50%), var(--paper) var(--p, 50%)); cursor: pointer; }
+        .range::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; box-sizing: border-box; width: 34px; height: 34px; background: var(--yellow); border: 4px solid var(--ink); border-radius: 9px; box-shadow: 0 5px 0 var(--ink); transition: transform .08s, box-shadow .08s; }
+        .range::-moz-range-thumb { box-sizing: border-box; width: 34px; height: 34px; background: var(--yellow); border: 4px solid var(--ink); border-radius: 9px; box-shadow: 0 5px 0 var(--ink); transition: transform .08s, box-shadow .08s; }
+        .range:active::-webkit-slider-thumb { transform: translateY(4px); box-shadow: 0 1px 0 var(--ink); }
+        .range:active::-moz-range-thumb { transform: translateY(4px); box-shadow: 0 1px 0 var(--ink); }
+        .range:focus-visible { outline: 4px solid var(--blue); outline-offset: 6px; }
+        .range:disabled { cursor: not-allowed; opacity: .5; }
+        .ruler { margin: 4px var(--half) 0; height: 16px; border-right: 3px solid var(--ink); background: repeating-linear-gradient(90deg, var(--ink) 0 3px, transparent 3px 25%) top / 100% 16px no-repeat, repeating-linear-gradient(90deg, var(--ink) 0 2px, transparent 2px 5%) top / 100% 8px no-repeat; }
+        .ruler-nums { margin: 0 var(--half); display: flex; justify-content: space-between; font-size: .7rem; font-weight: 700; }
+        .ruler-nums span { width: 0; display: flex; justify-content: center; }
+
+        /* 16. Segmented game loader. */
+        .loader { display: grid; grid-template-columns: repeat(10, 1fr); gap: 5px; border: 4px solid var(--ink); background: var(--ink); padding: 5px; box-shadow: 6px 6px 0 var(--ink); }
+        .seg { height: 34px; background: #2d2d2d; }
+        .seg.on { background: var(--c); animation: segpop .25s cubic-bezier(.2, 1.8, .5, 1); box-shadow: inset 0 -5px 0 rgba(0, 0, 0, .2); }
+        .loader-text { font-family: "Archivo Black", sans-serif; text-transform: uppercase; margin: 12px 0; }
+        @keyframes segpop { from { transform: scaleY(.2); } }
+
+        /* 17. Drop zone with marching ants. */
+        .drop { position: relative; display: grid; place-items: center; gap: 6px; text-align: center; padding: 34px 16px; cursor: pointer; background-color: var(--bg); background-image: linear-gradient(90deg, var(--ink) 50%, transparent 50%), linear-gradient(90deg, var(--ink) 50%, transparent 50%), linear-gradient(0deg, var(--ink) 50%, transparent 50%), linear-gradient(0deg, var(--ink) 50%, transparent 50%); background-repeat: repeat-x, repeat-x, repeat-y, repeat-y; background-size: 18px 4px, 18px 4px, 4px 18px, 4px 18px; background-position: 0 0, 0 100%, 0 0, 100% 0; animation: ants .6s linear infinite; transition: background-color .12s; }
+        .drop .big { font-family: "Archivo Black", sans-serif; font-size: clamp(1.8rem, 7vw, 2.6rem); line-height: 1; transform: rotate(-2deg); }
+        .drop .bi-cloud-arrow-up-fill { font-size: 2.2rem; }
+        .drop.over { background-color: var(--lime); }
+        .drop:focus-within { outline: 4px solid var(--blue); outline-offset: 4px; }
+        @keyframes ants { to { background-position: 18px 0, -18px 100%, 0 -18px, 100% 18px; } }
+        .files { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 8px; }
+        .files li { display: flex; justify-content: space-between; align-items: center; gap: 10px; border: 3px solid var(--ink); background: var(--paper); padding: 6px 10px; box-shadow: 3px 3px 0 var(--ink); font-size: .82rem; }
+        .files li b { overflow-wrap: anywhere; min-width: 0; }
+        .files li .size { flex: none; }
+
+        /* 18. Drawer accordion. */
+        .acc { display: grid; gap: 14px; }
+        .acc-btn { width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 10px; background: var(--c); border: 4px solid var(--ink); border-radius: 12px; padding: 12px 14px; font-family: "Archivo Black", sans-serif; text-transform: uppercase; text-align: left; box-shadow: 0 7px 0 var(--ink); transition: transform .08s, box-shadow .08s; }
+        .acc-btn:hover { transform: translateY(2px); box-shadow: 0 5px 0 var(--ink); }
+        .acc-btn[aria-expanded="true"] { transform: translateY(7px); box-shadow: 0 0 0 var(--ink); }
+        .acc-btn .bi { transition: transform .2s; }
+        .acc-btn[aria-expanded="true"] .bi { transform: rotate(45deg); }
+        .acc-panel { display: grid; grid-template-rows: 0fr; visibility: hidden; transition: grid-template-rows .3s ease, visibility .3s; margin: 0 10px; }
+        .acc-panel.open { grid-template-rows: 1fr; visibility: visible; }
+        .acc-panel > div { overflow: hidden; }
+        .acc-inner { margin-top: 7px; border: 3px solid var(--ink); border-top: 0; background: var(--paper); padding: 14px; box-shadow: inset 0 8px 0 rgba(0, 0, 0, .08), 4px 4px 0 var(--ink); font-size: .88rem; }
+        .acc-inner::before { content: ""; display: block; width: 50px; height: 8px; margin: -4px auto 10px; border: 3px solid var(--ink); border-radius: 6px; background: var(--bg); }
+        .acc-inner p { margin: 0; }
+
+        /* 19. Spinners. */
+        .bounce { display: inline-flex; gap: 8px; align-items: flex-end; height: 56px; }
+        .bounce span { width: 28px; height: 28px; background: var(--c); border: 3px solid var(--ink); border-radius: 7px; box-shadow: 0 5px 0 var(--ink); animation: hop .9s ease-in-out infinite; }
+        .bounce span:nth-child(2) { animation-delay: .15s; }
+        .bounce span:nth-child(3) { animation-delay: .3s; }
+        @keyframes hop { 0%, 60%, 100% { transform: translateY(0); box-shadow: 0 5px 0 var(--ink); } 30% { transform: translateY(-22px); box-shadow: 0 12px 0 rgba(17, 17, 17, .3); } }
+        .spin-sq { width: 66px; height: 66px; display: grid; place-items: center; background: var(--lilac); border: 4px solid var(--ink); box-shadow: 5px 5px 0 var(--ink); font-family: "Archivo Black", sans-serif; font-size: .75rem; animation: rot 1.6s steps(8) infinite; }
+        .spin-sq.smooth { background: var(--orange); animation: rot 1.2s linear infinite; }
+
+        /* 20. Empty state. */
+        .empty { text-align: center; display: grid; justify-items: center; gap: 14px; padding: 10px 0; }
+        .empty .emoji { font-size: 4rem; line-height: 1; background: var(--cyan); border: 4px solid var(--ink); box-shadow: 8px 8px 0 var(--ink); padding: 18px 22px; border-radius: 50%; transform: rotate(-8deg); }
+        .empty h3 { font-family: "Archivo Black", sans-serif; font-weight: 400; margin: 0; font-size: 1.3rem; text-transform: uppercase; }
+        .empty p { margin: 0; max-width: 34ch; font-size: .9rem; }
+
+        /* Breadcrumbs. */
+        .crumbs ol { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 10px 6px; align-items: center; }
+        .crumbs li { display: flex; align-items: center; gap: 6px; }
+        .crumbs li + li::before { content: "/"; font-family: "Archivo Black", sans-serif; font-size: 1.2rem; }
+        .crumbs a { border: 3px solid var(--ink); background: var(--paper); border-radius: 8px; padding: 3px 10px; font-weight: 700; font-size: .82rem; box-shadow: 0 4px 0 var(--ink); display: inline-block; transition: transform .08s, box-shadow .08s; }
+        .crumbs a:hover { transform: translateY(2px); box-shadow: 0 2px 0 var(--ink); }
+        .crumbs a:active { transform: translateY(4px); box-shadow: 0 0 0 var(--ink); }
+        .crumbs [aria-current] { background: var(--yellow); }
+
+        /* Pagination. */
+        .pager { display: flex; flex-wrap: wrap; gap: 10px 8px; align-items: center; }
+        .pg { min-width: 40px; height: 40px; padding: 0 8px; display: grid; place-items: center; background: var(--paper); border: 3px solid var(--ink); border-radius: 9px; font-weight: 700; box-shadow: 0 5px 0 var(--ink); transition: transform .08s, box-shadow .08s; }
+        .pg:hover { transform: translateY(2px); box-shadow: 0 3px 0 var(--ink); }
+        .pg[aria-current="page"] { background: var(--pink); transform: translateY(5px); box-shadow: 0 0 0 var(--ink); }
+        .pg:disabled { background: #eee; color: #999; border-color: #999; box-shadow: 0 5px 0 #999; transform: none; cursor: not-allowed; }
+        .pg-gap { font-weight: 700; padding: 0 2px; }
+        .pg-view { margin-top: 18px; border: 3px dashed var(--ink); padding: 12px; font-size: .85rem; background: var(--bg); }
+
+        /* Stepper. */
+        .steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); }
+        .steps li { position: relative; display: grid; justify-items: center; gap: 8px; text-align: center; font-weight: 700; font-size: .72rem; text-transform: uppercase; }
+        .steps li + li::before { content: ""; position: absolute; top: 22px; right: calc(50% + 24px); width: calc(100% - 48px); height: 6px; background: var(--paper); border: 3px solid var(--ink); z-index: 0; }
+        .steps li.done + li::before, .steps li.done + li.done::before { background: var(--lime); }
+        .step-key { position: relative; z-index: 1; width: 48px; height: 48px; display: grid; place-items: center; background: var(--paper); border: 4px solid var(--ink); border-radius: 12px; font-family: "Archivo Black", sans-serif; font-size: 1.1rem; box-shadow: 0 6px 0 var(--ink); transition: transform .12s, box-shadow .12s, background .12s; }
+        .steps li.done .step-key { background: var(--lime); }
+        .steps li[aria-current="step"] .step-key { background: var(--yellow); transform: translateY(6px); box-shadow: 0 0 0 var(--ink); }
+        .step-view { margin: 22px 0 16px; border: 3px solid var(--ink); background: var(--bg); padding: 12px; font-size: .88rem; box-shadow: 4px 4px 0 var(--ink); }
+
+        footer { margin-top: 50px; text-align: center; font-weight: 700; font-size: .8rem; }
+
+        @media (max-width: 480px) {
+            .demo { padding: 16px; box-shadow: 6px 6px 0 var(--ink); }
+            .toasts { right: 16px; left: 16px; width: auto; }
+            .steps li { font-size: .62rem; }
+            .step-key { width: 42px; height: 42px; }
+            .steps li + li::before { top: 19px; right: calc(50% + 21px); width: calc(100% - 42px); }
+            .tabs-row { padding: 0; gap: 4px; }
+            .tab { font-size: .72rem; padding: 7px 7px 9px; }
+            .tab[aria-selected="true"] { padding-bottom: 13px; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; animation-delay: 0s !important; transition-duration: .001ms !important; scroll-behavior: auto !important; }
+        }
+    </style>
+</head>
+<body>
+    <div class="wrap" id="page">
+        <header class="top">
+            <div class="brand">
+                <div class="logo">TOOLSTACK!</div>
+                <span class="sub">COMPONENT KIT // KEYCAPS EDITION</span>
+            </div>
+            <nav class="links" aria-label="Design links">
+                <a class="navkey" href="05-brutalist-keycaps.html" style="--c:var(--yellow)"><i class="bi bi-arrow-left"></i> KEYCAPS INDEX</a>
+                <a class="navkey" href="index.html" style="--c:var(--lime)"><i class="bi bi-grid-3x3-gap-fill"></i> GALLERY</a>
+            </nav>
+        </header>
+
+        <section class="intro">
+            <h1>Press <span class="hl">every</span> part.</h1>
+            <p>Twenty-plus loud, chunky, fully working components. Click them, tab to them, mash keys at them. Nothing here is a screenshot.</p>
+        </section>
+
+        <main class="grid">
+
+            <!-- 1. Primary button. -->
+            <section class="demo" aria-labelledby="h-primary">
+                <div class="demo-head"><h2 id="h-primary"><span class="n">01</span>Primary button</h2><code class="cap">button.btn</code></div>
+                <div class="row">
+                    <button class="btn" data-say="YELLOW">Yellow</button>
+                    <button class="btn" style="--c:var(--pink)" data-say="PINK">Pink</button>
+                    <button class="btn" style="--c:var(--cyan)" data-say="CYAN">Cyan</button>
+                    <button class="btn" style="--c:var(--blue)" data-say="BLUE">Blue</button>
+                    <button class="btn" style="--c:var(--lime)" id="loadBtn"><i class="bi bi-arrow-repeat spin" aria-hidden="true"></i><span>Save</span></button>
+                    <button class="btn" disabled>Disabled</button>
+                </div>
+                <p class="note">Hover nudges it, click sinks it fully into the shadow. "Save" shows the loading state.</p>
+            </section>
+
+            <!-- 2. Secondary button. -->
+            <section class="demo" aria-labelledby="h-secondary">
+                <div class="demo-head"><h2 id="h-secondary"><span class="n">02</span>Secondary button</h2><code class="cap">button.btn.btn-sec</code></div>
+                <div class="row" style="padding-top:8px">
+                    <button class="btn btn-sec" data-say="CANCELLED">Cancel<span class="stk" style="--c:var(--pink)">nope</span></button>
+                    <button class="btn btn-sec" data-say="SAVED A DRAFT">Draft<span class="stk" style="--c:var(--cyan)">later</span></button>
+                    <button class="btn btn-sec" data-say="EXPORTED">Export<span class="stk" style="--c:var(--lime)">new!</span></button>
+                    <button class="btn btn-sec" disabled>Locked<span class="stk" style="--c:#ccc">soon</span></button>
+                </div>
+            </section>
+
+            <!-- 3. Icon button. -->
+            <section class="demo" aria-labelledby="h-icon">
+                <div class="demo-head"><h2 id="h-icon"><span class="n">03</span>Icon button</h2><code class="cap">button.ibtn[aria-keyshortcuts]</code></div>
+                <div class="row">
+                    <button class="ibtn" style="--c:var(--yellow)" data-combo="k" data-say="SEARCH" aria-label="Search" aria-keyshortcuts="Control+K Meta+K"><i class="bi bi-search" aria-hidden="true"></i><span class="legend" aria-hidden="true">⌘K</span></button>
+                    <button class="ibtn" style="--c:var(--pink)" data-combo="b" data-say="BOLD" aria-label="Bold" aria-keyshortcuts="Control+B Meta+B"><i class="bi bi-type-bold" aria-hidden="true"></i><span class="legend" aria-hidden="true">⌘B</span></button>
+                    <button class="ibtn" style="--c:var(--cyan)" data-combo="s" data-say="SAVE" aria-label="Save" aria-keyshortcuts="Control+S Meta+S"><i class="bi bi-floppy-fill" aria-hidden="true"></i><span class="legend" aria-hidden="true">⌘S</span></button>
+                    <button class="ibtn" aria-label="Delete (disabled)" disabled><i class="bi bi-trash3-fill" aria-hidden="true"></i><span class="legend" aria-hidden="true">⌫</span></button>
+                </div>
+                <p class="note">Press the real shortcut on your keyboard and watch the matching keycap go down.</p>
+            </section>
+
+            <!-- 4. Textbox. -->
+            <section class="demo" aria-labelledby="h-text">
+                <div class="demo-head"><h2 id="h-text"><span class="n">04</span>Textbox</h2><code class="cap">input.input[type=text]</code></div>
+                <div class="stack">
+                    <div class="field">
+                        <label for="tb-name">Your name</label>
+                        <input class="input" id="tb-name" type="text" placeholder="E.G. KEYBOARD KAREN" autocomplete="name" aria-describedby="tb-name-hint">
+                        <span class="hint" id="tb-name-hint">Focus me to see the lime highlight.</span>
+                    </div>
+                    <div class="field">
+                        <label for="tb-email">Email</label>
+                        <input class="input" id="tb-email" type="email" value="bob@" autocomplete="email" aria-describedby="tb-email-err">
+                        <span class="stk err" id="tb-email-err" style="--c:var(--red)">That's not an email, champ.</span>
+                    </div>
+                    <div class="field">
+                        <label for="tb-off">Disabled</label>
+                        <input class="input" id="tb-off" type="text" value="CAN'T TOUCH THIS" disabled>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 5. Textarea. -->
+            <section class="demo" aria-labelledby="h-area">
+                <div class="demo-head"><h2 id="h-area"><span class="n">05</span>Textarea</h2><code class="cap">textarea[maxlength] + find / replace / go to</code></div>
+                <label class="lbl" for="ta">Complaint slip</label>
+                <div class="receipt-wrap" style="margin-top:10px">
+                    <div class="receipt" id="receipt">
+                        <div class="receipt-head" aria-hidden="true"><span>RECEIPT #0042</span><span>*** NOTES ***</span></div>
+                        <div class="ed-keys" role="toolbar" aria-label="Editor tools">
+                            <button class="ed-key" type="button" data-act="find" aria-keyshortcuts="Control+F Meta+F"><kbd></kbd>Find</button>
+                            <button class="ed-key" type="button" data-act="replace" aria-keyshortcuts="Control+H Meta+Alt+F"><kbd></kbd>Replace</button>
+                            <button class="ed-key" type="button" data-act="goto" aria-keyshortcuts="Control+G Meta+G"><kbd></kbd>Go to line</button>
+                        </div>
+                        <div class="fbar" id="fbar" role="group" aria-label="Find and replace" hidden>
+                            <div class="fbar-row">
+                                <input class="fin" id="f-find" type="text" placeholder="Find" aria-label="Find" autocomplete="off" spellcheck="false">
+                                <span class="fcount" id="f-count" aria-live="polite"></span>
+                                <button class="fkey" id="f-case" type="button" aria-pressed="false" aria-label="Match case" title="Match case">Aa</button>
+                                <button class="fkey" id="f-prev" type="button" aria-label="Previous match" title="Previous (Shift+Enter)"><i class="bi bi-arrow-up" aria-hidden="true"></i></button>
+                                <button class="fkey" id="f-next" type="button" aria-label="Next match" title="Next (Enter)"><i class="bi bi-arrow-down" aria-hidden="true"></i></button>
+                                <button class="fkey" type="button" data-close-bar aria-label="Close find" title="Close (Esc)">✕</button>
+                            </div>
+                            <div class="fbar-row" id="f-rep-row" hidden>
+                                <input class="fin" id="f-rep" type="text" placeholder="Replace with" aria-label="Replace with" autocomplete="off" spellcheck="false">
+                                <button class="fkey" id="f-one" type="button">Replace</button>
+                                <button class="fkey" id="f-all" type="button">All</button>
+                            </div>
+                        </div>
+                        <div class="fbar" id="gbar" role="group" aria-label="Go to line" hidden>
+                            <div class="fbar-row">
+                                <label class="lbl" for="g-line">Line</label>
+                                <input class="fin" id="g-line" type="text" inputmode="numeric" autocomplete="off" aria-describedby="g-total">
+                                <span class="fcount" id="g-total"></span>
+                                <button class="fkey" id="g-go" type="button">Go</button>
+                                <button class="fkey" type="button" data-close-bar aria-label="Close go to line" title="Close (Esc)">✕</button>
+                            </div>
+                        </div>
+                        <div class="ed" id="ed">
+                            <pre class="ed-gutter" id="ed-gutter" aria-hidden="true"></pre>
+                            <div class="ed-main">
+                                <textarea id="ta" maxlength="400" wrap="off" placeholder="Write it down. We'll print it. Probably." aria-describedby="ta-count">1x KEYCAP (YELLOW) ..... $4
+1x KEYCAP (PINK) ....... $4
+2x STICKER PACK ........ $6
+NOTE: keycap too loud.
+NOTE: keycap too clicky.
+NOTE: refund the keycap?</textarea>
+                                <div class="ed-hl" id="ed-hl" aria-hidden="true"></div>
+                            </div>
+                        </div>
+                        <div class="receipt-foot"><span>THANK YOU!</span><span>CHARS <span class="count" id="ta-count">0/400</span></span></div>
+                    </div>
+                </div>
+                <p class="note">Click into the slip and press Ctrl+F to find, Ctrl+H to replace or Ctrl+G to jump to a line. Esc closes the bar.</p>
+            </section>
+
+            <!-- 6. Dropdown. -->
+            <section class="demo" aria-labelledby="h-dd">
+                <div class="demo-head"><h2 id="h-dd"><span class="n">06</span>Dropdown</h2><code class="cap">button[aria-haspopup=listbox] + ul[role=listbox]</code></div>
+                <div class="row" style="align-items:flex-start">
+                    <div class="field" style="width:min(260px,100%)">
+                        <span class="lbl" id="dd-lbl">Pick a flavour</span>
+                        <div class="dd" data-dd>
+                            <button class="dd-btn" type="button" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="dd-lbl dd-val" aria-controls="dd-list"><span class="dd-val" id="dd-val">Bubblegum</span><i class="bi bi-caret-down-fill" aria-hidden="true"></i></button>
+                            <ul class="dd-list" id="dd-list" role="listbox" aria-labelledby="dd-lbl" hidden>
+                                <li role="option" tabindex="-1" aria-selected="true" style="--i:0;--c:var(--pink)">🍬 Bubblegum<i class="bi bi-check-lg" aria-hidden="true"></i></li>
+                                <li role="option" tabindex="-1" aria-selected="false" style="--i:1;--c:var(--yellow)">🍋 Lemon Zap<i class="bi bi-check-lg" aria-hidden="true"></i></li>
+                                <li role="option" tabindex="-1" aria-selected="false" style="--i:2;--c:var(--cyan)">🌊 Blue Razz<i class="bi bi-check-lg" aria-hidden="true"></i></li>
+                                <li role="option" tabindex="-1" aria-selected="false" style="--i:3;--c:var(--lilac)">🍇 Grape Ape<i class="bi bi-check-lg" aria-hidden="true"></i></li>
+                                <li role="option" tabindex="-1" aria-selected="false" style="--i:4;--c:var(--lime)">🥝 Kiwi Kick<i class="bi bi-check-lg" aria-hidden="true"></i></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="field" style="width:min(260px,100%)">
+                        <span class="lbl" id="dd-lbl2">Disabled</span>
+                        <div class="dd">
+                            <button class="dd-btn" type="button" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="dd-lbl2" disabled><span>Sold out</span><i class="bi bi-caret-down-fill" aria-hidden="true"></i></button>
+                        </div>
+                    </div>
+                </div>
+                <p class="note">Arrow keys move, Enter picks, Esc closes, clicking outside closes.</p>
+            </section>
+
+            <!-- 6B. Searchable dropdown. -->
+            <section class="demo" aria-labelledby="h-cb">
+                <div class="demo-head"><h2 id="h-cb"><span class="n">06B</span>Searchable dropdown</h2><code class="cap">input[role=combobox] + ul[role=listbox]</code></div>
+                <div class="field" style="width:min(300px,100%)">
+                    <label class="lbl" for="cb-input" id="cb-lbl">Find a tool</label>
+                    <div class="dd cb" id="cb">
+                        <div class="cb-box">
+                            <i class="bi bi-search" aria-hidden="true"></i>
+                            <input class="cb-input" id="cb-input" type="text" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="cb-list" autocomplete="off" spellcheck="false" placeholder="Type to search…">
+                            <button class="cb-toggle" type="button" tabindex="-1" aria-label="Show all tools"><i class="bi bi-caret-down-fill" aria-hidden="true"></i></button>
+                        </div>
+                        <ul class="dd-list cb-list" id="cb-list" role="listbox" aria-labelledby="cb-lbl" hidden></ul>
+                    </div>
+                </div>
+                <p class="note">Type to filter, arrows move, Enter picks, Esc closes and a second Esc clears.</p>
+            </section>
+
+            <!-- 7. Checkbox. -->
+            <section class="demo" aria-labelledby="h-check">
+                <div class="demo-head"><h2 id="h-check"><span class="n">07</span>Checkbox</h2><code class="cap">input[type=checkbox]</code></div>
+                <fieldset>
+                    <legend>Toppings</legend>
+                    <div class="stack">
+                        <label class="check"><input class="sr" type="checkbox" checked><span class="box" aria-hidden="true"></span><span>Extra cheese</span></label>
+                        <label class="check"><input class="sr" type="checkbox"><span class="box" aria-hidden="true"></span><span>Pineapple (bold move)</span></label>
+                        <label class="check"><input class="sr" type="checkbox" checked disabled><span class="box" aria-hidden="true"></span><span>Dough (required)</span></label>
+                        <label class="check"><input class="sr" type="checkbox" disabled><span class="box" aria-hidden="true"></span><span>Anchovies (out)</span></label>
+                    </div>
+                </fieldset>
+            </section>
+
+            <!-- 8. Radio. -->
+            <section class="demo" aria-labelledby="h-radio">
+                <div class="demo-head"><h2 id="h-radio"><span class="n">08</span>Radio</h2><code class="cap">input[type=radio]</code></div>
+                <fieldset>
+                    <legend>Cup size</legend>
+                    <div class="rkeys">
+                        <label class="rk"><input class="sr" type="radio" name="size" value="S"><span style="--c:var(--cyan)">S</span></label>
+                        <label class="rk"><input class="sr" type="radio" name="size" value="M" checked><span style="--c:var(--yellow)">M</span></label>
+                        <label class="rk"><input class="sr" type="radio" name="size" value="L"><span style="--c:var(--pink)">L</span></label>
+                        <label class="rk"><input class="sr" type="radio" name="size" value="XL"><span style="--c:var(--orange)">XL</span></label>
+                        <label class="rk"><input class="sr" type="radio" name="size" value="XXL" disabled><span>XXL</span></label>
+                    </div>
+                </fieldset>
+                <p class="note out" id="size-out" aria-live="polite">Selected: M</p>
+            </section>
+
+            <!-- 9. Toggle. -->
+            <section class="demo" aria-labelledby="h-toggle">
+                <div class="demo-head"><h2 id="h-toggle"><span class="n">09</span>Toggle</h2><code class="cap">input[type=checkbox][role=switch]</code></div>
+                <div class="stack">
+                    <div class="row">
+                        <label class="rocker"><input class="sr" type="checkbox" role="switch" id="lights"><span class="rk-body" aria-hidden="true"><b class="on">ON</b><b class="off">OFF</b></span><span>Lights</span></label>
+                        <i class="bi bi-lightbulb-fill bulb" id="bulb" aria-hidden="true"></i>
+                    </div>
+                    <label class="rocker"><input class="sr" type="checkbox" role="switch" checked><span class="rk-body" aria-hidden="true"><b class="on">ON</b><b class="off">OFF</b></span><span>Dark jokes</span></label>
+                    <label class="rocker"><input class="sr" type="checkbox" role="switch" disabled><span class="rk-body" aria-hidden="true"><b class="on">ON</b><b class="off">OFF</b></span><span>Turbo (disabled)</span></label>
+                </div>
+            </section>
+
+            <!-- 10. Tabs. -->
+            <section class="demo wide" aria-labelledby="h-tabs">
+                <div class="demo-head"><h2 id="h-tabs"><span class="n">10</span>Tabs</h2><code class="cap">[role=tablist] &gt; [role=tab] + [role=tabpanel]</code></div>
+                <div data-tabs>
+                    <div class="tabs-row" role="tablist" aria-label="Folders">
+                        <button class="tab" role="tab" id="tab-1" aria-controls="panel-1" aria-selected="true" tabindex="0" style="--c:var(--yellow)">Inbox</button>
+                        <button class="tab" role="tab" id="tab-2" aria-controls="panel-2" aria-selected="false" tabindex="-1" style="--c:var(--pink)">Drafts</button>
+                        <button class="tab" role="tab" id="tab-3" aria-controls="panel-3" aria-selected="false" tabindex="-1" style="--c:var(--cyan)">Spam</button>
+                        <button class="tab" role="tab" id="tab-4" aria-controls="panel-4" aria-selected="false" tabindex="-1" style="--c:var(--lilac)">Trash</button>
+                    </div>
+                    <div class="tab-panel" role="tabpanel" id="panel-1" aria-labelledby="tab-1" tabindex="0" style="--c:var(--yellow)"><h3>INBOX (3)</h3><p>Three unread messages, all of them asking if you got the previous message.</p></div>
+                    <div class="tab-panel" role="tabpanel" id="panel-2" aria-labelledby="tab-2" tabindex="0" style="--c:var(--pink)" hidden><h3>DRAFTS (12)</h3><p>Twelve half-written replies you will never send. Respect.</p></div>
+                    <div class="tab-panel" role="tabpanel" id="panel-3" aria-labelledby="tab-3" tabindex="0" style="--c:var(--cyan)" hidden><h3>SPAM (999+)</h3><p>A prince would like to discuss your car's extended warranty.</p></div>
+                    <div class="tab-panel" role="tabpanel" id="panel-4" aria-labelledby="tab-4" tabindex="0" style="--c:var(--lilac)" hidden><h3>TRASH (0)</h3><p>Squeaky clean. Suspiciously clean.</p></div>
+                </div>
+                <p class="note">Use Left/Right arrows, Home and End when a tab has focus.</p>
+            </section>
+
+            <!-- 11. Labels and badges. -->
+            <section class="demo" aria-labelledby="h-tags">
+                <div class="demo-head"><h2 id="h-tags"><span class="n">11</span>Labels / badges</h2><code class="cap">span.stk / mark.marker</code></div>
+                <div class="tags">
+                    <span class="stk">New</span>
+                    <span class="stk" style="--c:var(--pink)">Hot</span>
+                    <span class="stk" style="--c:var(--cyan)">Beta</span>
+                    <span class="stk" style="--c:var(--lilac)">v2.0</span>
+                    <span class="stk" style="--c:var(--red);color:var(--paper)">Broken</span>
+                    <span class="pill" style="--c:var(--lime)"><i class="bi bi-check-circle-fill" aria-hidden="true"></i>Online</span>
+                    <button class="btn btn-sm count-badge" style="--c:var(--paper)" data-say="YOU HAVE 7 NOTIFICATIONS">Inbox<span class="stk">7<span class="sr"> unread</span></span></button>
+                </div>
+                <p class="scribble">Read the <mark class="marker">fine print</mark> before you <mark class="marker" style="--c:var(--pink)">press anything</mark>. Or don't, we're a <mark class="marker" style="--c:var(--cyan)">website</mark>, not your boss.</p>
+            </section>
+
+            <!-- 12. Modal. -->
+            <section class="demo" aria-labelledby="h-modal">
+                <div class="demo-head"><h2 id="h-modal"><span class="n">12</span>Alert popup / modal</h2><code class="cap">div[role=alertdialog][aria-modal]</code></div>
+                <div class="row">
+                    <button class="btn" style="--c:var(--red)" data-open="m-warn"><i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>Warning</button>
+                    <button class="btn" style="--c:var(--lime)" data-open="m-ok"><i class="bi bi-check2-circle" aria-hidden="true"></i>Success</button>
+                </div>
+                <p class="note">Esc or a backdrop click closes it, and Tab stays inside while open.</p>
+            </section>
+
+            <!-- 13. Toast. -->
+            <section class="demo" aria-labelledby="h-toast">
+                <div class="demo-head"><h2 id="h-toast"><span class="n">13</span>Toast</h2><code class="cap">div.slap (aria-live)</code></div>
+                <div class="stack">
+                    <span class="lbl">Plain</span>
+                    <div class="row">
+                        <button class="btn btn-sm" data-toast="info">Info</button>
+                        <button class="btn btn-sm" style="--c:var(--lime)" data-toast="success">Success</button>
+                        <button class="btn btn-sm" style="--c:var(--orange)" data-toast="warn">Warning</button>
+                        <button class="btn btn-sm" style="--c:var(--red)" data-toast="error">Error</button>
+                    </div>
+                    <span class="lbl">With actions</span>
+                    <div class="row">
+                        <button class="btn btn-sm" style="--c:var(--paper)" data-toast-act="undo">Undo</button>
+                        <button class="btn btn-sm" style="--c:var(--pink)" data-toast-act="retry">Retry</button>
+                        <button class="btn btn-sm" style="--c:var(--cyan)" data-toast-act="confirm">Confirm</button>
+                    </div>
+                </div>
+                <p class="note">Plain stickers peel off after about three seconds. Stickers with actions stay longer and pause while you hover or focus them.</p>
+            </section>
+
+            <!-- 14. Tooltip. -->
+            <section class="demo" aria-labelledby="h-tip">
+                <div class="demo-head"><h2 id="h-tip"><span class="n">14</span>Tooltip</h2><code class="cap">[role=tooltip] + aria-describedby</code></div>
+                <div class="row" style="justify-content:center;padding:40px 0 10px">
+                    <span class="tip"><button class="btn btn-sm" aria-describedby="tip-1">Hover me</button><span class="bubble" role="tooltip" id="tip-1">Hi. I'm a speech bubble with a hard shadow.</span></span>
+                    <span class="tip below"><button class="ibtn" style="--c:var(--cyan);width:52px;height:52px;font-size:1.2rem" aria-label="Help" aria-describedby="tip-2"><i class="bi bi-question-lg" aria-hidden="true"></i></button><span class="bubble" role="tooltip" id="tip-2">Tab here, I show up too.</span></span>
+                </div>
+                <p class="note">Shows on hover and keyboard focus; Esc hides it.</p>
+            </section>
+
+            <!-- 15. Slider. -->
+            <section class="demo" aria-labelledby="h-slider">
+                <div class="demo-head"><h2 id="h-slider"><span class="n">15</span>Slider</h2><code class="cap">input[type=range]</code></div>
+                <div class="stack">
+                    <div class="slider">
+                        <div class="slider-top"><label class="lbl" for="rg-1">Loudness</label><output for="rg-1" id="rg-1-out">40</output></div>
+                        <input class="range" id="rg-1" type="range" min="0" max="100" value="40">
+                        <div class="ruler" aria-hidden="true"></div>
+                        <div class="ruler-nums" aria-hidden="true"><span>0</span><span>25</span><span>50</span><span>75</span><span>100</span></div>
+                    </div>
+                    <div class="slider">
+                        <div class="slider-top"><label class="lbl" for="rg-2">Spice (disabled)</label><output for="rg-2" id="rg-2-out">75</output></div>
+                        <input class="range" id="rg-2" type="range" min="0" max="100" value="75" style="--c:var(--orange)" disabled>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 16. Progress. -->
+            <section class="demo" aria-labelledby="h-progress">
+                <div class="demo-head"><h2 id="h-progress"><span class="n">16</span>Progress</h2><code class="cap">div[role=progressbar]</code></div>
+                <div class="loader" id="loader" role="progressbar" aria-label="Level loading" aria-valuemin="0" aria-valuemax="100" aria-valuenow="30"></div>
+                <p class="loader-text" id="loader-text" aria-live="polite">Loading… 30%</p>
+                <div class="row">
+                    <button class="btn btn-sm" id="p-add">+1 Block</button>
+                    <button class="btn btn-sm" style="--c:var(--cyan)" id="p-auto">Auto load</button>
+                    <button class="btn btn-sm btn-sec" id="p-reset">Reset</button>
+                </div>
+            </section>
+
+            <!-- 17. File upload. -->
+            <section class="demo" aria-labelledby="h-file">
+                <div class="demo-head"><h2 id="h-file"><span class="n">17</span>File upload</h2><code class="cap">input[type=file] + drag-drop</code></div>
+                <label class="drop" id="drop">
+                    <input class="sr" type="file" id="file" multiple aria-describedby="drop-help">
+                    <i class="bi bi-cloud-arrow-up-fill" aria-hidden="true"></i>
+                    <span class="big" id="drop-big">DROP IT</span>
+                    <span id="drop-help" style="font-size:.8rem">…or click to browse. Max 5 MB each.</span>
+                </label>
+                <ul class="files" id="files" aria-live="polite"></ul>
+                <div class="row" style="margin-top:14px"><button class="btn btn-sm btn-sec" id="file-clear" hidden>Clear files</button></div>
+            </section>
+
+            <!-- 18. Accordion. -->
+            <section class="demo" aria-labelledby="h-acc">
+                <div class="demo-head"><h2 id="h-acc"><span class="n">18</span>Accordion</h2><code class="cap">button[aria-expanded] + div[role=region]</code></div>
+                <div class="acc" data-acc>
+                    <div>
+                        <h3 style="margin:0"><button class="acc-btn" id="acc-b1" aria-expanded="true" aria-controls="acc-p1" style="--c:var(--yellow)">Is it free?<i class="bi bi-plus-lg" aria-hidden="true"></i></button></h3>
+                        <div class="acc-panel open" id="acc-p1" role="region" aria-labelledby="acc-b1"><div><div class="acc-inner"><p>Yes. Free like a sample at the grocery store, but forever.</p></div></div></div>
+                    </div>
+                    <div>
+                        <h3 style="margin:0"><button class="acc-btn" id="acc-b2" aria-expanded="false" aria-controls="acc-p2" style="--c:var(--pink)">Where does my data go?<i class="bi bi-plus-lg" aria-hidden="true"></i></button></h3>
+                        <div class="acc-panel" id="acc-p2" role="region" aria-labelledby="acc-b2"><div><div class="acc-inner"><p>Nowhere. It stays in your browser and sulks quietly.</p></div></div></div>
+                    </div>
+                    <div>
+                        <h3 style="margin:0"><button class="acc-btn" id="acc-b3" aria-expanded="false" aria-controls="acc-p3" style="--c:var(--cyan)">Can I use the keyboard?<i class="bi bi-plus-lg" aria-hidden="true"></i></button></h3>
+                        <div class="acc-panel" id="acc-p3" role="region" aria-labelledby="acc-b3"><div><div class="acc-inner"><p>It's literally made of keys. Tab to a drawer and hit Enter.</p></div></div></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 19. Spinner. -->
+            <section class="demo" aria-labelledby="h-spin">
+                <div class="demo-head"><h2 id="h-spin"><span class="n">19</span>Spinner</h2><code class="cap">div[role=status]</code></div>
+                <div class="row" style="gap:34px">
+                    <div class="bounce" role="status" aria-label="Loading"><span style="--c:var(--pink)"></span><span style="--c:var(--yellow)"></span><span style="--c:var(--cyan)"></span></div>
+                    <div class="spin-sq" role="status" aria-label="Loading">WAIT</div>
+                    <div class="spin-sq smooth" role="status" aria-label="Loading">BRB</div>
+                </div>
+            </section>
+
+            <!-- 20. Empty state. -->
+            <section class="demo" aria-labelledby="h-empty">
+                <div class="demo-head"><h2 id="h-empty"><span class="n">20</span>Empty state</h2><code class="cap">div.empty</code></div>
+                <div class="empty">
+                    <div class="emoji" aria-hidden="true">🦗</div>
+                    <h3>Nothing. Zip. Nada.</h3>
+                    <p>It's so empty in here you can hear the crickets judging you.</p>
+                    <button class="btn btn-sm" style="--c:var(--pink)" data-say="OK FINE, MADE A THING">Make something</button>
+                </div>
+            </section>
+
+            <!-- Breadcrumbs. -->
+            <section class="demo" aria-labelledby="h-crumbs">
+                <div class="demo-head"><h2 id="h-crumbs"><span class="n">+</span>Breadcrumbs</h2><code class="cap">nav[aria-label=Breadcrumb] &gt; ol</code></div>
+                <nav class="crumbs" aria-label="Breadcrumb">
+                    <ol>
+                        <li><a href="#" data-crumb><i class="bi bi-house-fill" aria-hidden="true"></i> Home</a></li>
+                        <li><a href="#" data-crumb>Tools</a></li>
+                        <li><a href="#" data-crumb>Format</a></li>
+                        <li><a href="#" aria-current="page">JSON Formatter</a></li>
+                    </ol>
+                </nav>
+            </section>
+
+            <!-- Pagination. -->
+            <section class="demo" aria-labelledby="h-pager">
+                <div class="demo-head"><h2 id="h-pager"><span class="n">+</span>Pagination</h2><code class="cap">nav[aria-label=Pagination]</code></div>
+                <nav aria-label="Pagination"><div class="pager" id="pager"></div></nav>
+                <div class="pg-view" id="pg-view" aria-live="polite"></div>
+            </section>
+
+            <!-- Stepper. -->
+            <section class="demo wide" aria-labelledby="h-steps">
+                <div class="demo-head"><h2 id="h-steps"><span class="n">+</span>Stepper</h2><code class="cap">ol.steps &gt; li[aria-current=step]</code></div>
+                <ol class="steps" id="steps" aria-label="Checkout progress">
+                    <li><span class="step-key">1</span>Cart</li>
+                    <li><span class="step-key">2</span>Ship</li>
+                    <li><span class="step-key">3</span>Pay</li>
+                    <li><span class="step-key">4</span>Done</li>
+                </ol>
+                <div class="step-view" id="step-view" aria-live="polite"></div>
+                <div class="row">
+                    <button class="btn btn-sm btn-sec" id="step-back">Back</button>
+                    <button class="btn btn-sm" id="step-next">Next</button>
+                </div>
+            </section>
+        </main>
+
+        <footer>MADE OF KEYS. NO MICE WERE HARMED.</footer>
+    </div>
+
+    <!-- Warning modal. -->
+    <div class="overlay" id="m-warn" hidden>
+        <div class="modal" role="alertdialog" aria-modal="true" aria-labelledby="m-warn-t" aria-describedby="m-warn-d">
+            <div class="hazard" aria-hidden="true"></div>
+            <div class="modal-body">
+                <h2 id="m-warn-t">WARNING! <span class="stk" style="--c:var(--red);color:var(--paper)">for real</span></h2>
+                <p id="m-warn-d">You are about to delete every tool, every setting and your sense of calm. This cannot be undone.</p>
+                <div class="modal-actions">
+                    <button class="btn btn-sec" data-close data-autofocus>Cancel</button>
+                    <button class="btn" style="--c:var(--red)" data-close data-say="DELETED. JUST KIDDING." data-kind="error">Delete it</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success modal. -->
+    <div class="overlay" id="m-ok" hidden>
+        <div class="modal ok" role="dialog" aria-modal="true" aria-labelledby="m-ok-t" aria-describedby="m-ok-d">
+            <div class="hazard" aria-hidden="true"></div>
+            <div class="modal-body">
+                <h2 id="m-ok-t">NAILED IT! <span class="stk" style="--c:var(--lime)">✓ saved</span></h2>
+                <p id="m-ok-d">Your changes are saved. Go stretch, you earned it.</p>
+                <div class="modal-actions">
+                    <button class="btn" style="--c:var(--lime)" data-close data-autofocus>Sweet</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toasts" id="toasts" aria-live="polite"></div>
+
+    <script>
+        const $ = (s, r = document) => r.querySelector(s);
+        const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+        const page = $("#page");
+        const isMac = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
+
+        // Briefly pushes an element down into its shadow.
+        function pressFlash(el) {
+            el.classList.add("pressed");
+            setTimeout(() => el.classList.remove("pressed"), 160);
+        }
+
+        // Escapes text so it can be placed inside HTML.
+        const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+        // Shows a sticker toast with optional action buttons that removes itself after a delay.
+        const toastBox = $("#toasts");
+        const toastStyle = { info: ["var(--yellow)", "bi-info-circle-fill"], success: ["var(--lime)", "bi-check-circle-fill"], warn: ["var(--orange)", "bi-exclamation-triangle-fill"], error: ["var(--red)", "bi-x-octagon-fill"] };
+        function toast(msg, kind = "info", { ms, actions = [] } = {}) {
+            const [colour, icon] = toastStyle[kind] || toastStyle.info;
+            const life = ms ?? (actions.length ? 6500 : 3200);
+            const t = document.createElement("div");
+            t.className = "slap";
+            t.style.setProperty("--c", colour);
+            t.innerHTML = `<i class="bi ${icon}" aria-hidden="true"></i><span></span><button class="slap-x" type="button" aria-label="Dismiss">✕</button>`;
+            t.querySelector("span").textContent = msg;
+            let gone = false, timer = null;
+            const kill = () => {
+                if (gone) return;
+                gone = true;
+                clearTimeout(timer);
+                t.classList.add("out");
+                setTimeout(() => t.remove(), 260);
+            };
+            t.querySelector(".slap-x").addEventListener("click", kill);
+            if (actions.length) {
+                const row = document.createElement("div");
+                row.className = "slap-acts";
+                actions.forEach(a => {
+                    const b = document.createElement("button");
+                    b.type = "button";
+                    b.className = a.primary ? "slap-act primary" : "slap-act";
+                    b.textContent = a.label;
+                    b.addEventListener("click", () => { kill(); if (a.run) a.run(); });
+                    row.appendChild(b);
+                });
+                t.appendChild(row);
+            }
+            // Pauses the countdown while the pointer or keyboard focus is on the toast.
+            const arm = () => { clearTimeout(timer); timer = setTimeout(kill, life); };
+            t.addEventListener("mouseenter", () => clearTimeout(timer));
+            t.addEventListener("mouseleave", () => { if (!t.contains(document.activeElement)) arm(); });
+            t.addEventListener("focusin", () => clearTimeout(timer));
+            t.addEventListener("focusout", e => { if (!t.contains(e.relatedTarget) && !t.matches(":hover")) arm(); });
+            toastBox.appendChild(t);
+            while (toastBox.children.length > 4) toastBox.firstElementChild.remove();
+            arm();
+        }
+
+        // Announces any button that carries a data-say message.
+        document.addEventListener("click", e => {
+            const b = e.target.closest("[data-say]");
+            if (b && !b.disabled) toast(b.dataset.say, b.dataset.kind || "info");
+        });
+
+        // Runs the fake loading state on the Save button.
+        const loadBtn = $("#loadBtn");
+        loadBtn.addEventListener("click", () => {
+            if (loadBtn.classList.contains("is-loading")) return;
+            const label = loadBtn.querySelector("span");
+            loadBtn.classList.add("is-loading");
+            loadBtn.setAttribute("aria-busy", "true");
+            label.textContent = "Saving…";
+            setTimeout(() => {
+                loadBtn.classList.remove("is-loading");
+                loadBtn.removeAttribute("aria-busy");
+                label.textContent = "Save";
+                toast("SAVED. TOTALLY REAL.", "success");
+            }, 1600);
+        });
+
+        // Labels shortcut legends for the current platform and wires the real shortcut keys.
+        $$(".ibtn[data-combo]").forEach(b => { b.querySelector(".legend").textContent = (isMac ? "⌘" : "^") + b.dataset.combo.toUpperCase(); });
+        document.addEventListener("keydown", e => {
+            if (openOverlay || !(e.ctrlKey || e.metaKey) || e.altKey || e.shiftKey) return;
+            const b = $(`.ibtn[data-combo="${e.key.toLowerCase()}"]`);
+            if (!b || b.disabled) return;
+            e.preventDefault();
+            pressFlash(b);
+            b.click();
+        });
+
+        // Validates the email box and shows the red sticker on error.
+        const email = $("#tb-email"), emailErr = $("#tb-email-err");
+        function checkEmail() {
+            const bad = email.value.trim() !== "" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim());
+            email.setAttribute("aria-invalid", bad ? "true" : "false");
+            emailErr.hidden = !bad;
+        }
+        email.addEventListener("input", checkEmail);
+        checkEmail();
+
+        // Cuts the zig-zag tear into the bottom of the receipt.
+        (function tearReceipt() {
+            const teeth = 18, depth = "calc(100% - 12px)", pts = ["0 0", "100% 0", `100% ${depth}`];
+            for (let k = teeth * 2 - 1; k >= 0; k--) pts.push(`${(k / (teeth * 2) * 100).toFixed(3)}% ${k % 2 ? "100%" : depth}`);
+            $("#receipt").style.clipPath = `polygon(${pts.join(", ")})`;
+        })();
+
+        // Updates the textarea character counter.
+        const ta = $("#ta"), taCount = $("#ta-count");
+        function countChars() {
+            const max = +ta.maxLength;
+            taCount.textContent = `${ta.value.length}/${max}`;
+            taCount.classList.toggle("warn", ta.value.length >= max - 20);
+        }
+        ta.addEventListener("input", countChars);
+        countChars();
+
+        // Wires the textarea line gutter, match highlights and the find, replace and go-to bars.
+        const ed = $("#ed"), gutter = $("#ed-gutter"), hl = $("#ed-hl");
+        const fbar = $("#fbar"), fFind = $("#f-find"), fRep = $("#f-rep"), fRepRow = $("#f-rep-row"), fCount = $("#f-count"), fCase = $("#f-case");
+        const gbar = $("#gbar"), gLine = $("#g-line"), gTotal = $("#g-total");
+        const LINE_H = 28;
+        let matches = [], cur = -1, query = "";
+        const lineOf = pos => ta.value.slice(0, pos).split("\n").length;
+        const lineCount = () => ta.value.split("\n").length;
+        const charWidth = () => {
+            const s = document.createElement("span");
+            s.style.cssText = "position:absolute;visibility:hidden;white-space:pre;font:400 .95rem 'Space Mono',monospace";
+            s.textContent = "M".repeat(20);
+            document.body.appendChild(s);
+            const w = s.getBoundingClientRect().width / 20;
+            s.remove();
+            return w;
+        };
+        function syncScroll() {
+            gutter.scrollTop = hl.scrollTop = ta.scrollTop;
+            hl.scrollLeft = ta.scrollLeft;
+        }
+        function renderGutter() {
+            const n = lineCount(), here = lineOf(ta.selectionStart);
+            ed.style.setProperty("--gw", `${String(n).length * 8 + 18}px`);
+            gutter.innerHTML = Array.from({ length: n }, (_, i) => (i + 1 === here ? `<b>${i + 1}</b>` : i + 1)).join("\n");
+            syncScroll();
+        }
+        function renderMarks() {
+            const v = ta.value;
+            let html = "", at = 0;
+            matches.forEach((m, i) => {
+                html += esc(v.slice(at, m)) + `<mark${i === cur ? ' class="cur"' : ""}>${esc(v.slice(m, m + query.length))}</mark>`;
+                at = m + query.length;
+            });
+            hl.innerHTML = matches.length ? html + esc(v.slice(at)) + "\n" : "";
+            syncScroll();
+        }
+        function findAll(keepPos = ta.selectionStart) {
+            query = fbar.hidden ? "" : fFind.value;
+            matches = [];
+            if (query) {
+                const cs = fCase.getAttribute("aria-pressed") === "true";
+                const hay = cs ? ta.value : ta.value.toLowerCase(), needle = cs ? query : query.toLowerCase();
+                for (let i = hay.indexOf(needle); i > -1; i = hay.indexOf(needle, i + needle.length)) matches.push(i);
+            }
+            cur = matches.length ? Math.max(0, matches.findIndex(m => m >= keepPos)) : -1;
+            fCount.textContent = matches.length ? `${cur + 1}/${matches.length}` : query ? "0/0" : "";
+            fCount.classList.toggle("none", !!query && !matches.length);
+            ["#f-prev", "#f-next", "#f-one", "#f-all"].forEach(s => { $(s).disabled = !matches.length; });
+            renderMarks();
+        }
+        // Scrolls the textarea so a range is in view and selects it.
+        function reveal(pos, len) {
+            const col = Math.max(0, pos - ta.value.lastIndexOf("\n", pos - 1) - 1);
+            ta.scrollTop = (lineOf(pos) - 1) * LINE_H - ta.clientHeight / 2 + LINE_H;
+            ta.scrollLeft = Math.max(0, col * charWidth() - ta.clientWidth / 2);
+            ta.setSelectionRange(pos, pos + len);
+            renderGutter();
+        }
+        function stepMatch(dir) {
+            if (!matches.length) return;
+            cur = (cur + dir + matches.length) % matches.length;
+            fCount.textContent = `${cur + 1}/${matches.length}`;
+            renderMarks();
+            reveal(matches[cur], query.length);
+        }
+        function setValue(v) {
+            ta.value = v;
+            countChars();
+            renderGutter();
+        }
+        function fits(v) {
+            if (v.length <= ta.maxLength) return true;
+            toast(`TOO LONG: ${ta.maxLength} CHAR LIMIT.`, "error");
+            return false;
+        }
+        function replaceOne() {
+            if (cur < 0) return;
+            const at = matches[cur], next = ta.value.slice(0, at) + fRep.value + ta.value.slice(at + query.length);
+            if (!fits(next)) return;
+            setValue(next);
+            findAll(at + fRep.value.length);
+            if (cur > -1) reveal(matches[cur], query.length);
+        }
+        function replaceAll() {
+            if (!matches.length) return;
+            const before = ta.value, n = matches.length;
+            let out = "", at = 0;
+            matches.forEach(m => { out += before.slice(at, m) + fRep.value; at = m + query.length; });
+            out += before.slice(at);
+            if (!fits(out)) return;
+            setValue(out);
+            findAll(0);
+            toast(`REPLACED ${n} MATCH${n > 1 ? "ES" : ""}.`, "success", { actions: [{ label: "Undo", primary: true, run: () => { setValue(before); findAll(0); toast("REPLACE UNDONE."); } }] });
+        }
+        function openFind(withReplace) {
+            gbar.hidden = true;
+            fbar.hidden = false;
+            fRepRow.hidden = !withReplace;
+            const sel = ta.value.slice(ta.selectionStart, ta.selectionEnd);
+            if (sel && !sel.includes("\n")) fFind.value = sel;
+            findAll(ta.selectionStart);
+            const target = withReplace && fFind.value ? fRep : fFind;
+            target.focus();
+            target.select();
+        }
+        function openGoto() {
+            fbar.hidden = true;
+            findAll();
+            gbar.hidden = false;
+            gTotal.textContent = `of ${lineCount()}`;
+            gLine.value = lineOf(ta.selectionStart);
+            gLine.removeAttribute("aria-invalid");
+            gLine.focus();
+            gLine.select();
+        }
+        function goLine() {
+            const n = Number(gLine.value), total = lineCount();
+            if (!Number.isInteger(n) || n < 1 || n > total) { gLine.setAttribute("aria-invalid", "true"); return; }
+            const pos = ta.value.split("\n").slice(0, n - 1).reduce((s, l) => s + l.length + 1, 0);
+            gbar.hidden = true;
+            ta.focus();
+            reveal(pos, 0);
+        }
+        function closeBars() {
+            fbar.hidden = gbar.hidden = true;
+            findAll();
+            ta.focus();
+        }
+        const edActions = { find: () => openFind(false), replace: () => openFind(true), goto: openGoto };
+        const edLegend = { find: isMac ? "⌘F" : "^F", replace: isMac ? "⌥⌘F" : "^H", goto: isMac ? "⌘G" : "^G" };
+        $$(".ed-key").forEach(b => {
+            $("kbd", b).textContent = edLegend[b.dataset.act];
+            b.addEventListener("click", () => edActions[b.dataset.act]());
+        });
+        // Maps Ctrl or Cmd shortcuts inside the slip to editor actions.
+        $("#receipt").addEventListener("keydown", e => {
+            if (e.key === "Escape" && (!fbar.hidden || !gbar.hidden)) { e.preventDefault(); e.stopPropagation(); closeBars(); return; }
+            if (!(e.ctrlKey || e.metaKey) || e.shiftKey) return;
+            const act = e.code === "KeyF" ? (e.altKey ? "replace" : "find") : e.altKey ? null : { KeyH: "replace", KeyG: "goto" }[e.code];
+            if (!act) return;
+            e.preventDefault();
+            pressFlash($(`.ed-key[data-act="${act}"]`));
+            edActions[act]();
+        });
+        fFind.addEventListener("input", () => { findAll(ta.selectionStart); if (cur > -1) reveal(matches[cur], query.length); });
+        fFind.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); stepMatch(e.shiftKey ? -1 : 1); } });
+        fRep.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); (e.ctrlKey || e.metaKey ? replaceAll : replaceOne)(); } });
+        fCase.addEventListener("click", () => {
+            fCase.setAttribute("aria-pressed", String(fCase.getAttribute("aria-pressed") !== "true"));
+            findAll(ta.selectionStart);
+            if (cur > -1) reveal(matches[cur], query.length);
+        });
+        $("#f-prev").addEventListener("click", () => stepMatch(-1));
+        $("#f-next").addEventListener("click", () => stepMatch(1));
+        $("#f-one").addEventListener("click", replaceOne);
+        $("#f-all").addEventListener("click", replaceAll);
+        $("#g-go").addEventListener("click", goLine);
+        gLine.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); goLine(); } });
+        gLine.addEventListener("input", () => gLine.removeAttribute("aria-invalid"));
+        $$("[data-close-bar]").forEach(b => b.addEventListener("click", closeBars));
+        ta.addEventListener("input", () => { renderGutter(); if (!fbar.hidden) findAll(); });
+        ta.addEventListener("scroll", syncScroll);
+        ["keyup", "mouseup", "focus"].forEach(ev => ta.addEventListener(ev, renderGutter));
+        findAll();
+        renderGutter();
+
+        // Builds an accessible keyboard-driven dropdown.
+        $$("[data-dd]").forEach(root => {
+            const btn = $(".dd-btn", root), list = $(".dd-list", root), val = $(".dd-val", root);
+            const opts = $$("[role=option]", list);
+            let open = false;
+            const show = idx => {
+                open = true;
+                root.classList.add("open");
+                btn.setAttribute("aria-expanded", "true");
+                list.hidden = false;
+                const sel = opts.findIndex(o => o.getAttribute("aria-selected") === "true");
+                opts[idx ?? Math.max(0, sel)].focus();
+            };
+            const hide = refocus => {
+                if (!open) return;
+                open = false;
+                root.classList.remove("open");
+                btn.setAttribute("aria-expanded", "false");
+                list.hidden = true;
+                if (refocus) btn.focus();
+            };
+            const pick = o => {
+                opts.forEach(x => x.setAttribute("aria-selected", String(x === o)));
+                val.textContent = o.textContent.trim();
+                hide(true);
+                toast(`FLAVOUR: ${val.textContent.toUpperCase()}`);
+            };
+            btn.addEventListener("click", () => (open ? hide(true) : show()));
+            btn.addEventListener("keydown", e => {
+                if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+                    e.preventDefault();
+                    show(e.key === "ArrowUp" ? opts.length - 1 : undefined);
+                }
+            });
+            list.addEventListener("keydown", e => {
+                const i = opts.indexOf(document.activeElement);
+                const n = opts.length;
+                if (e.key === "ArrowDown") { e.preventDefault(); opts[(i + 1) % n].focus(); }
+                else if (e.key === "ArrowUp") { e.preventDefault(); opts[(i - 1 + n) % n].focus(); }
+                else if (e.key === "Home") { e.preventDefault(); opts[0].focus(); }
+                else if (e.key === "End") { e.preventDefault(); opts[n - 1].focus(); }
+                else if (e.key === "Enter" || e.key === " ") { e.preventDefault(); if (i > -1) pick(opts[i]); }
+                else if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); hide(true); }
+                else if (e.key === "Tab") hide(false);
+            });
+            opts.forEach(o => o.addEventListener("click", () => pick(o)));
+            document.addEventListener("pointerdown", e => { if (open && !root.contains(e.target)) hide(false); });
+        });
+
+        // Builds a searchable combobox that filters keycap options as you type.
+        (function searchable() {
+            const tools = [["🧾", "JSON Formatter", "--yellow"], ["🔐", "Base64 Encoder", "--pink"], ["🔗", "URL Decoder", "--cyan"], ["🆔", "UUID Generator", "--lilac"], ["🧪", "Regex Tester", "--lime"], ["#️⃣", "Hash Generator", "--orange"], ["🎟️", "JWT Decoder", "--yellow"], ["🎨", "Color Picker", "--pink"], ["🔍", "Diff Checker", "--cyan"], ["⏰", "Cron Parser", "--lilac"], ["📜", "Lorem Ipsum", "--lime"], ["🔳", "QR Code Maker", "--orange"]];
+            const root = $("#cb"), input = $("#cb-input"), list = $("#cb-list"), toggle = $(".cb-toggle", root);
+            let open = false, active = -1, shown = [], chosen = null;
+            const setActive = (i, scroll = true) => {
+                active = i;
+                const opts = $$("[role=option]", list);
+                opts.forEach((li, k) => li.classList.toggle("active", k === i));
+                if (opts[i]) {
+                    input.setAttribute("aria-activedescendant", opts[i].id);
+                    if (scroll) opts[i].scrollIntoView({ block: "nearest" });
+                } else input.removeAttribute("aria-activedescendant");
+            };
+            const render = (q = "") => {
+                q = q.trim().toLowerCase();
+                shown = tools.filter(t => t[1].toLowerCase().includes(q));
+                list.innerHTML = shown.length ? shown.map((t, i) => {
+                    const at = t[1].toLowerCase().indexOf(q);
+                    const name = q ? `${esc(t[1].slice(0, at))}<mark>${esc(t[1].slice(at, at + q.length))}</mark>${esc(t[1].slice(at + q.length))}` : esc(t[1]);
+                    return `<li role="option" id="cb-o${i}" aria-selected="${t === chosen}" style="--i:${Math.min(i, 5)};--c:var(${t[2]})"><span aria-hidden="true">${t[0]}</span><span>${name}</span><i class="bi bi-check-lg" aria-hidden="true"></i></li>`;
+                }).join("") : `<li class="cb-empty" role="presentation">NO MATCH. TRY "JSON".</li>`;
+                setActive(shown.length ? (q ? 0 : Math.max(0, shown.indexOf(chosen))) : -1);
+            };
+            const show = q => {
+                open = true;
+                root.classList.add("open");
+                input.setAttribute("aria-expanded", "true");
+                list.hidden = false;
+                render(q);
+            };
+            const hide = () => {
+                if (!open) return;
+                open = false;
+                root.classList.remove("open");
+                input.setAttribute("aria-expanded", "false");
+                input.removeAttribute("aria-activedescendant");
+                list.hidden = true;
+                input.value = chosen ? chosen[1] : "";
+            };
+            const pick = i => {
+                chosen = shown[i];
+                hide();
+                toast(`TOOL: ${chosen[1].toUpperCase()}`);
+            };
+            input.addEventListener("input", () => (open ? render(input.value) : show(input.value)));
+            input.addEventListener("click", () => { if (!open) show(); });
+            input.addEventListener("keydown", e => {
+                const n = shown.length;
+                if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+                    e.preventDefault();
+                    if (!open) show();
+                    else if (n) setActive(e.key === "ArrowDown" ? (active + 1) % n : (active - 1 + n) % n);
+                } else if (e.key === "Enter" && open && active > -1) { e.preventDefault(); pick(active); }
+                else if (e.key === "Escape") {
+                    e.stopPropagation();
+                    if (open) { e.preventDefault(); hide(); }
+                    else { input.value = ""; chosen = null; }
+                } else if (e.key === "Tab") hide();
+            });
+            toggle.addEventListener("click", () => { open ? hide() : show(); input.focus(); });
+            list.addEventListener("pointerdown", e => e.preventDefault());
+            list.addEventListener("pointermove", e => { const li = e.target.closest("[role=option]"); if (li && !li.classList.contains("active")) setActive($$("[role=option]", list).indexOf(li), false); });
+            list.addEventListener("click", e => { const li = e.target.closest("[role=option]"); if (li) pick($$("[role=option]", list).indexOf(li)); });
+            document.addEventListener("pointerdown", e => { if (open && !root.contains(e.target)) hide(); });
+        })();
+
+        // Shows the chosen radio value.
+        $$("input[name=size]").forEach(r => r.addEventListener("change", () => { $("#size-out").textContent = `Selected: ${r.value}`; }));
+
+        // Lights the bulb when the rocker switch is on.
+        const lights = $("#lights"), bulb = $("#bulb");
+        lights.addEventListener("change", () => bulb.classList.toggle("lit", lights.checked));
+
+        // Switches tabs on click and with arrow keys.
+        $$("[data-tabs]").forEach(box => {
+            const tabs = $$("[role=tab]", box);
+            const activate = (tab, focus) => {
+                tabs.forEach(t => {
+                    const on = t === tab;
+                    t.setAttribute("aria-selected", String(on));
+                    t.tabIndex = on ? 0 : -1;
+                    document.getElementById(t.getAttribute("aria-controls")).hidden = !on;
+                });
+                if (focus) tab.focus();
+            };
+            tabs.forEach((t, i) => {
+                t.addEventListener("click", () => activate(t, false));
+                t.addEventListener("keydown", e => {
+                    const n = tabs.length;
+                    const to = { ArrowRight: (i + 1) % n, ArrowLeft: (i - 1 + n) % n, Home: 0, End: n - 1 }[e.key];
+                    if (to === undefined) return;
+                    e.preventDefault();
+                    activate(tabs[to], true);
+                });
+            });
+        });
+
+        // Opens and closes the modals with a basic focus trap.
+        let openOverlay = null, lastFocus = null;
+        const focusables = el => $$('button:not([disabled]), [href], input:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])', el);
+        function openModal(id) {
+            const ov = document.getElementById(id);
+            if (!ov) return;
+            lastFocus = document.activeElement;
+            ov.hidden = false;
+            openOverlay = ov;
+            page.inert = true;
+            document.body.classList.add("no-scroll");
+            const box = $(".modal", ov);
+            box.classList.remove("shake");
+            void box.offsetWidth;
+            box.classList.add("shake");
+            ($("[data-autofocus]", ov) || focusables(ov)[0]).focus();
+        }
+        function closeModal() {
+            if (!openOverlay) return;
+            openOverlay.hidden = true;
+            openOverlay = null;
+            page.inert = false;
+            document.body.classList.remove("no-scroll");
+            if (lastFocus) lastFocus.focus();
+        }
+        $$("[data-open]").forEach(b => b.addEventListener("click", () => openModal(b.dataset.open)));
+        $$(".overlay").forEach(ov => {
+            ov.addEventListener("click", e => { if (e.target === ov || e.target.closest("[data-close]")) closeModal(); });
+        });
+        document.addEventListener("keydown", e => {
+            if (!openOverlay) return;
+            if (e.key === "Escape") { e.preventDefault(); closeModal(); return; }
+            if (e.key !== "Tab") return;
+            const f = focusables(openOverlay);
+            if (!f.length) return;
+            const first = f[0], last = f[f.length - 1];
+            if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+            else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+            else if (!openOverlay.contains(document.activeElement)) { e.preventDefault(); first.focus(); }
+        });
+
+        // Fires demo toasts.
+        const toastMsgs = { info: "HEADS UP: THIS IS A TOAST.", success: "NICE! IT WORKED.", warn: "CAREFUL: BATTERY AT 3%.", error: "WELP. SOMETHING BROKE." };
+        $$("[data-toast]").forEach(b => b.addEventListener("click", () => toast(toastMsgs[b.dataset.toast], b.dataset.toast)));
+
+        // Fires demo toasts that carry action buttons.
+        const actionToasts = {
+            undo: () => toast("MOVED 3 FILES TO TRASH.", "info", { actions: [{ label: "Undo", primary: true, run: () => toast("FILES RESTORED.", "success") }] }),
+            retry: () => toast("UPLOAD FAILED. WIFI SAID NO.", "error", { actions: [{ label: "Details", run: () => toast("ERR 418: I'M A TEAPOT.") }, { label: "Retry", primary: true, run: () => toast("UPLOADED ON TRY #2!", "success") }] }),
+            confirm: () => toast("DISCARD UNSAVED CHANGES?", "warn", { actions: [{ label: "Keep", run: () => toast("KEPT. PHEW.", "success") }, { label: "Discard", primary: true, run: () => toast("CHANGES DISCARDED.", "error") }] })
+        };
+        $$("[data-toast-act]").forEach(b => b.addEventListener("click", () => actionToasts[b.dataset.toastAct]()));
+
+        // Hides tooltips on Esc until the pointer or focus leaves.
+        document.addEventListener("keydown", e => {
+            if (e.key === "Escape" && !openOverlay) $$(".tip").forEach(t => t.classList.add("hush"));
+        });
+        $$(".tip").forEach(t => {
+            t.addEventListener("mouseleave", () => t.classList.remove("hush"));
+            t.addEventListener("focusout", () => t.classList.remove("hush"));
+        });
+
+        // Syncs each slider fill and output value.
+        $$(".range").forEach(r => {
+            const out = document.getElementById(r.id + "-out");
+            const sync = () => {
+                const pct = (r.value - r.min) / (r.max - r.min) * 100;
+                r.style.setProperty("--p", pct + "%");
+                if (out) out.textContent = r.value;
+            };
+            r.addEventListener("input", sync);
+            sync();
+        });
+
+        // Drives the segmented progress loader.
+        const loader = $("#loader"), loaderText = $("#loader-text"), pAuto = $("#p-auto"), pAdd = $("#p-add");
+        const segColours = ["--pink", "--orange", "--yellow", "--lime", "--cyan", "--blue", "--lilac", "--pink", "--orange", "--yellow"];
+        loader.innerHTML = segColours.map(c => `<span class="seg" style="--c:var(${c})"></span>`).join("");
+        const segs = $$(".seg", loader);
+        let level = 3, autoTimer = null;
+        function renderLoader() {
+            segs.forEach((s, i) => s.classList.toggle("on", i < level));
+            loader.setAttribute("aria-valuenow", String(level * 10));
+            loaderText.textContent = level >= 10 ? "Level complete! ★" : `Loading… ${level * 10}%`;
+            pAdd.disabled = level >= 10;
+            pAuto.disabled = level >= 10 || autoTimer !== null;
+        }
+        function stopAuto() { clearInterval(autoTimer); autoTimer = null; }
+        pAdd.addEventListener("click", () => { if (level < 10) { level++; renderLoader(); } });
+        pAuto.addEventListener("click", () => {
+            if (autoTimer) return;
+            autoTimer = setInterval(() => {
+                level++;
+                if (level >= 10) { level = 10; stopAuto(); toast("LEVEL LOADED!", "success"); }
+                renderLoader();
+            }, 280);
+            renderLoader();
+        });
+        $("#p-reset").addEventListener("click", () => { stopAuto(); level = 0; renderLoader(); });
+        renderLoader();
+
+        // Handles file selection by click and by drag-and-drop.
+        const drop = $("#drop"), fileInput = $("#file"), fileList = $("#files"), fileClear = $("#file-clear"), dropBig = $("#drop-big");
+        const LIMIT = 5 * 1024 * 1024;
+        const fmtSize = b => b < 1024 ? `${b} B` : b < 1048576 ? `${(b / 1024).toFixed(1)} KB` : `${(b / 1048576).toFixed(1)} MB`;
+        function showFiles(files) {
+            fileList.innerHTML = "";
+            [...files].forEach(f => {
+                const li = document.createElement("li");
+                const name = document.createElement("b");
+                name.textContent = f.name;
+                const size = document.createElement("span");
+                size.className = f.size > LIMIT ? "size stk" : "size";
+                if (f.size > LIMIT) size.style.setProperty("--c", "var(--red)");
+                size.textContent = f.size > LIMIT ? `${fmtSize(f.size)} · TOO BIG` : fmtSize(f.size);
+                li.append(name, size);
+                fileList.appendChild(li);
+            });
+            fileClear.hidden = !files.length;
+            if (files.length) toast(`GOT ${files.length} FILE${files.length > 1 ? "S" : ""}!`, "success");
+        }
+        fileInput.addEventListener("change", () => showFiles(fileInput.files));
+        ["dragenter", "dragover"].forEach(ev => drop.addEventListener(ev, e => {
+            e.preventDefault();
+            drop.classList.add("over");
+            dropBig.textContent = "LET GO!";
+        }));
+        drop.addEventListener("dragleave", e => {
+            if (drop.contains(e.relatedTarget)) return;
+            drop.classList.remove("over");
+            dropBig.textContent = "DROP IT";
+        });
+        drop.addEventListener("drop", e => {
+            e.preventDefault();
+            drop.classList.remove("over");
+            dropBig.textContent = "DROP IT";
+            const files = e.dataTransfer.files;
+            try { fileInput.files = files; } catch (err) { /* Older browsers cannot assign files, so the list is still shown. */ }
+            showFiles(files);
+        });
+        ["dragover", "drop"].forEach(ev => window.addEventListener(ev, e => { if (!drop.contains(e.target)) e.preventDefault(); }));
+        fileClear.addEventListener("click", () => { fileInput.value = ""; showFiles([]); });
+
+        // Opens and closes accordion drawers.
+        $$("[data-acc] .acc-btn").forEach(b => b.addEventListener("click", () => {
+            const open = b.getAttribute("aria-expanded") !== "true";
+            b.setAttribute("aria-expanded", String(open));
+            document.getElementById(b.getAttribute("aria-controls")).classList.toggle("open", open);
+        }));
+
+        // Keeps breadcrumb demo links on this page.
+        $$("[data-crumb]").forEach(a => a.addEventListener("click", e => { e.preventDefault(); toast(`→ ${a.textContent.trim().toUpperCase()}`); }));
+
+        // Renders the pagination keys around the current page.
+        const pager = $("#pager"), pgView = $("#pg-view");
+        const TOTAL = 12;
+        let current = 1;
+        function pageList() {
+            const out = [];
+            for (let i = 1; i <= TOTAL; i++) {
+                if (i === 1 || i === TOTAL || Math.abs(i - current) <= 1) out.push(i);
+                else if (out[out.length - 1] !== "…") out.push("…");
+            }
+            return out;
+        }
+        function renderPager(focusKey) {
+            pager.innerHTML =
+                `<button class="pg" data-go="prev" aria-label="Previous page" ${current === 1 ? "disabled" : ""}><i class="bi bi-chevron-left" aria-hidden="true"></i></button>` +
+                pageList().map(p => p === "…" ? `<span class="pg-gap" aria-hidden="true">…</span>` : `<button class="pg" data-go="${p}" aria-label="Page ${p}" ${p === current ? 'aria-current="page"' : ""}>${p}</button>`).join("") +
+                `<button class="pg" data-go="next" aria-label="Next page" ${current === TOTAL ? "disabled" : ""}><i class="bi bi-chevron-right" aria-hidden="true"></i></button>`;
+            pgView.textContent = `PAGE ${current} OF ${TOTAL}: showing results ${(current - 1) * 10 + 1}–${current * 10}.`;
+            if (focusKey) {
+                const target = $(`[data-go="${focusKey}"]:not([disabled])`, pager) || $(`[data-go="${current}"]`, pager);
+                if (target) target.focus();
+            }
+        }
+        pager.addEventListener("click", e => {
+            const b = e.target.closest("[data-go]");
+            if (!b || b.disabled) return;
+            const go = b.dataset.go;
+            current = go === "prev" ? current - 1 : go === "next" ? current + 1 : +go;
+            current = Math.min(TOTAL, Math.max(1, current));
+            renderPager(go === "prev" || go === "next" ? go : String(current));
+        });
+        renderPager();
+
+        // Moves the stepper between checkout steps.
+        const stepItems = $$("#steps li"), stepView = $("#step-view"), stepBack = $("#step-back"), stepNext = $("#step-next");
+        const stepText = ["Cart: 3 keycaps, 1 sticker pack, 0 regrets.", "Shipping: we'll yeet it to your door in 2–3 days.", "Payment: cash, card, or a really good meme.", "Done! Your order is on its way. Go press something."];
+        let step = 0;
+        function renderSteps() {
+            stepItems.forEach((li, i) => {
+                li.classList.toggle("done", i < step || step === stepItems.length - 1);
+                if (i === step) li.setAttribute("aria-current", "step"); else li.removeAttribute("aria-current");
+                li.querySelector(".step-key").textContent = i < step || (step === stepItems.length - 1 && i === step) ? "✓" : String(i + 1);
+            });
+            stepView.textContent = stepText[step];
+            stepBack.disabled = step === 0;
+            stepNext.disabled = step === stepItems.length - 1;
+            stepNext.textContent = step === stepItems.length - 2 ? "Finish" : "Next";
+        }
+        stepBack.addEventListener("click", () => { if (step > 0) { step--; renderSteps(); if (step === 0) stepNext.focus(); } });
+        stepNext.addEventListener("click", () => {
+            if (step >= stepItems.length - 1) return;
+            step++;
+            renderSteps();
+            if (step === stepItems.length - 1) { stepBack.focus(); toast("ORDER PLACED!", "success"); }
+        });
+        renderSteps();
+    </script>
+</body>
+</html>

@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Codexael Toolstack — Wildlife Spotted Near You</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta http-equiv="Content-Security-Policy" content="connect-src https://api.inaturalist.org; img-src 'self' data: https://inaturalist-open-data.s3.amazonaws.com https://static.inaturalist.org; object-src 'none'; base-uri 'none'; form-action 'none'">
+
+        <!-- Metadata -->
+        <meta name="description" content="See the birds, insects and plants people recently spotted near you.">
+        <meta name="author" content="Codexael">
+        <meta name="theme-color" content="#fff4e0" media="(prefers-color-scheme: light)">
+        <meta name="theme-color" content="#17140f" media="(prefers-color-scheme: dark)">
+
+        <!-- Open Graph -->
+        <meta property="og:title" content="Codexael Toolstack — Wildlife Spotted Near You">
+        <meta property="og:description" content="See the birds, insects and plants people recently spotted near you.">
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="https://tools.codexael.com/wildlife_near_you.html">
+        <meta property="og:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+        <meta property="og:image:width" content="1200">
+        <meta property="og:image:height" content="630">
+        <meta property="og:image:type" content="image/png">
+        <meta property="og:image:alt" content="Codexael Toolstack — Wildlife Spotted Near You">
+        <meta property="og:site_name" content="Codexael Toolstack">
+
+        <!-- Twitter Card -->
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="Codexael Toolstack — Wildlife Spotted Near You">
+        <meta name="twitter:description" content="See the birds, insects and plants people recently spotted near you.">
+        <meta name="twitter:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+
+        <!-- Favicon / App Icon -->
+        <link rel="icon" type="image/svg+xml" href="assets/images/codexael_icon.svg">
+        <link rel="apple-touch-icon" href="assets/images/codexael_icon.svg">
+
+        <!-- Bootstrap 5.2.0-beta1 -->
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+
+        <!-- Bootstrap with Popper 5.2.0-beta1 -->
+        <script src="js/bootstrap.bundle.min.js"></script>
+
+        <!-- Bootstrap Icons 1.11.3 -->
+        <link rel="stylesheet" href="css/bootstrap-icons.min.css">
+
+        <!-- Google fonts -->
+        <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+        <!-- Custom CSS -->
+        <link rel="stylesheet" href="css/keycaps.css">
+
+        <style>
+            .wild-body {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                gap: 18px;
+                padding: 24px 22px 28px;
+            }
+
+            .wild-search {
+                display: grid;
+                grid-template-columns: auto minmax(0, 1fr) auto;
+                align-items: end;
+                gap: 12px;
+            }
+
+            .wild-search label,
+            .wild-meta {
+                display: block;
+                font-size: 0.75rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.04em;
+            }
+
+            .wild-search label { margin-bottom: 6px; }
+            .wild-search input { margin-bottom: 0; }
+
+            /* Bootstrap btn hover and active states would hide the ink border without these values. */
+            .wild-search .btn,
+            .wild-more .btn {
+                --bs-btn-hover-border-color: var(--ink);
+                --bs-btn-active-border-color: var(--ink);
+                width: auto;
+                margin-bottom: 0;
+                white-space: nowrap;
+            }
+
+            .chip-row {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            .chip-row button {
+                padding: 4px 12px;
+                background: var(--paper);
+                color: var(--ink);
+                border: 2px solid var(--ink);
+                border-radius: 99px;
+                box-shadow: 0 2px 0 var(--ink);
+                font-size: 0.8rem;
+                font-weight: 700;
+            }
+
+            .chip-row button:hover { background: var(--yellow); color: #111111; }
+            .chip-row button.active { background: var(--orange); color: #111111; }
+
+            .wild-status {
+                margin: 0;
+                font-size: 0.85rem;
+                font-weight: 700;
+            }
+
+            .wild-body.loading .sighting-grid { opacity: 0.55; }
+
+            .sighting-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+                gap: 16px;
+            }
+
+            /* Each sighting is a card with a square photo on top and its details below. */
+            .sighting {
+                display: flex;
+                flex-direction: column;
+                min-width: 0;
+                overflow: hidden;
+                background: var(--paper);
+                border: 3px solid var(--ink);
+                border-radius: 12px;
+                box-shadow: 3px 3px 0 var(--ink);
+            }
+
+            .sighting img {
+                display: block;
+                width: 100%;
+                height: auto;
+                aspect-ratio: 1;
+                object-fit: cover;
+                border-bottom: 3px solid var(--ink);
+                background: var(--bg);
+            }
+
+            .sighting-text {
+                display: flex;
+                flex-direction: column;
+                gap: 3px;
+                padding: 10px 12px 12px;
+                font-size: 0.8rem;
+                line-height: 1.4;
+                overflow-wrap: anywhere;
+            }
+
+            .sighting-text b { font-size: 0.92rem; }
+            .sighting-text i { opacity: 0.8; }
+
+            .sighting-group {
+                align-self: flex-start;
+                padding: 0 8px;
+                background: var(--lime);
+                color: #111111;
+                border: 2px solid var(--ink);
+                font-size: 0.7rem;
+                font-weight: 700;
+                text-transform: uppercase;
+            }
+
+            .sighting-text a {
+                color: var(--ink);
+                font-weight: 700;
+            }
+
+            .sighting-credit {
+                font-size: 0.68rem;
+                opacity: 0.8;
+            }
+
+            .wild-more {
+                display: flex;
+                justify-content: center;
+            }
+
+            .privacy-note {
+                padding: 10px 12px;
+                border: 2px dashed var(--ink);
+                font-size: 0.75rem;
+                font-weight: 700;
+                line-height: 1.5;
+            }
+
+            @media (max-width: 576px) {
+                .wild-body {
+                    padding: 20px 16px 24px;
+                }
+
+                .wild-search {
+                    grid-template-columns: 1fr;
+                }
+
+                .wild-search .btn {
+                    width: 100%;
+                }
+
+                .sighting-grid {
+                    grid-template-columns: 1fr 1fr;
+                    gap: 12px;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <!-- Common layout -->
+        <div id="navbar-container"></div>
+
+        <div class="container-fluid tool-wrapper">
+            <div class="row">
+                <div class="col-md-8 offset-md-2">
+                    <div class="editor-panel">
+                        <div class="editor-header">
+                            <span class="editor-title">Wildlife Spotted Near You</span>
+                            <div class="editor-actions">
+                                <button title="Reload sightings" id="headerReloadBtn" onclick="loadSightings()"><i class="bi bi-arrow-clockwise icon-btn"></i></button>
+                                <div class="divider"></div>
+                                <button title="Share" onclick="shareSightings()"><i class="bi bi-share icon-btn"></i></button>
+                            </div>
+                        </div>
+
+                        <div class="editor-body wild-body" id="wildBody">
+
+                            <div class="wild-search">
+                                <button class="btn action-btn-primary" id="nearMeBtn" onclick="useMyLocation()"><i class="bi bi-crosshair"></i> Near me</button>
+                                <div>
+                                    <label for="placeInput">Or search a city, park or region</label>
+                                    <input type="text" class="form-control input-cyan" id="placeInput" maxlength="80" autocomplete="off" placeholder="e.g. Mumbai, Yellowstone, Kerala">
+                                </div>
+                                <button class="btn action-btn-ghost" id="placeSearchBtn" onclick="searchPlaces()"><i class="bi bi-search"></i> Find place</button>
+                            </div>
+
+                            <div class="chip-row" id="placeChoices" hidden></div>
+
+                            <div>
+                                <span class="wild-meta mb-2">Show</span>
+                                <div class="chip-row" id="groupChips"></div>
+                            </div>
+
+                            <p class="wild-status" id="wildStatus" role="status">Click "Near me" or search for a place to see what people have spotted there.</p>
+
+                            <div class="sighting-grid" id="sightingGrid" aria-live="polite"></div>
+
+                            <div class="wild-more" id="moreRow" hidden>
+                                <button class="btn action-btn-ghost" id="moreBtn" onclick="loadSightings({ more: true })"><i class="bi bi-plus-lg"></i> Show more sightings</button>
+                            </div>
+
+                            <div class="privacy-note">
+                                <i class="bi bi-info-circle"></i> Sightings and photos come from <a href="https://www.inaturalist.org" target="_blank" rel="noopener noreferrer">iNaturalist</a>, where the community has confirmed each identification. "Near me" asks your browser for your location, rounds it to about 1 km, and sends only that to iNaturalist. Photos belong to the people credited under them.
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <div id="footer-container"></div>
+
+        <!-- Common JS -->
+        <script src="js/tool-help.js"></script>
+        <script src="js/storage.js"></script>
+        <script src="js/common.js"></script>
+        <script src="js/script.js"></script>
+        <script src="js/api-client.js"></script>
+
+        <!-- Custom JS -->
+        <script>
+
+            const pageTitle = "Wildlife Spotted Near You";
+
+            const OBSERVATIONS_URL = "https://api.inaturalist.org/v2/observations";
+            const PLACES_URL = "https://api.inaturalist.org/v1/places/autocomplete";
+            const OBSERVATION_FIELDS = "id,uri,observed_on,place_guess,user.login,taxon.name,taxon.preferred_common_name,taxon.iconic_taxon_name,photos.url,photos.attribution";
+            const OBSERVATIONS_MAX_BYTES = 262144;
+            const PLACES_MAX_BYTES = 524288;
+            const PAGE_SIZE = 12;
+            const NEAR_RADIUS_KM = 25;
+            const LOCATION_KEY = "toolstack_wildlife_location";
+
+            // Groups match iNaturalist's iconic taxa, with friendly names for the buttons and card tags.
+            const GROUPS = [
+                ["", "All"], ["Aves", "Birds"], ["Insecta", "Insects"], ["Plantae", "Plants"], ["Mammalia", "Mammals"],
+                ["Reptilia", "Reptiles"], ["Amphibia", "Amphibians"], ["Fungi", "Fungi"], ["Arachnida", "Spiders"],
+                ["Actinopterygii", "Fish"], ["Mollusca", "Molluscs"]
+            ];
+            const GROUP_NAMES = Object.fromEntries(GROUPS.filter(([key]) => key));
+
+            const wildBody = document.getElementById("wildBody");
+            const placeInput = document.getElementById("placeInput");
+            const placeChoices = document.getElementById("placeChoices");
+            const groupChips = document.getElementById("groupChips");
+            const wildStatus = document.getElementById("wildStatus");
+            const sightingGrid = document.getElementById("sightingGrid");
+            const moreRow = document.getElementById("moreRow");
+            const busyButtons = ["nearMeBtn", "placeSearchBtn", "moreBtn", "headerReloadBtn"].map(id => document.getElementById(id));
+
+            let location_ = null;
+            let group = "";
+            let page = 1;
+            let shownCount = 0;
+            let totalCount = 0;
+            let requestController = null;
+            let retryWhenOnline = null;
+
+            // Returns a saved location only when its shape is valid.
+            function loadSavedLocation() {
+                const saved = getStorageItem(LOCATION_KEY, null);
+                if (saved?.type === "point" && Number.isFinite(saved.lat) && Number.isFinite(saved.lng)) return { type: "point", lat: saved.lat, lng: saved.lng, label: "Near you" };
+                if (saved?.type === "place" && Number.isInteger(saved.id) && typeof saved.label === "string") return { type: "place", id: saved.id, label: saved.label };
+                return null;
+            }
+
+            function saveLocation() {
+                try { setStorageItem(LOCATION_KEY, location_); } catch { /* The location still works for this visit. */ }
+            }
+
+            function setupGroups() {
+                groupChips.replaceChildren(...GROUPS.map(([key, name]) => {
+                    const chip = document.createElement("button");
+                    chip.type = "button";
+                    chip.textContent = name;
+                    chip.className = key === group ? "active" : "";
+                    chip.setAttribute("aria-pressed", String(key === group));
+                    chip.addEventListener("click", () => {
+                        group = key;
+                        setupGroups();
+                        if (location_) loadSightings();
+                    });
+                    return chip;
+                }));
+            }
+
+            function setLoading(isLoading) {
+                wildBody.classList.toggle("loading", isLoading);
+                busyButtons.forEach(button => button.disabled = isLoading);
+            }
+
+            // Runs one request with the shared busy state, cancel handling and offline retry.
+            async function runRequest(task, retry) {
+                if (requestController) requestController.abort();
+                const controller = new AbortController();
+                requestController = controller;
+                retryWhenOnline = null;
+                setLoading(true);
+                try {
+                    await task(controller.signal);
+                } catch (error) {
+                    // A request replaced by a newer one ends quietly.
+                    if (error.kind === "aborted") return;
+                    showErrorToast(error.message);
+                    if (error.kind === "offline") {
+                        retryWhenOnline = retry;
+                        wildStatus.textContent = "You are offline. This will load when your connection comes back.";
+                    } else {
+                        wildStatus.textContent = `${error.message}. Please try again.`;
+                    }
+                } finally {
+                    if (requestController === controller) {
+                        requestController = null;
+                        setLoading(false);
+                    }
+                }
+            }
+
+            // Asks the browser for the user's position and rounds it to about 1 km before using it.
+            function useMyLocation() {
+                if (!navigator.geolocation) {
+                    wildStatus.textContent = "Your browser cannot share its location. Search for a place instead.";
+                    return;
+                }
+                wildStatus.textContent = "Asking your browser for your location...";
+                navigator.geolocation.getCurrentPosition(position => {
+                    location_ = {
+                        type: "point",
+                        lat: Math.round(position.coords.latitude * 100) / 100,
+                        lng: Math.round(position.coords.longitude * 100) / 100,
+                        label: "Near you"
+                    };
+                    placeChoices.hidden = true;
+                    saveLocation();
+                    loadSightings();
+                }, error => {
+                    wildStatus.textContent = error.code === error.PERMISSION_DENIED
+                        ? "Location access was blocked. Allow it in your browser, or search for a place instead."
+                        : "Your location could not be found. Search for a place instead.";
+                }, { timeout: 10000, maximumAge: 10 * 60 * 1000 });
+            }
+
+            // Searches iNaturalist's places and lets the user pick the right one.
+            async function searchPlaces() {
+                const query = placeInput.value.trim();
+                if (!query) {
+                    showInfoToast("Type a city, park or region to search");
+                    placeInput.focus();
+                    return;
+                }
+                await runRequest(async signal => {
+                    wildStatus.textContent = "Finding places...";
+                    const reply = await fetchPublicJson(`${PLACES_URL}?q=${encodeURIComponent(query)}&per_page=6`, { serviceName: "iNaturalist", maxBytes: PLACES_MAX_BYTES, signal });
+                    const places = (Array.isArray(reply?.results) ? reply.results : [])
+                        .filter(place => Number.isInteger(place?.id) && typeof place.display_name === "string")
+                        .map(place => ({ id: place.id, label: place.display_name.trim() }));
+
+                    if (!places.length) {
+                        placeChoices.hidden = true;
+                        wildStatus.textContent = `No places match "${query}". Try a bigger city or region nearby.`;
+                        return;
+                    }
+
+                    placeChoices.replaceChildren(...places.map(place => {
+                        const chip = document.createElement("button");
+                        chip.type = "button";
+                        chip.innerHTML = '<i class="bi bi-geo-alt"></i> ';
+                        chip.append(place.label);
+                        chip.addEventListener("click", () => {
+                            location_ = { type: "place", ...place };
+                            placeChoices.hidden = true;
+                            saveLocation();
+                            loadSightings();
+                        });
+                        return chip;
+                    }));
+                    placeChoices.hidden = false;
+                    wildStatus.textContent = places.length === 1 ? "Pick the place to see its sightings." : "Pick the place you meant.";
+                }, "places");
+            }
+
+            // Builds the observations address for the chosen place, group and page.
+            function observationsUrl() {
+                const params = new URLSearchParams({
+                    photos: "true",
+                    quality_grade: "research",
+                    order_by: "observed_on",
+                    order: "desc",
+                    per_page: String(PAGE_SIZE),
+                    page: String(page),
+                    locale: navigator.language || "en",
+                    fields: OBSERVATION_FIELDS
+                });
+                if (location_.type === "point") {
+                    params.set("lat", location_.lat);
+                    params.set("lng", location_.lng);
+                    params.set("radius", NEAR_RADIUS_KM);
+                } else {
+                    params.set("place_id", location_.id);
+                }
+                if (group) params.set("iconic_taxa", group);
+                return `${OBSERVATIONS_URL}?${params}`;
+            }
+
+            // Returns a photo address on iNaturalist's image hosts in the medium size.
+            function photoUrl(value) {
+                try {
+                    const url = new URL(value);
+                    if (url.protocol !== "https:" || !["inaturalist-open-data.s3.amazonaws.com", "static.inaturalist.org"].includes(url.hostname)) return null;
+                    return url.href.replace(/\/square\./, "/medium.");
+                } catch {
+                    return null;
+                }
+            }
+
+            // Keeps only sightings that have a species and a usable photo.
+            function parseSightings(reply) {
+                return (Array.isArray(reply?.results) ? reply.results : []).map(item => {
+                    const photo = photoUrl(item?.photos?.[0]?.url);
+                    const scientific = typeof item?.taxon?.name === "string" ? item.taxon.name : "";
+                    if (!photo || !scientific) return null;
+                    let link = null;
+                    try {
+                        const url = new URL(item.uri);
+                        if (url.protocol === "https:" && url.hostname === "www.inaturalist.org") link = url.href;
+                    } catch { /* A sighting without a valid link is still shown. */ }
+                    return {
+                        photo,
+                        scientific,
+                        common: typeof item.taxon.preferred_common_name === "string" ? item.taxon.preferred_common_name : "",
+                        group: GROUP_NAMES[item.taxon.iconic_taxon_name] || "",
+                        date: typeof item.observed_on === "string" ? item.observed_on : "",
+                        place: typeof item.place_guess === "string" ? item.place_guess : "",
+                        credit: typeof item.photos[0].attribution === "string" ? item.photos[0].attribution : "",
+                        link
+                    };
+                }).filter(Boolean);
+            }
+
+            function formatDate(value) {
+                const date = new Date(`${value}T00:00:00`);
+                return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+            }
+
+            function createCard(sighting) {
+                const card = document.createElement("article");
+                card.className = "sighting";
+                const img = document.createElement("img");
+                img.src = sighting.photo;
+                img.alt = sighting.common || sighting.scientific;
+                img.loading = "lazy";
+                img.referrerPolicy = "no-referrer";
+                img.width = 500;
+                img.height = 500;
+                img.onerror = () => img.remove();
+
+                const body = document.createElement("div");
+                body.className = "sighting-text";
+                if (sighting.group) {
+                    const tag = document.createElement("span");
+                    tag.className = "sighting-group";
+                    tag.textContent = sighting.group;
+                    body.append(tag);
+                }
+                const name = document.createElement("b");
+                name.textContent = sighting.common || sighting.scientific;
+                body.append(name);
+                if (sighting.common) {
+                    const latin = document.createElement("i");
+                    latin.textContent = sighting.scientific;
+                    body.append(latin);
+                }
+                const where = document.createElement("span");
+                where.textContent = [sighting.date && formatDate(sighting.date), sighting.place].filter(Boolean).join(" · ");
+                body.append(where);
+                if (sighting.link) {
+                    const link = document.createElement("a");
+                    link.href = sighting.link;
+                    link.target = "_blank";
+                    link.rel = "noopener noreferrer";
+                    link.textContent = "See on iNaturalist →";
+                    body.append(link);
+                }
+                if (sighting.credit) {
+                    const credit = document.createElement("span");
+                    credit.className = "sighting-credit";
+                    credit.textContent = sighting.credit;
+                    body.append(credit);
+                }
+                card.append(img, body);
+                return card;
+            }
+
+            // Loads the first page for the chosen place and group, or the next page when more is asked for.
+            async function loadSightings({ more = false } = {}) {
+                if (!location_) {
+                    wildStatus.textContent = 'Click "Near me" or search for a place first.';
+                    return;
+                }
+                await runRequest(async signal => {
+                    const nextPage = more ? page + 1 : 1;
+                    wildStatus.textContent = more ? "Loading more sightings..." : `Loading sightings ${location_.type === "point" ? "near you" : `in ${location_.label}`}...`;
+                    page = nextPage;
+                    let reply;
+                    try {
+                        reply = await fetchPublicJson(observationsUrl(), { serviceName: "iNaturalist", maxBytes: OBSERVATIONS_MAX_BYTES, signal });
+                    } catch (error) {
+                        if (more) page--;
+                        throw error;
+                    }
+                    const sightings = parseSightings(reply);
+                    totalCount = Number.isInteger(reply?.total_results) ? reply.total_results : sightings.length;
+
+                    if (more) {
+                        sightingGrid.append(...sightings.map(createCard));
+                        shownCount += sightings.length;
+                    } else {
+                        sightingGrid.replaceChildren(...sightings.map(createCard));
+                        shownCount = sightings.length;
+                    }
+
+                    const groupName = group ? GROUP_NAMES[group].toLowerCase() : "sightings";
+                    const where = location_.type === "point" ? `within ${NEAR_RADIUS_KM} km of you` : `in ${location_.label}`;
+                    wildStatus.textContent = totalCount
+                        ? `${totalCount.toLocaleString()} confirmed ${groupName} ${where}, newest first.`
+                        : `No confirmed ${groupName} ${where} yet. Try another group or a bigger area.`;
+                    moreRow.hidden = shownCount >= totalCount || sightings.length === 0;
+                }, more ? "more" : "sightings");
+            }
+
+            function shareSightings() {
+                const where = location_ ? (location_.type === "point" ? "near me" : `in ${location_.label}`) : "near you";
+                const shareText = `🦋 See the wildlife people have spotted ${where}`;
+                if (navigator.share) {
+                    navigator.share({ title: "Wildlife Spotted Near You", text: shareText, url: location.href }).catch(() => {});
+                } else {
+                    navigator.clipboard.writeText(`${shareText}\n${location.href}`)
+                        .then(() => showSuccessToast("Copied to clipboard"))
+                        .catch(() => showErrorToast("Could not copy, your browser blocked the clipboard"));
+                }
+            }
+
+            // Enter in the place field runs the place search.
+            placeInput.addEventListener("keydown", event => {
+                if (event.key === "Enter" && !event.ctrlKey && !event.metaKey) {
+                    event.preventDefault();
+                    searchPlaces();
+                }
+            });
+
+            setupGroups();
+            location_ = loadSavedLocation();
+            if (location_) loadSightings();
+
+            // The request that failed while offline runs again when the connection comes back.
+            window.addEventListener("online", () => {
+                if (requestController || !retryWhenOnline) return;
+                if (retryWhenOnline === "places") searchPlaces();
+                else loadSightings({ more: retryWhenOnline === "more" });
+            });
+        </script>
+
+    </body>
+</html>

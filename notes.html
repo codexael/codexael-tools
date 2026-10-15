@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Codexael Toolstack — Notes</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+        <!-- Metadata -->
+        <meta name="description" content="Jot down notes that save automatically. No account needed.">
+        <meta name="author" content="Codexael">
+        <meta name="theme-color" content="#fff4e0" media="(prefers-color-scheme: light)">
+        <meta name="theme-color" content="#17140f" media="(prefers-color-scheme: dark)">
+
+        <!-- Open Graph -->
+        <meta property="og:title" content="Codexael Toolstack — Quick Notes">
+        <meta property="og:description" content="Jot down notes that save automatically. No account needed.">
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="https://tools.codexael.com/notes.html">
+        <meta property="og:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+        <meta property="og:image:width" content="1200">
+        <meta property="og:image:height" content="630">
+        <meta property="og:image:type" content="image/png">
+        <meta property="og:image:alt" content="Codexael Toolstack — Quick Notes">
+        <meta property="og:site_name" content="Codexael Toolstack">
+
+        <!-- Twitter Card -->
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="Codexael Toolstack — Quick Notes">
+        <meta name="twitter:description" content="Jot down notes that save automatically. No account needed.">
+        <meta name="twitter:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+
+        <!-- Favicon / App Icon -->
+        <link rel="icon" type="image/svg+xml" href="assets/images/codexael_icon.svg">
+        <link rel="apple-touch-icon" href="assets/images/codexael_icon.svg">
+
+        <!-- Bootstrap 5.2.0-beta1 -->
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+
+        <!-- Bootstrap with Popper 5.2.0-beta1 -->
+        <script src="js/bootstrap.bundle.min.js"></script>
+
+        <!-- Bootstrap Icons 1.11.3 -->
+        <link rel="stylesheet" href="css/bootstrap-icons.min.css">
+
+        <!-- Google fonts -->
+        <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+        <!-- CodeMirror -->
+        <link rel="stylesheet" href="css/codemirror/codemirror.css">
+        <link rel="stylesheet" href="css/find-replace.css">
+
+        <!-- Custom CSS -->
+        <link rel="stylesheet" href="css/keycaps.css">
+
+        <style>
+            /* Both panels get a fixed height so the note list and the textarea scroll inside them. */
+            #notesListPanel,
+            #noteEditorPanel {
+                height: calc(100vh - 200px);
+                min-height: 520px;
+            }
+
+            /* The list panel wears a pink header so the two panels read as separate keys. */
+            #notesListPanel {
+                --panel-c: var(--pink);
+            }
+
+            /* The panels sit side by side with a gap wide enough for their hard shadows. */
+            @media (min-width: 768px) {
+                #notesListPanel {
+                    flex: 0 0 calc(33.3333% - 12px);
+                    max-width: calc(33.3333% - 12px);
+                    margin-right: 24px;
+                }
+
+                #noteEditorPanel {
+                    flex: 0 0 calc(66.6667% - 12px);
+                    max-width: calc(66.6667% - 12px);
+                }
+            }
+
+            .notes-list-body {
+                padding: 14px 14px 10px;
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+                flex: 1;
+                min-height: 0;
+            }
+
+            .notes-list-body > .input-clear-wrap {
+                margin-bottom: 0;
+                flex-shrink: 0;
+            }
+
+            /* The scroll area keeps a little room so the row shadows are not clipped. */
+            .notes-list-scroll {
+                flex: 1;
+                min-height: 0;
+                overflow-y: auto;
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+                padding: 4px 4px 8px 0;
+            }
+
+            /* Each note is a paper keycap that sinks when it is the open note. */
+            .note-row {
+                position: relative;
+                flex-shrink: 0;
+                display: flex;
+                align-items: flex-start;
+                justify-content: space-between;
+                gap: 8px;
+                padding: 9px 10px 9px 12px;
+                background: var(--paper);
+                color: var(--ink);
+                border: 3px solid var(--ink);
+                border-radius: 10px;
+                box-shadow: 0 2px 0 var(--ink);
+                cursor: pointer;
+                transition: transform 0.08s, box-shadow 0.08s, background-color 0.12s;
+            }
+
+            .note-row:hover {
+                transform: translateY(1px);
+                box-shadow: 0 1px 0 var(--ink);
+                background: var(--bg);
+            }
+
+            .note-row.active {
+                transform: translateY(2px);
+                box-shadow: 0 0 0 var(--ink), inset 0 2px 0 rgba(0, 0, 0, 0.18);
+                background: var(--yellow);
+                color: #111111;
+            }
+
+            .note-row-main {
+                min-width: 0;
+                flex: 1;
+            }
+
+            .note-row-title {
+                font-family: var(--display-font);
+                font-size: 0.85rem;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .note-row-title.untitled {
+                opacity: 0.6;
+            }
+
+            .note-row-snippet {
+                margin-top: 2px;
+                font-size: 0.76rem;
+                opacity: 0.75;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            /* The date is printed on a small ink tag. */
+            .note-row-date {
+                display: inline-block;
+                margin-top: 6px;
+                padding: 0 5px;
+                background: var(--ink);
+                color: var(--paper);
+                font-size: 0.66rem;
+                font-weight: 700;
+            }
+
+            .note-row.active .note-row-date {
+                background: #111111;
+                color: var(--yellow);
+            }
+
+            .note-row-delete {
+                flex-shrink: 0;
+                width: 28px;
+                height: 28px;
+                display: grid;
+                place-items: center;
+                padding: 0;
+                background: var(--paper);
+                color: var(--ink);
+                border: 2.5px solid var(--ink);
+                border-radius: 7px;
+                box-shadow: 0 1.5px 0 var(--ink);
+                font-size: 0.8rem;
+                transition: transform 0.08s, box-shadow 0.08s, background-color 0.12s;
+            }
+
+            .note-row.active .note-row-delete {
+                background: #ffffff;
+                color: #111111;
+                border-color: #111111;
+                box-shadow: 0 1.5px 0 #111111;
+            }
+
+            .note-row .note-row-delete:hover {
+                transform: translateY(1px);
+                box-shadow: 0 0.5px 0 var(--ink);
+                background: var(--red);
+                color: #111111;
+            }
+
+            /* Empty states are shown as tilted stickers. */
+            .notes-empty-hint,
+            .note-editor-empty {
+                margin: auto;
+                max-width: calc(100% - 32px);
+                padding: 6px 14px;
+                background: var(--yellow);
+                color: #111111;
+                border: 3px solid var(--ink);
+                box-shadow: 2px 2px 0 var(--ink);
+                font-size: 0.8rem;
+                font-weight: 700;
+                text-align: center;
+                text-transform: uppercase;
+                transform: rotate(-2deg);
+            }
+
+            .note-editor-empty {
+                background: var(--cyan);
+            }
+
+            /* The note title field reads like the panel title on the header strip. */
+            #noteTitleInput {
+                flex: 1;
+                min-width: 0;
+                padding: 0;
+                background: none;
+                color: inherit;
+                border: none;
+                outline: none;
+                font-family: var(--display-font);
+                font-size: 1.05rem;
+            }
+
+            #noteTitleInput::placeholder {
+                color: inherit;
+                opacity: 0.55;
+            }
+
+            #noteTitleInput:focus-visible {
+                outline: 3px dashed #111111;
+                outline-offset: 3px;
+            }
+
+            #noteTitleInput:disabled {
+                opacity: 0.45;
+                cursor: not-allowed;
+            }
+
+            /* The editor fills the space between the header and the status strip. */
+            #noteEditorPanel .CodeMirror {
+                flex: 1 1 0;
+                min-height: 0;
+                height: auto;
+            }
+
+            /* An empty note shows a faded hint on its first line. */
+            #noteEditorPanel .CodeMirror.is-empty .CodeMirror-line:first-child::before {
+                content: "Start typing...";
+                position: absolute;
+                opacity: 0.5;
+                pointer-events: none;
+            }
+
+            /* Phones stack the panels, so each one gets its own sensible height. */
+            @media (max-width: 767px) {
+                #notesListPanel {
+                    height: 360px;
+                    min-height: 0;
+                    margin-bottom: 12px;
+                }
+
+                #noteEditorPanel {
+                    height: 70vh;
+                    min-height: 440px;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <!-- Common layout -->
+        <div id="navbar-container"></div>
+
+        <div class="container-fluid tool-wrapper">
+            <div class="row g-3 g-md-0 gx-md-3 gx-0">
+
+                <div class="col-md-4 editor-panel" id="notesListPanel">
+                    <div class="editor-header">
+                        <span class="editor-title">My Notes</span>
+                        <div class="editor-actions">
+                            <button title="New note" onclick="createNote()"><i class="bi bi-plus-lg icon-btn"></i></button>
+                        </div>
+                    </div>
+                    <div class="editor-body notes-list-body">
+                        <div class="input-clear-wrap">
+                            <i class="bi bi-search search-icon"></i>
+                            <input type="text" class="input-cyan" id="noteSearchInput" placeholder="Search notes..." oninput="renderNotesList()">
+                            <button class="clear-btn" type="button" title="Clear"><i class="bi bi-x"></i></button>
+                        </div>
+                        <div class="notes-list-scroll invisible-scrollbars" id="notesListScroll"></div>
+                    </div>
+                </div>
+
+                <div class="col-md-8 editor-panel" id="noteEditorPanel">
+                    <div class="editor-header">
+                        <input type="text" id="noteTitleInput" placeholder="Untitled note" oninput="onTitleInput()">
+                        <div class="editor-actions">
+                            <button title="Copy" data-shortcut="copy" onclick="copyText(getSelectedNote() ? getSelectedNote().content : '', this)"><i class="bi bi-copy icon-btn"></i></button>
+                            <button title="Download" onclick="downloadCurrentNote()"><i class="bi bi-download icon-btn"></i></button>
+                            <button title="Print" onclick="printCurrentNote()"><i class="bi bi-printer icon-btn"></i></button>
+                            <div class="divider"></div>
+                            <button class="btn-danger" title="Delete" onclick="deleteCurrentNote()"><i class="bi bi-trash icon-btn"></i></button>
+                            <button title="Fullscreen" onclick="toggleEditorFullScreen('noteEditorPanel')"><i class="bi bi-arrows-fullscreen icon-btn"></i></button>
+                        </div>
+                    </div>
+                    <textarea class="editor-body" id="noteContentInput" spellcheck="false"></textarea>
+                    <div class="editor-footer">
+                        <div class="status">
+                            <span>Ln <b id="noteCurrentLine">1</b></span>
+                            <span>Col <b id="noteCurrentColumn">1</b></span>
+                            <span>Lines <b id="noteTotalLines">1</b></span>
+                            <span><b id="noteWordCount">0</b> words</span>
+                            <span id="noteSavedIndicator">Saved</span>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+
+
+        <div id="footer-container"></div>
+
+        <!-- Common JS -->
+        <script src="js/tool-help.js"></script>
+        <script src="js/storage.js"></script>
+        <script src="js/common.js"></script>
+        <script src="js/custom-input.js"></script>
+        <script src="js/script.js"></script>
+        <script src="js/codemirror/codemirror.js"></script>
+        <script src="js/codemirror/active-line.js"></script>
+        <script src="js/find-replace.js"></script>
+
+        <!-- Custom JS -->
+        <script>
+            const pageTitle = "Notes";
+
+            const STORAGE_KEY = "toolstack_notes";
+            const AUTOSAVE_DELAY = 400;
+
+            const notesListScroll = document.getElementById("notesListScroll");
+            const noteSearchInput = document.getElementById("noteSearchInput");
+            const noteTitleInput = document.getElementById("noteTitleInput");
+            const noteContentInput = document.getElementById("noteContentInput");
+            const noteWordCount = document.getElementById("noteWordCount");
+            const noteSavedIndicator = document.getElementById("noteSavedIndicator");
+            const noteEditorPanel = document.getElementById("noteEditorPanel");
+
+            // Turns the note textarea into a line-numbered editor like the JSON formatter.
+            const noteEditor = CodeMirror.fromTextArea(noteContentInput, {
+                lineNumbers: true,
+                lineWrapping: true,
+                styleActiveLine: true
+            });
+            const noteEditorWrapper = noteEditor.getWrapperElement();
+            attachFindReplace(noteEditor);
+            let isLoadingNote = false;
+
+            setupEditors([
+                createEditorConfig(
+                    noteEditor,
+                    document.getElementById("noteTotalLines"),
+                    document.getElementById("noteCurrentLine"),
+                    document.getElementById("noteCurrentColumn")
+                )
+            ]);
+
+            // Treats every change except loading a note as an edit, so replace-all still saves.
+            noteEditor.on("change", () => {
+                updateEmptyHint();
+                if (!isLoadingNote) onContentInput();
+            });
+
+            // Shows the "Start typing" hint only while the editor is empty.
+            function updateEmptyHint() {
+                noteEditorWrapper.classList.toggle("is-empty", noteEditor.getValue() === "");
+            }
+
+            // Loads text into the editor and starts a fresh undo history for it.
+            function setEditorContent(content) {
+                isLoadingNote = true;
+                noteEditor.setValue(content);
+                isLoadingNote = false;
+                noteEditor.clearHistory();
+                updateEmptyHint();
+            }
+
+            let notes = [];
+            let selectedNoteId = null;
+            let saveTimer = null;
+
+            function getNotes() {
+                return getStorageItem(STORAGE_KEY, []);
+            }
+
+            function saveNotes(list) {
+                setStorageItem(STORAGE_KEY, list);
+            }
+
+            function getSelectedNote() {
+                return notes.find(n => n.id === selectedNoteId) || null;
+            }
+
+            function downloadText(filename, content) {
+                if (isBlank(content, "Nothing to download")) return;
+                const blob = new Blob([content], { type: "text/plain" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
+
+            function copyText(text, btn) {
+                if (isBlank(text, "Nothing to copy")) return;
+                navigator.clipboard.writeText(text).then(() => {
+                    showSuccessToast("Copied to clipboard");
+                    if (btn) {
+                        const icon = btn.querySelector("i");
+                        const original = icon.className;
+                        icon.className = "bi bi-check-lg";
+                        setTimeout(() => icon.className = original, 1000);
+                    }
+                });
+            }
+
+            window.addEventListener("DOMContentLoaded", () => {
+                notes = getNotes();
+                notes.sort((a, b) => b.updatedAt - a.updatedAt);
+                renderNotesList();
+                selectNote(notes.length ? notes[0].id : null);
+            });
+
+            function createNote() {
+                const note = { id: Date.now(), title: "", content: "", updatedAt: Date.now() };
+                notes.unshift(note);
+                saveNotes(notes);
+                renderNotesList();
+                selectNote(note.id);
+                noteTitleInput.focus();
+            }
+
+            function selectNote(id) {
+                selectedNoteId = id;
+                const note = getSelectedNote();
+
+                highlightActiveRow();
+
+                if (!note) {
+                    renderEmptyEditor();
+                    return;
+                }
+
+                renderEditorChrome(true);
+                noteTitleInput.value = note.title;
+                setEditorContent(note.content);
+                updateWordCount(note.content);
+                noteSavedIndicator.textContent = "Saved";
+            }
+
+            function renderEmptyEditor() {
+                renderEditorChrome(false);
+                noteTitleInput.value = "";
+                setEditorContent("");
+                noteWordCount.textContent = "0";
+                noteSavedIndicator.textContent = "";
+
+                const empty = document.createElement("div");
+                empty.className = "note-editor-empty";
+                empty.id = "noteEditorEmptyHint";
+                empty.textContent = "Select a note or create a new one to get started";
+                noteEditorPanel.insertBefore(empty, noteEditorWrapper.nextSibling);
+                noteEditorWrapper.classList.add("d-none");
+            }
+
+            function renderEditorChrome(enabled) {
+                const existingHint = document.getElementById("noteEditorEmptyHint");
+                if (existingHint) existingHint.remove();
+                noteEditorWrapper.classList.remove("d-none");
+                noteEditor.refresh();
+
+                noteTitleInput.disabled = !enabled;
+                noteEditorPanel.querySelectorAll(".editor-actions button").forEach(btn => btn.disabled = !enabled);
+            }
+
+            function onTitleInput() {
+                const note = getSelectedNote();
+                if (!note) return;
+
+                note.title = noteTitleInput.value;
+                note.updatedAt = Date.now();
+                scheduleSave(note);
+            }
+
+            function onContentInput() {
+                const note = getSelectedNote();
+                if (!note) return;
+
+                note.content = noteEditor.getValue();
+                note.updatedAt = Date.now();
+                updateWordCount(note.content);
+                scheduleSave(note);
+            }
+
+            function scheduleSave(note) {
+                noteSavedIndicator.textContent = "Saving...";
+                clearTimeout(saveTimer);
+                saveTimer = setTimeout(() => {
+                    saveNotes(notes);
+                    updateRowInPlace(note);
+                    noteSavedIndicator.textContent = "Saved";
+                }, AUTOSAVE_DELAY);
+            }
+
+            function updateWordCount(content) {
+                const trimmed = content.trim();
+                noteWordCount.textContent = trimmed ? trimmed.split(/\s+/).length : 0;
+            }
+
+            function deleteCurrentNote() {
+                const note = getSelectedNote();
+                if (!note) return;
+
+                notes = notes.filter(n => n.id !== note.id);
+                saveNotes(notes);
+                renderNotesList();
+
+                const next = [...notes].sort((a, b) => b.updatedAt - a.updatedAt)[0];
+                selectNote(next ? next.id : null);
+            }
+
+            function sanitizeFilename(title) {
+                return title
+                    .replace(/[\\/:*?"<>|]/g, "")
+                    .trim()
+                    .toLowerCase()
+                    .replace(/\s+/g, "_");
+            }
+
+            function downloadCurrentNote() {
+                const note = getSelectedNote();
+                if (!note) { showInfoToast("Nothing to download"); return; }
+                const safeTitle = sanitizeFilename(note.title.trim());
+                downloadText(safeTitle ? `notes_${safeTitle}.txt` : "notes.txt", note.content);
+            }
+
+            function printCurrentNote() {
+                const note = getSelectedNote();
+                if (!note) { showInfoToast("Nothing to print"); return; }
+                printData({ title: note.title.trim() || "Untitled note", value: note.content });
+            }
+
+            function renderNotesList() {
+                const query = noteSearchInput.value.trim().toLowerCase();
+                const sorted = [...notes].sort((a, b) => b.updatedAt - a.updatedAt);
+                const filtered = query
+                    ? sorted.filter(n => n.title.toLowerCase().includes(query) || n.content.toLowerCase().includes(query))
+                    : sorted;
+
+                notesListScroll.innerHTML = "";
+
+                if (!filtered.length) {
+                    const hint = document.createElement("div");
+                    hint.className = "notes-empty-hint";
+                    hint.textContent = query ? "No notes found" : "No notes yet — create one!";
+                    notesListScroll.appendChild(hint);
+                    return;
+                }
+
+                filtered.forEach(note => notesListScroll.appendChild(buildNoteRow(note)));
+                highlightActiveRow();
+            }
+
+            function buildNoteRow(note) {
+                const row = document.createElement("div");
+                row.className = "note-row";
+                row.dataset.noteId = note.id;
+                row.addEventListener("click", () => selectNote(note.id));
+
+                const main = document.createElement("div");
+                main.className = "note-row-main";
+                main.innerHTML = `
+                    <div class="note-row-title${note.title.trim() ? "" : " untitled"}">${escapeHtml(note.title.trim() || "Untitled note")}</div>
+                    <div class="note-row-snippet">${escapeHtml(note.content.trim())}</div>
+                    <div class="note-row-date">${new Date(note.updatedAt).toLocaleDateString()}</div>
+                `;
+
+                const deleteBtn = document.createElement("button");
+                deleteBtn.className = "note-row-delete";
+                deleteBtn.title = "Delete note";
+                deleteBtn.innerHTML = `<i class="bi bi-trash"></i>`;
+                deleteBtn.addEventListener("click", e => {
+                    e.stopPropagation();
+                    notes = notes.filter(n => n.id !== note.id);
+                    saveNotes(notes);
+                    renderNotesList();
+
+                    if (selectedNoteId === note.id) {
+                        const next = [...notes].sort((a, b) => b.updatedAt - a.updatedAt)[0];
+                        selectNote(next ? next.id : null);
+                    }
+                });
+
+                row.append(main, deleteBtn);
+                return row;
+            }
+
+            function updateRowInPlace(note) {
+                const row = notesListScroll.querySelector(`.note-row[data-note-id="${note.id}"]`);
+                if (!row) return;
+
+                const titleEl = row.querySelector(".note-row-title");
+                const snippetEl = row.querySelector(".note-row-snippet");
+                const dateEl = row.querySelector(".note-row-date");
+
+                titleEl.textContent = note.title.trim() || "Untitled note";
+                titleEl.classList.toggle("untitled", !note.title.trim());
+                snippetEl.textContent = note.content.trim();
+                dateEl.textContent = new Date(note.updatedAt).toLocaleDateString();
+            }
+
+            function highlightActiveRow() {
+                notesListScroll.querySelectorAll(".note-row").forEach(row => {
+                    row.classList.toggle("active", Number(row.dataset.noteId) === selectedNoteId);
+                });
+            }
+
+            function escapeHtml(value) {
+                const div = document.createElement("div");
+                div.textContent = value;
+                return div.innerHTML;
+            }
+        </script>
+    </body>
+</html>

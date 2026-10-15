@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Codexael Toolstack — Text Editor</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+        <!-- Metadata -->
+        <meta name="description" content="Find and replace, change case, sort lines and compare two texts.">
+        <meta name="author" content="Codexael">
+        <meta name="theme-color" content="#fff4e0" media="(prefers-color-scheme: light)">
+        <meta name="theme-color" content="#17140f" media="(prefers-color-scheme: dark)">
+
+        <!-- Open Graph -->
+        <meta property="og:title" content="Codexael Toolstack — Online Text Editor & Compare Tool">
+        <meta property="og:description" content="Find and replace, change case, sort lines and compare two texts.">
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="https://tools.codexael.com/text_editor.html">
+        <meta property="og:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+        <meta property="og:image:width" content="1200">
+        <meta property="og:image:height" content="630">
+        <meta property="og:image:type" content="image/png">
+        <meta property="og:image:alt" content="Codexael Toolstack — Online Text Editor & Compare Tool">
+        <meta property="og:site_name" content="Codexael Toolstack">
+
+        <!-- Twitter Card -->
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="Codexael Toolstack — Online Text Editor & Compare Tool">
+        <meta name="twitter:description" content="Find and replace, change case, sort lines and compare two texts.">
+        <meta name="twitter:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+
+        <!-- Favicon / App Icon -->
+        <link rel="icon" type="image/svg+xml" href="assets/images/codexael_icon.svg">
+        <link rel="apple-touch-icon" href="assets/images/codexael_icon.svg">
+
+        <!-- Bootstrap 5.2.0-beta1 -->
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+
+        <!-- Bootstrap with Popper 5.2.0-beta1 -->
+        <script src="js/bootstrap.bundle.min.js"></script>
+
+        <!-- Bootstrap Icons 1.11.3 -->
+        <link rel="stylesheet" href="css/bootstrap-icons.min.css">
+
+        <!-- CodeMirror 5.65.21 -->
+        <link rel="stylesheet" href="css/codemirror/codemirror.css">
+        <link rel="stylesheet" href="css/find-replace.css">
+
+        <!-- Google fonts -->
+        <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+        <!-- Custom CSS -->
+        <link rel="stylesheet" href="css/keycaps.css">
+        <link rel="stylesheet" href="css/text_editor.css">
+    </head>
+    <body>
+        <!-- Common layout -->
+        <div id="navbar-container"></div>
+
+        <div class="container-fluid tool-wrapper">
+            <div class="row g-3 g-md-0 gx-md-3 gx-0 justify-content-center text-editor-type-row">
+                <div class="segmented-control overflow-hidden">
+                    <input type="radio" name="text_editor_type" id="replace" value="replace">
+                    <label for="replace" class="fit-segmented-label"><i class="bi bi-arrow-repeat"></i> Replace</label>
+
+                    <input type="radio" name="text_editor_type" id="case_converter" value="case_converter">
+                    <label for="case_converter" class="fit-segmented-label"><i class="bi bi-type"></i> Case Converter</label>
+
+                    <input type="radio" name="text_editor_type" id="sort_lines" value="sort_lines">
+                    <label for="sort_lines" class="fit-segmented-label"><i class="bi bi-sort-alpha-down"></i> Sort Lines</label>
+
+                    <input type="radio" name="text_editor_type" id="difference" value="difference">
+                    <label for="difference" class="fit-segmented-label"><i class="bi bi-file-earmark-diff"></i> Difference</label>
+                </div>
+            </div>
+
+            <div class="row g-3 g-md-0 gx-md-3 gx-0">
+
+                <!-- Left Editor -->
+                <div id="inputEditor" class="col-md-5 editor-panel text-editor-panel">
+                    <div class="editor-header">
+                        <span class="editor-title" id="leftEditorTitle">Input</span>
+                        <div class="editor-actions">
+                            <button title="Load Dummy Data" onclick="loadDummyData()"><i class="bi bi-file-earmark-text icon-btn"></i></button>
+                            <div class="divider"></div>
+                            <button title="Download" onclick="downloadData('text_editor.txt')"><i class="bi bi-download icon-btn"></i></button>
+                            <button title="Print" onclick="printData({ title: pageTitle, format: format })"><i class="bi bi-printer icon-btn"></i></button>
+                            <div class="divider"></div>
+                            <button class="btn-danger" title="Clear" data-undo-clear onclick="clearTextEditorInputs()"><i class="bi bi-x-lg icon-btn"></i></button>
+                            <button title="Copy" onclick="copyToClipboard(codeMirrorInput, 'copyInputEditor')"><i class="bi bi-copy icon-btn" id="copyInputEditor"></i></button>
+                            <button title="Fullscreen" onclick="toggleEditorFullScreen('inputEditor')"><i class="bi bi-arrows-fullscreen icon-btn"></i></button>
+                        </div>
+                    </div>
+
+                    <textarea class="editor-body" id="input" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"></textarea>
+
+                    <div class="editor-footer">
+                        <div class="status">
+                            <span>Ln <b id="inputCurrentLine">1</b></span>
+                            <span>Col <b id="inputCurrentColumn">1</b></span>
+                            <span>Lines <b id="inputTotalLines">1</b></span>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Center Actions -->
+                <div id="textActionPanel" class="col-md-2 center-col text-action-panel text-center invisible-scrollbars">
+                    <div class="center-actions-separator"></div>
+
+                    <button class="btn action-btn-ghost" onclick="openFilePicker()"><i class="bi bi-upload"></i> Upload Data</button>
+                    <input type="file" id="fileInput" accept="*" hidden onchange="handleFileSelect(event)">
+
+                    <div id="action_replace">
+                        <div class="center-actions-wrapper">
+                            <div class="chk-switch-row">
+                                <label for="caseSensitive">Case sensitive</label>
+                                <label class="chk-switch">
+                                    <input class="replace-checkbox" type="checkbox" id="caseSensitive">
+                                    <span class="track"></span>
+                                </label>
+                            </div>
+                            <div class="chk-switch-row">
+                                <label for="wholeWord">Whole word</label>
+                                <label class="chk-switch">
+                                    <input class="replace-checkbox" type="checkbox" id="wholeWord">
+                                    <span class="track"></span>
+                                </label>
+                            </div>
+                            <div class="chk-switch-row">
+                                <label for="regex">Regex</label>
+                                <label class="chk-switch">
+                                    <input class="replace-checkbox" type="checkbox" id="regex">
+                                    <span class="track"></span>
+                                </label>
+                            </div>
+                            <div class="chk-switch-row">
+                                <label for="multiline">Multiline</label>
+                                <label class="chk-switch">
+                                    <input class="replace-checkbox" type="checkbox" id="multiline" checked>
+                                    <span class="track"></span>
+                                </label>
+                            </div>
+                            <div class="center-actions-separator"></div>
+                        </div>
+                        <div class="center-actions-wrapper">
+                            <div class="input-badge-wrap">
+                                <input type="text" id="findText" class="input-cyan" title="Text to find..." placeholder="Text to find..." oninput="highlightMatches()">
+                                <span id="matchCount" class="input-badge"></span>
+                            </div>
+                            <input type="text" id="replaceWith" class="input-cyan" title="Replacement text…" placeholder="Replacement text…">
+                            <button class="btn action-btn-primary" onclick="doReplace()"><i class="bi bi-arrow-left-right"></i> Replace All</button>
+                        </div>
+                    </div>
+
+                    <div id="action_case_converter" class="d-none">
+                        <div class="center-actions-wrapper top-padding">
+                            <div class="center-actions-label">Original</div>
+                            <button class="btn action-btn-ghost" onclick="convertCase('original')">Original</button>
+                        </div>
+                        <div class="center-actions-wrapper">
+                            <div class="center-actions-label">Sentence</div>
+                            <button class="btn action-btn-ghost" onclick="convertCase('sentence')">Sentence case</button>
+                            <button class="btn action-btn-ghost" onclick="convertCase('lower')">lower case</button>
+                            <button class="btn action-btn-ghost" onclick="convertCase('upper')">UPPER CASE</button>
+                            <button class="btn action-btn-ghost" onclick="convertCase('title')">Title Case</button>
+                        </div>
+                        <div class="center-actions-wrapper">
+                            <div class="center-actions-label">Code</div>
+                            <button class="btn action-btn-ghost" onclick="convertCase('camel')">camelCase</button>
+                            <button class="btn action-btn-ghost" onclick="convertCase('pascal')">PascalCase</button>
+                            <button class="btn action-btn-ghost" onclick="convertCase('snake')">snake_case</button>
+                            <button class="btn action-btn-ghost" onclick="convertCase('constant')">CONSTANT_CASE</button>
+                            <button class="btn action-btn-ghost" onclick="convertCase('kebab')">kebab-case</button>
+                            <button class="btn action-btn-ghost" onclick="convertCase('cobol')">COBOL-CASE</button>
+                            <button class="btn action-btn-ghost" onclick="convertCase('train')">Train-Case</button>
+                        </div>
+                        <div class="center-actions-wrapper">
+                            <div class="center-actions-label">Fun</div>
+                            <button class="btn action-btn-ghost" onclick="convertCase('alternating')">aLtErNaTiNg</button>
+                            <button class="btn action-btn-ghost" onclick="convertCase('inverse')">iNvErSe</button>
+                        </div>
+                    </div>
+
+                    <div id="action_sort_lines" class="d-none">
+                        <div class="center-actions-wrapper">
+                            <div class="chk-switch-row">
+                                <label for="ignoreBlankLines">Ignore blank lines</label>
+                                <label class="chk-switch">
+                                    <input type="checkbox" id="ignoreBlankLines" checked>
+                                    <span class="track"></span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="center-actions-wrapper">
+                            <div class="center-actions-label">Sort</div>
+                            <button class="btn action-btn-ghost" onclick="sortLines('alpha')"><i class="bi bi-sort-alpha-down"></i> Alphabetize</button>
+                            <button class="btn action-btn-ghost" onclick="sortLines('alpha-rev')"><i class="bi bi-sort-alpha-up"></i> Reverse alpha</button>
+                            <button class="btn action-btn-ghost" onclick="sortLines('alpha-last')">By last word</button>
+                            <button class="btn action-btn-ghost" onclick="sortLines('alpha-last-rev')">Rev. by last word</button>
+                        </div>
+                        <div class="center-actions-wrapper">
+                            <div class="center-actions-label">Transform</div>
+                            <button class="btn action-btn-ghost" onclick="sortLines('reverse')"><i class="bi bi-arrow-down-up"></i> Reverse</button>
+                            <button class="btn action-btn-ghost" onclick="sortLines('randomize')"><i class="bi bi-shuffle"></i> Randomize</button>
+                        </div>
+                        <div class="center-actions-wrapper">
+                            <div class="center-actions-label">Filter</div>
+                            <button class="btn action-btn-ghost" onclick="sortLines('dedupe')"><i class="bi bi-files"></i> Remove Duplicates</button>
+                            <button class="btn action-btn-ghost" onclick="sortLines('trim')"><i class="bi bi-eraser"></i> Trim Whitespace</button>
+                            <button class="btn action-btn-ghost" onclick="sortLines('remove-empty')"><i class="bi bi-file-earmark-x"></i> Remove Empty</button>
+                        </div>
+                    </div>
+
+                    <div id="action_difference" class="d-none">
+                        <div class="center-actions-wrapper">
+                            <button class="btn action-btn-ghost" onclick="openFilePicker(modifiedFileInput)"><i class="bi bi-upload"></i> Upload Modified</button>
+                            <input type="file" id="modifiedFileInput" accept="*" hidden onchange="handleFileSelect(event, null, codeMirrorOutput)">
+                        </div>
+                        <div class="center-actions-wrapper overflow-hidden">
+                            <div class="center-actions-label">Display Mode</div>
+                            <div class="segmented-control btn-group full-width" role="group" aria-label="Radio toggle">
+                                <input type="radio" name="display_mode" id="split" value="split">
+                                <label for="split">Split</label>
+
+                                <input type="radio" name="display_mode" id="unified" value="unified">
+                                <label for="unified">Unified</label>
+                            </div>
+                        </div>
+                        <div class="center-actions-wrapper">
+                            <div class="chk-switch-row">
+                                <label for="ignoreWhitespace">Ignore whitespace</label>
+                                <label class="chk-switch">
+                                    <input class="compare-checkbox" type="checkbox" id="ignoreWhitespace">
+                                    <span class="track"></span>
+                                </label>
+                            </div>
+                            <div class="chk-switch-row">
+                                <label for="ignoreCase">Ignore case</label>
+                                <label class="chk-switch">
+                                    <input class="compare-checkbox" type="checkbox" id="ignoreCase">
+                                    <span class="track"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Editor -->
+                <div id="outputEditor" class="col-md-5 editor-panel text-editor-panel">
+                    <div class="editor-header">
+                        <span class="editor-title" id="rightEditorTitle">Output</span>
+                        <div class="editor-actions">
+                            <button title="Download" onclick="downloadData('text_editor.txt', false)"><i class="bi bi-download icon-btn"></i></button>
+                            <button title="Print" onclick="printData({ title: pageTitle, isInput: false, format: format })"><i class="bi bi-printer icon-btn"></i></button>
+                            <div class="divider"></div>
+                            <button class="btn-danger" title="Clear" data-undo-clear="Output cleared" onclick="clearInput(codeMirrorOutput)"><i class="bi bi-x-lg icon-btn"></i></button>
+                            <button title="Copy" data-shortcut="copy" onclick="copyToClipboard(codeMirrorOutput, 'copyOutputEditor')"><i class="bi bi-copy icon-btn" id="copyOutputEditor"></i></button>
+                            <button title="Fullscreen" onclick="toggleEditorFullScreen('outputEditor')"><i class="bi bi-arrows-fullscreen icon-btn"></i></button>
+                        </div>
+                    </div>
+                    
+                    <textarea class="editor-body" id="output" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"></textarea>
+
+                    <div class="editor-footer">
+                        <div class="status">
+                            <span>Ln <b id="outputCurrentLine">1</b></span>
+                            <span>Col <b id="outputCurrentColumn">1</b></span>
+                            <span>Lines <b id="outputTotalLines">1</b></span>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div id="differenceEditorContainer" class="row no-top-padding g-3 g-md-0 gx-md-3 gx-0">
+
+                <!-- Difference Editor -->
+                <div id="differenceEditor" class="full-width editor-panel text-editor-difference-panel">
+                    <div class="editor-header">
+                        <span class="editor-title" id="leftEditorTitle">Difference</span>
+                        <div class="editor-actions">
+                            <div class="difference-stats" id="differenceStats"></div>
+                            <div class="divider"></div>
+                            <button title="Fullscreen" onclick="toggleEditorFullScreen('differenceEditor')"><i class="bi bi-arrows-fullscreen icon-btn"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="difference-body invisible-scrollbars" id="differenceBody"></div>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- CodeMirror 5.65.21 -->
+        <script src="js/codemirror/codemirror.js"></script>
+        <script src="js/codemirror/active-line.js"></script>
+
+        <!-- Difference Match Patch JS  -->
+        <script src="js/diff_match_patch.js"></script>
+        
+        <div id="footer-container"></div>
+
+        <!-- Common JS -->
+        <script src="js/tool-help.js"></script>
+        <script src="js/storage.js"></script>
+        <script src="js/common.js"></script>
+        <script src="js/script.js"></script>
+        <script src="js/find-replace.js"></script>
+
+        <!-- Custom JS -->
+        <script>
+
+            // Elements
+            const format = "data";
+            const pageTitle = "Text Editor";
+
+            // Sample text used to populate the input editor for quick testing
+            const DUMMY_TEXT = `The Quick Brown Fox jumps over the lazy Dog.
+The quick brown fox jumps over the lazy dog again.
+
+banana
+Apple
+cherry
+Date
+elderberry
+Apple
+
+Replace this placeholder text with your own content.
+Replace this placeholder text with your own content.`;
+            const STORAGE_TEXT_EDITOR_TYPE_KEY = "text_editor_type";
+            const STORAGE_DISPLAY_MODE_KEY = "display_mode";
+
+            const input = document.getElementById("input");
+            const output = document.getElementById("output");
+            const findText = document.getElementById("findText");
+            const fileInput = document.getElementById("fileInput");
+            const matchCount = document.getElementById("matchCount");
+            const replaceWith = document.getElementById("replaceWith");
+            const inputEditor = document.getElementById("inputEditor");
+            const outputEditor = document.getElementById("outputEditor");
+            const textActionPanel = document.getElementById("textActionPanel");
+            const leftEditorTitle = document.getElementById("leftEditorTitle");
+            const rightEditorTitle = document.getElementById("rightEditorTitle");
+            const ignoreBlankLines = document.getElementById("ignoreBlankLines");
+            const modifiedFileInput = document.getElementById("modifiedFileInput");
+            const differenceEditorContainer = document.getElementById("differenceEditorContainer");
+
+            const regex = document.getElementById("regex");
+            const wholeWord = document.getElementById("wholeWord");
+            const multiline = document.getElementById("multiline");
+            const ignoreCase = document.getElementById("ignoreCase");
+            const caseSensitive = document.getElementById("caseSensitive");
+            const differenceBody = document.getElementById("differenceBody");
+            const ignoreWhitespace = document.getElementById("ignoreWhitespace");
+
+            const inputTotalLines = document.getElementById('inputTotalLines');
+            const inputCurrentLine = document.getElementById('inputCurrentLine');
+            const inputCurrentColumn = document.getElementById('inputCurrentColumn');
+
+            const outputTotalLines = document.getElementById('outputTotalLines');
+            const outputCurrentLine = document.getElementById('outputCurrentLine');
+            const outputCurrentColumn = document.getElementById('outputCurrentColumn');
+
+            const codeMirrorInput = createCodeMirrorEditor(input);
+            const codeMirrorOutput = createCodeMirrorEditor(output);
+
+            const differenceMatchPatch = new diff_match_patch();
+
+            // Runs after HTML content has fully loaded, get text editor type type local storage
+            window.addEventListener("DOMContentLoaded", () => {
+                const text_editor_type = document.querySelectorAll("input[name='text_editor_type']");
+                const saved_text_editor_type = getStorageString(STORAGE_TEXT_EDITOR_TYPE_KEY);
+
+                let anyChecked = false;
+
+                text_editor_type.forEach(type => {
+                    if (type.value === saved_text_editor_type) {
+                        type.checked = true;
+                        anyChecked = true;
+                    }
+                });
+
+                if (!anyChecked) {
+                    text_editor_type[0].checked = true;
+                    setStorageString(STORAGE_TEXT_EDITOR_TYPE_KEY, text_editor_type[0].value);
+                }
+
+                text_editor_type.forEach(radio => {
+                    radio.addEventListener("change", () => {
+                        setStorageString(STORAGE_TEXT_EDITOR_TYPE_KEY, radio.value);
+                        document.querySelectorAll('[id^="action_"]').forEach(el => el.classList.add('d-none'));
+                        document.getElementById('action_' + radio.id).classList.remove('d-none');
+                        updateEditorsTitle(radio.id);
+                        clearTextEditorInputs();
+                    });
+                });
+
+                const selectedEditorType = document.querySelector('input[name="text_editor_type"]:checked');
+                if (selectedEditorType) {
+                    document.querySelectorAll('[id^="action_"]').forEach(el => el.classList.add('d-none'));
+                    document.getElementById('action_' + selectedEditorType.id).classList.remove('d-none');
+                    updateEditorsTitle(selectedEditorType.id);
+                }
+
+                const display_mode = document.querySelectorAll("input[name='display_mode']");
+                const saved_display_mode = getStorageString(STORAGE_DISPLAY_MODE_KEY);
+
+                anyChecked = false;
+
+                display_mode.forEach(type => {
+                    if (type.value === saved_display_mode) {
+                        type.checked = true;
+                        anyChecked = true;
+                    }
+                });
+
+                if (!anyChecked) {
+                    display_mode[0].checked = true;
+                    setStorageString(STORAGE_DISPLAY_MODE_KEY, display_mode[0].value);
+                }
+
+                display_mode.forEach(radio => {
+                    radio.addEventListener("change", () => {
+                        setStorageString(STORAGE_DISPLAY_MODE_KEY, radio.value);
+                        getDifference();
+                    });
+                });
+            });
+
+            document.querySelectorAll('.replace-checkbox').forEach(checkbox => {
+                checkbox.addEventListener('change', highlightMatches);
+            });
+
+            document.querySelectorAll('.compare-checkbox').forEach(checkbox => {
+                checkbox.addEventListener('change', getDifference);
+            });
+
+            function updateEditorsTitle(editorTypeId) {
+                const isDifferenceEditorType = editorTypeId === "difference";
+                leftEditorTitle.textContent = isDifferenceEditorType ? "Original (A)" : "Input";
+                rightEditorTitle.textContent = isDifferenceEditorType ? "Modified (B)" : "Output";
+                differenceEditorContainer.style.display = isDifferenceEditorType ? "flex" : "none";
+                if (isDifferenceEditorType) {
+                    inputEditor.classList.remove("text-editor-panel");
+                    inputEditor.classList.add("text-editor-half-panel");
+                    outputEditor.classList.remove("text-editor-panel");
+                    outputEditor.classList.add("text-editor-half-panel");
+                    textActionPanel.classList.remove("text-action-panel");
+                    textActionPanel.classList.add("text-action-half-panel");
+                    getDifference();
+                } else {
+                    inputEditor.classList.remove("text-editor-half-panel");
+                    inputEditor.classList.add("text-editor-panel");
+                    outputEditor.classList.remove("text-editor-half-panel");
+                    outputEditor.classList.add("text-editor-panel");
+                    textActionPanel.classList.remove("text-action-half-panel");
+                    textActionPanel.classList.add("text-action-panel");
+                }
+            }
+
+            // Loads sample text into the input editor
+            function loadDummyData() {
+                codeMirrorInput.setValue(DUMMY_TEXT);
+            }
+
+            function clearTextEditorInputs() {
+                clearInputs();
+                findText.value = "";
+                replaceWith.value = "";
+            }
+
+            function words(str) { return str.match(/[a-zA-Z0-9]+/g) || []; }
+
+            const caseFunctions = {
+                original:   s => s,
+                sentence:   s => s.toLowerCase().replace(/(^\s*\w|[.!?]\s+\w)/gm, c => c.toUpperCase()),
+                lower:      s => s.toLowerCase(),
+                upper:      s => s.toUpperCase(),
+                title:      s => s.toLowerCase().replace(/\b\w/g, c => c.toUpperCase()),
+                camel:      s => words(s).map((w,i) => i===0 ? w.toLowerCase() : w[0].toUpperCase() + w.slice(1).toLowerCase()).join(''),
+                pascal:     s => words(s).map(w => w[0].toUpperCase() + w.slice(1).toLowerCase()).join(''),
+                snake:      s => words(s).map(w => w.toLowerCase()).join('_'),
+                constant:   s => words(s).map(w => w.toUpperCase()).join('_'),
+                kebab:      s => words(s).map(w => w.toLowerCase()).join('-'),
+                cobol:      s => words(s).map(w => w.toUpperCase()).join('-'),
+                train:      s => words(s).map(w => w[0].toUpperCase() + w.slice(1).toLowerCase()).join('-'),
+                alternating:s => s.split('').map((c,i) => i%2===0 ? c.toLowerCase() : c.toUpperCase()).join(''),
+                inverse:    s => s.split('').map(c => c === c.toUpperCase() ? c.toLowerCase() : c.toUpperCase()).join('')
+            };
+
+            function convertCase(type) {
+                clearInput(codeMirrorOutput);
+
+                try {
+                    if (isInputBlank(codeMirrorInput)) return;
+                    codeMirrorOutput.setValue(caseFunctions[type](codeMirrorInput.getValue()));
+                } catch (error) {
+                    console.log("Processing text error:", error.message);
+                    showErrorToast("Invalid text");
+                }
+            }
+
+            function sortLines(method) {
+                clearInput(codeMirrorOutput);
+
+                try {
+                    if (isInputBlank(codeMirrorInput)) return;
+                    let lines = codeMirrorInput.getValue().split('\n');
+                    if (ignoreBlankLines.checked) {
+                        lines = lines.filter(line => line.trim() !== '');
+                    }
+                    const lastWord = s => (s.trim().split(/\s+/).pop() || '').toLowerCase();
+
+                    switch(method) {
+                        case 'alpha':          lines.sort((a,b) => a.toLowerCase().localeCompare(b.toLowerCase())); break;
+                        case 'alpha-rev':      lines.sort((a,b) => b.toLowerCase().localeCompare(a.toLowerCase())); break;
+                        case 'alpha-last':     lines.sort((a,b) => lastWord(a).localeCompare(lastWord(b))); break;
+                        case 'alpha-last-rev': lines.sort((a,b) => lastWord(b).localeCompare(lastWord(a))); break;
+                        case 'reverse':        lines.reverse(); break;
+                        case 'randomize':      for (let i=lines.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[lines[i],lines[j]]=[lines[j],lines[i]];} break;
+                        case 'dedupe':         lines = [...new Set(lines)]; break;
+                        case 'trim':           lines = lines.map(l => l.trim()); break;
+                        case 'remove-empty':   lines = lines.filter(l => l.trim() !== ''); break;
+                    }
+                    codeMirrorOutput.setValue(lines.join('\n'));
+                } catch (error) {
+                    console.log("Processing lines error:", error.message);
+                    showErrorToast("Invalid lines");
+                }
+            }
+
+            function buildFindRegex(raw) {
+                let flags = 'g' + (caseSensitive.checked ? '' : 'i') + (multiline.checked ? 'm' : '');
+                let pattern = regex.checked ? raw : raw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                if (wholeWord.checked) pattern = '\\b' + pattern + '\\b';
+                return new RegExp(pattern, flags);
+            }
+
+            function highlightMatches() {
+                const find = findText.value;
+                if (!find) {
+                    matchCount.classList.remove('show');
+                    return;
+                }
+                try {
+                    const processedFind = find.replace(/\\n/g, '\n').replace(/\\t/g, '\t');
+                    const matches = codeMirrorInput.getValue().match(buildFindRegex(processedFind));
+                    const count = matches ? matches.length : 0;
+                    matchCount.innerHTML = count + ' match' + (count !== 1 ? 'es' : '');
+                    matchCount.classList.toggle('show', count > 0);
+                } catch {
+                    matchCount.classList.remove('show');
+                }
+            }
+
+            function doReplace() {
+                clearInput(codeMirrorOutput);
+
+                try {
+                    const find = findText.value;
+                    if (!find) {
+                        showInfoToast('Enter search term');
+                        return;
+                    }
+                    const processedFind = find.replace(/\\n/g, '\n').replace(/\\t/g, '\t');
+                    const replacement = replaceWith.value.replace(/\\n/g, '\n').replace(/\\t/g, '\t');
+                    codeMirrorOutput.setValue(codeMirrorInput.getValue().replace(buildFindRegex(processedFind), replacement));
+                    highlightMatches();
+                } catch (error) {
+                    console.log("Processing text error:", error.message);
+                    showErrorToast("Invalid regex: " + error.message);
+                }
+            }
+
+            setupEditors([
+                createEditorConfig(codeMirrorInput, inputTotalLines, inputCurrentLine, inputCurrentColumn),
+                createEditorConfig(codeMirrorOutput, outputTotalLines, outputCurrentLine, outputCurrentColumn)
+            ]);
+
+            codeMirrorInput.on("change", editorInputChange);
+            codeMirrorOutput.on("change", () => { editorInputChange(false); });
+
+            function editorInputChange(isInput = true) {
+                const selectedEditorType = document.querySelector('input[name="text_editor_type"]:checked');
+                if (selectedEditorType) {
+                    if (isInput) {
+                        if (selectedEditorType.id === "replace") {
+                            highlightMatches();
+                        }
+                    }
+                    if (selectedEditorType.id === "difference") {
+                        getDifference();
+                    }
+                }
+            }
+
+            function normalizeContent(content) {
+                if (ignoreWhitespace.checked) content = content.replace(/[^\S\n]+/g,'');
+                if (ignoreCase.checked) content = content.toLowerCase();
+                return content;
+            }
+
+            function getDifference() {
+                const original = codeMirrorInput.getValue();
+                const modified  = codeMirrorOutput.getValue();
+
+                const differenceRows = computeRows(normalizeContent(original), normalizeContent(modified));
+
+                const selectedDisplayMode = document.querySelector('input[name="display_mode"]:checked');
+                const differenceHTML = selectedDisplayMode && selectedDisplayMode.id === "split" ? renderSide(differenceRows) : renderUnified(differenceRows);
+                differenceBody.innerHTML = differenceHTML;
+                calculateStats(differenceRows);
+            }
+
+            function calculateStats(differenceRows) {
+                let inserted = 0, deleted = 0, changed = 0, equal = 0;
+                let parts = [];
+
+                differenceRows.forEach(r => {
+                    if (r.type === 'inserted') inserted++;
+                    else if (r.type === 'deleted') deleted++;
+                    else if (r.type === 'changed') changed++;
+                    else equal++;
+                });
+
+                if (changed) parts.push(`<span class="stat-insert"><i class="bi bi-pencil-fill me-1"></i>${changed} Changed</span>`);
+                if (inserted) parts.push(`<span class="stat-insert"><i class="bi bi-plus-circle-fill me-1"></i>${inserted} Added</span>`);
+                if (deleted) parts.push(`<span class="stat-delete"><i class="bi bi-dash-circle-fill me-1"></i>${deleted} Removed</span>`);
+
+                parts.push(`<span class="stat-equal">${equal} Unchanged</span>`);
+                differenceStats.innerHTML = parts.join('');
+            }
+
+            function computeRows(normalizedOriginal, normalizedModified) {
+                const lineObject = differenceMatchPatch.diff_linesToChars_(normalizedOriginal, normalizedModified);
+                const lineDifferences = differenceMatchPatch.diff_main(lineObject.chars1, lineObject.chars2, false);
+                differenceMatchPatch.diff_charsToLines_(lineDifferences, lineObject.lineArray);
+
+                const differenceRows = [];
+                let lineA = 1, lineB = 1;
+                let deletedBuffer = [], insertedBuf = [];
+
+                function flushPaired() {
+                    const paired = Math.min(deletedBuffer.length, insertedBuf.length);
+                    for (let z = 0; z < paired; z++) {
+                        const { html: leftHtml }  = inlineDifferences(deletedBuffer[z].text, insertedBuf[z].text, 'deleted');
+                        const { html: rightHtml } = inlineDifferences(deletedBuffer[z].text, insertedBuf[z].text, 'inserted');
+                        differenceRows.push({ type:'changed', lineA: deletedBuffer[z].ln, lineB: insertedBuf[z].ln, leftHtml, rightHtml });
+                    }
+                    for (let z = paired; z < deletedBuffer.length; z++) {
+                        differenceRows.push({ type:'deleted', lineA: deletedBuffer[z].ln, text: deletedBuffer[z].text });
+                    }
+                    for (let z = paired; z < insertedBuf.length; z++) {
+                        differenceRows.push({ type:'inserted', lineB: insertedBuf[z].ln, text: insertedBuf[z].text });
+                    }
+                    deletedBuffer = []; insertedBuf = [];
+                }
+
+                for (const [op, text] of lineDifferences) {
+                    const lines = text.split('\n');
+                    if (lines[lines.length - 1] === '') lines.pop();
+
+                    if (op === 0) {
+                        flushPaired();
+                        lines.forEach(l => {
+                            differenceRows.push({ type:'equal', lineA, lineB, text: l });
+                            lineA++; lineB++;
+                        });
+                    } else if (op === -1) {
+                        lines.forEach(l => { deletedBuffer.push({ ln: lineA, text: l }); lineA++; });
+                    } else {
+                        lines.forEach(l => { insertedBuf.push({ ln: lineB, text: l }); lineB++; });
+                    }
+                }
+                flushPaired();
+
+                return differenceRows;
+            }
+
+            function inlineDifferences(oldLine, newLine, side) {
+                const charDifferences = differenceMatchPatch.diff_main(oldLine, newLine);
+                differenceMatchPatch.diff_cleanupSemantic(charDifferences);
+                let html = '';
+                for (const [op, text] of charDifferences) {
+                    const safeHTMLTags = escapeHTMLTags(text);
+                    if (op === 0) {
+                        html += safeHTMLTags;
+                    } else if (op === -1 && side === 'deleted') {
+                        html += `<span class="char-delete">${safeHTMLTags}</span>`;
+                    } else if (op === 1 && side === 'inserted') {
+                        html += `<span class="char-insert">${safeHTMLTags}</span>`;
+                    }
+                }
+                return { html };
+            }
+
+            function escapeHTMLTags(content) {
+                return content.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+            }
+
+            function renderUnified(differenceRows) {
+                if (!differenceRows.length) return '<div class="empty-difference">No content to compare.</div>';
+
+                const allEq = differenceRows.every(r => r.type === 'equal');
+                if (allEq) return '<div class="identical-content"><i class="bi bi-check-circle-fill me-2"></i>Contents are identical — no differences found.</div>';
+
+                const CONTEXT = 3;
+                const changed = new Set();
+                differenceRows.forEach((r, i) => { if (r.type !== 'equal') { for (let j=Math.max(0,i-CONTEXT); j<=Math.min(differenceRows.length-1,i+CONTEXT); j++) changed.add(j); }});
+
+                let unifiedHTML = `<table class="unified-table">
+                    <colgroup><col><col><col><col></colgroup>
+                    <thead><tr><th><span class="right-aligned">A</span></th><th><span class="right-aligned">B</span></th><th></th><th>Content</th></tr></thead>
+                    <tbody>`;
+
+                let hidden = 0;
+                differenceRows.forEach((row, i) => {
+                    if (row.type === 'equal' && !changed.has(i)) { hidden++; return; }
+                    if (hidden > 0) {
+                        unifiedHTML += `<tr class="u-hunk"><td colspan="4">--- ${hidden} unchanged line${hidden>1?'s':''} ---</td></tr>`;
+                        hidden = 0;
+                    }
+
+                    if (row.type === 'equal') {
+                        unifiedHTML += `<tr><td class="u-ln">${row.lineA}</td><td class="u-ln">${row.lineB}</td><td class="u-sign"></td><td class="u-content">${escapeHTMLTags(row.text)}</td></tr>`;
+                    } else if (row.type === 'changed') {
+                        unifiedHTML += `<tr class="u-row-del"><td class="u-ln">${row.lineA}</td><td class="u-ln"></td><td class="u-sign">-</td><td class="u-content">${row.leftHtml}</td></tr>`;
+                        unifiedHTML += `<tr class="u-row-ins"><td class="u-ln"></td><td class="u-ln">${row.lineB}</td><td class="u-sign">+</td><td class="u-content">${row.rightHtml}</td></tr>`;
+                    } else if (row.type === 'deleted') {
+                        unifiedHTML += `<tr class="u-row-del"><td class="u-ln">${row.lineA}</td><td class="u-ln"></td><td class="u-sign">-</td><td class="u-content">${escapeHTMLTags(row.text)}</td></tr>`;
+                    } else if (row.type === 'inserted') {
+                        unifiedHTML += `<tr class="u-row-ins"><td class="u-ln"></td><td class="u-ln">${row.lineB}</td><td class="u-sign">+</td><td class="u-content">${escapeHTMLTags(row.text)}</td></tr>`;
+                    }
+                });
+
+                if (hidden > 0) unifiedHTML += `<tr class="u-hunk"><td colspan="4">--- ${hidden} unchanged line${hidden>1?'s':''} ---</td></tr>`;
+                unifiedHTML += '</tbody></table>';
+                return unifiedHTML;
+            }
+
+            function renderSide(differenceRows) {
+                if (!differenceRows.length) return '<div class="empty-difference">No content to compare.</div>';
+
+                const allEq = differenceRows.every(r => r.type === 'equal');
+                if (allEq) return '<div class="identical-content"><i class="bi bi-check-circle-fill me-2"></i>Contents are identical — no differences found.</div>';
+
+                let sideHTML = `<table class="side-table">
+                    <colgroup><col><col><col><col></colgroup>
+                    <thead><tr>
+                        <th colspan="2"><i class="bi bi-file-earmark me-1"></i>Original (A)</th>
+                        <th colspan="2" style="border-left:1px solid var(--border-color,#2a2a3e)"><i class="bi bi-file-earmark-diff me-1"></i>Modified (B)</th>
+                    </tr></thead><tbody>`;
+
+                const CONTEXT = 3;
+                const changed = new Set();
+                differenceRows.forEach((r, i) => { if (r.type !== 'equal') { for (let j = Math.max(0,i-CONTEXT); j <= Math.min(differenceRows.length-1,i+CONTEXT); j++) changed.add(j); } });
+
+                let hidden = 0;
+                differenceRows.forEach((row, i) => {
+                    if (row.type === 'equal' && !changed.has(i)) {
+                        hidden++;
+                        return;
+                    }
+                    if (hidden > 0) {
+                        sideHTML += `<tr class="hunk-sep"><td colspan="4">--- ${hidden} unchanged line${hidden>1?'s':''} ---</td></tr>`;
+                        hidden = 0;
+                    }
+
+                    if (row.type === 'equal') {
+                        const safe = escapeHTMLTags(row.text);
+                        sideHTML += `<tr class="row-eq">
+                            <td class="ln">${row.lineA}</td><td class="lc">${safe}</td>
+                            <td class="ln ln-right">${row.lineB}</td><td class="lc">${safe}</td>
+                        </tr>`;
+                    } else if (row.type === 'changed') {
+                        sideHTML += `<tr class="row-del">
+                            <td class="ln">${row.lineA}</td><td class="lc">${row.leftHtml}</td>
+                            <td class="ln ln-right row-ins-num">${row.lineB}</td><td class="lc" style="background:rgba(34,197,94,0.08);border-left:2px solid rgba(34,197,94,0.5)">${row.rightHtml}</td>
+                        </tr>`;
+                    } else if (row.type === 'deleted') {
+                        sideHTML += `<tr class="row-del">
+                            <td class="ln">${row.lineA}</td><td class="lc">${escapeHTMLTags(row.text)}</td>
+                            <td class="ln ln-right"></td><td class="lc" style="background:rgba(0,0,0,0.12)"></td>
+                        </tr>`;
+                    } else if (row.type === 'inserted') {
+                        sideHTML += `<tr class="row-ins">
+                            <td class="ln"></td><td class="lc" style="background:rgba(0,0,0,0.12)"></td>
+                            <td class="ln ln-right">${row.lineB}</td><td class="lc">${escapeHTMLTags(row.text)}</td>
+                        </tr>`;
+                    }
+                });
+
+                if (hidden > 0) {
+                    sideHTML += `<tr class="hunk-sep"><td colspan="4">--- ${hidden} unchanged line${hidden>1?'s':''} ---</td></tr>`;
+                }
+
+                sideHTML += '</tbody></table>';
+                return sideHTML;
+            }
+        </script>
+
+    </body>
+</html>

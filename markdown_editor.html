@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Codexael Toolstack — Markdown Editor</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+        <!-- Metadata -->
+        <meta name="description" content="Write Markdown with a full toolbar and see exactly how it will look.">
+        <meta name="author" content="Codexael">
+        <meta name="theme-color" content="#fff4e0" media="(prefers-color-scheme: light)">
+        <meta name="theme-color" content="#17140f" media="(prefers-color-scheme: dark)">
+
+        <!-- Open Graph -->
+        <meta property="og:title" content="Codexael Toolstack — Markdown Editor with Live Preview">
+        <meta property="og:description" content="Write Markdown with a full toolbar and see exactly how it will look.">
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="https://tools.codexael.com/markdown_editor.html">
+        <meta property="og:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+        <meta property="og:image:width" content="1200">
+        <meta property="og:image:height" content="630">
+        <meta property="og:image:type" content="image/png">
+        <meta property="og:image:alt" content="Codexael Toolstack — Markdown Editor with Live Preview">
+        <meta property="og:site_name" content="Codexael Toolstack">
+
+        <!-- Twitter Card -->
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="Codexael Toolstack — Markdown Editor with Live Preview">
+        <meta name="twitter:description" content="Write Markdown with a full toolbar and see exactly how it will look.">
+        <meta name="twitter:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+
+        <!-- Favicon / App Icon -->
+        <link rel="icon" type="image/svg+xml" href="assets/images/codexael_icon.svg">
+        <link rel="apple-touch-icon" href="assets/images/codexael_icon.svg">
+
+        <!-- Bootstrap 5.2.0-beta1 -->
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+
+        <!-- Bootstrap with Popper 5.2.0-beta1 -->
+        <script src="js/bootstrap.bundle.min.js"></script>
+
+        <!-- Bootstrap Icons 1.11.3 -->
+        <link rel="stylesheet" href="css/bootstrap-icons.min.css">
+
+        <!-- CodeMirror 5.65.21 -->
+        <link rel="stylesheet" href="css/codemirror/codemirror.css">
+
+        <!-- Google fonts -->
+        <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+        <!-- Custom CSS -->
+        <link rel="stylesheet" href="css/find-replace.css">
+        <link rel="stylesheet" href="css/keycaps.css">
+        <link rel="stylesheet" href="css/markdown_editor.css">
+    </head>
+    <body>
+        <!-- Common layout -->
+        <div id="navbar-container"></div>
+
+        <div class="container-fluid tool-wrapper">
+            <div class="row g-3 g-md-0 gx-md-3 gx-0">
+
+                <!-- Left Editor -->
+                <div id="inputEditor" class="col-md-5 editor-panel">
+                    <div class="editor-header">
+                        <span class="editor-title">Markdown Source</span>
+                        <div class="editor-actions">
+                            <button title="Load Dummy Data" onclick="loadDummyData()"><i class="bi bi-file-earmark-text icon-btn"></i></button>
+                            <div class="divider"></div>
+                            <button title="Download .md" onclick="downloadData('markdown_editor.md')"><i class="bi bi-download icon-btn"></i></button>
+                            <button title="Print" onclick="printData({ title: pageTitle, format: 'Markdown' })"><i class="bi bi-printer icon-btn"></i></button>
+                            <div class="divider"></div>
+                            <button class="btn-danger" title="Clear" data-undo-clear onclick="clearMarkdownInputs()"><i class="bi bi-x-lg icon-btn"></i></button>
+                            <button title="Copy" data-shortcut="copy" onclick="copyToClipboard(codeMirrorInput, 'copyInputEditor')"><i class="bi bi-copy icon-btn" id="copyInputEditor"></i></button>
+                            <button title="Fullscreen" onclick="toggleEditorFullScreen('inputEditor')"><i class="bi bi-arrows-fullscreen icon-btn"></i></button>
+                        </div>
+                    </div>
+
+                    <textarea class="editor-body" id="input" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"></textarea>
+
+                    <div class="editor-footer">
+                        <div class="status">
+                            <span>Ln <b id="inputCurrentLine">1</b></span>
+                            <span>Col <b id="inputCurrentColumn">1</b></span>
+                            <span>Lines <b id="inputTotalLines">1</b></span>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Center Actions -->
+                <div class="col-md-2 center-col converter-action-panel text-center invisible-scrollbars">
+                    <button class="btn action-btn-ghost" onclick="openFilePicker()"><i class="bi bi-upload"></i> Upload .md File</button>
+                    <input type="file" id="fileInput" accept=".md,.markdown,.txt,text/markdown,text/plain" hidden onchange="handleFileSelect(event, 'MD')">
+
+                    <select class="form-select action-select" id="headingSelect" onchange="insertHeading(this.value)">
+                        <option value="" selected disabled>Insert Heading</option>
+                        <option value="1">Heading 1</option>
+                        <option value="2">Heading 2</option>
+                        <option value="3">Heading 3</option>
+                        <option value="4">Heading 4</option>
+                        <option value="5">Heading 5</option>
+                        <option value="6">Heading 6</option>
+                    </select>
+
+                    <div class="md-toolbar-label">Formatting</div>
+                    <div class="md-toolbar-grid">
+                        <button class="md-toolbar-btn" title="Bold" onclick="insertBold()"><i class="bi bi-type-bold"></i></button>
+                        <button class="md-toolbar-btn" title="Italic" onclick="insertItalic()"><i class="bi bi-type-italic"></i></button>
+                        <button class="md-toolbar-btn" title="Strikethrough" onclick="insertStrikethrough()"><i class="bi bi-type-strikethrough"></i></button>
+                        <button class="md-toolbar-btn" title="Inline Code" onclick="insertInlineCode()"><i class="bi bi-code"></i></button>
+                    </div>
+
+                    <div class="md-toolbar-label">Blocks</div>
+                    <div class="md-toolbar-grid">
+                        <button class="md-toolbar-btn" title="Blockquote" onclick="insertBlockquote()"><i class="bi bi-blockquote-left"></i></button>
+                        <button class="md-toolbar-btn" title="Code Block" onclick="insertCodeBlock()"><i class="bi bi-code-square"></i></button>
+                        <button class="md-toolbar-btn" title="Horizontal Rule" onclick="insertHorizontalRule()"><i class="bi bi-dash-lg"></i></button>
+                        <button class="md-toolbar-btn" title="Table" onclick="insertTable()"><i class="bi bi-table"></i></button>
+                    </div>
+
+                    <div class="md-toolbar-label">Lists</div>
+                    <div class="md-toolbar-grid">
+                        <button class="md-toolbar-btn" title="Unordered List" onclick="insertUnorderedList()"><i class="bi bi-list-ul"></i></button>
+                        <button class="md-toolbar-btn" title="Ordered List" onclick="insertOrderedList()"><i class="bi bi-list-ol"></i></button>
+                        <button class="md-toolbar-btn" title="Task List" onclick="insertTaskList()"><i class="bi bi-check2-square"></i></button>
+                    </div>
+
+                    <div class="md-toolbar-label">Insert</div>
+                    <div class="md-toolbar-grid">
+                        <button class="md-toolbar-btn" title="Link" onclick="insertLink()"><i class="bi bi-link-45deg"></i></button>
+                        <button class="md-toolbar-btn" title="Image" onclick="insertImage()"><i class="bi bi-image"></i></button>
+                    </div>
+
+                    <button class="btn action-btn-pill" onclick="downloadRenderedHTML()"><i class="bi bi-download"></i> Download HTML</button>
+                </div>
+
+                <!-- Right Editor / Preview -->
+                <div id="outputEditor" class="col-md-5 editor-panel">
+                    <div class="editor-header">
+                        <span class="editor-title">Preview</span>
+                        <div class="editor-actions">
+                            <button title="Download HTML" onclick="downloadRenderedHTML()"><i class="bi bi-download icon-btn"></i></button>
+                            <button title="Print" onclick="printMarkdownPreview()"><i class="bi bi-printer icon-btn"></i></button>
+                            <div class="divider"></div>
+                            <button title="Fullscreen" onclick="toggleEditorFullScreen('outputEditor')"><i class="bi bi-arrows-fullscreen icon-btn"></i></button>
+                        </div>
+                    </div>
+
+                    <iframe class="preview-body" id="previewFrame"></iframe>
+
+                </div>
+
+            </div>
+        </div>
+
+
+        <!-- CodeMirror 5.65.21 -->
+        <script src="js/codemirror/codemirror.js"></script>
+        <script src="js/codemirror/active-line.js"></script>
+        <script src="js/codemirror/matchbrackets.js"></script>
+        <script src="js/codemirror/closebrackets.js"></script>
+        <script src="js/codemirror/overlay.js"></script>
+        <script src="js/codemirror/markdown.js"></script>
+        <script src="js/codemirror/gfm.js"></script>
+
+        <!-- Markdown rendering -->
+        <script src="js/marked.min.js"></script>
+        <script src="js/purify.min.js"></script>
+
+        <div id="footer-container"></div>
+
+        <!-- Common JS -->
+        <script src="js/tool-help.js"></script>
+        <script src="js/storage.js"></script>
+        <script src="js/common.js"></script>
+        <script src="js/custom-dropdown.js"></script>
+        <script src="js/script.js"></script>
+        <script src="js/find-replace.js"></script>
+
+        <!-- Custom JS -->
+        <script>
+
+            // Elements
+            const pageTitle = "Markdown Editor";
+
+            // Sample Markdown used to populate the input editor for quick testing
+            const DUMMY_MARKDOWN = `An h1 header
+============
+
+Paragraphs are separated by a blank line.
+
+2nd paragraph. *Italic*, **bold**, and \`monospace\`. Itemized lists
+look like:
+
+  * this one
+  * that one
+  * the other one
+
+Note that --- not considering the asterisk --- the actual text
+content starts at 4-columns in.
+
+> Block quotes are
+> written like so.
+>
+> They can span multiple paragraphs,
+> if you like.
+
+Use 3 dashes for an em-dash. Use 2 dashes for ranges (ex., "it's all
+in chapters 12--14"). Three dots ... will be converted to an ellipsis.
+Unicode is supported. âº
+
+
+
+An h2 header
+------------
+
+Here's a numbered list:
+
+ 1. first item
+ 2. second item
+ 3. third item
+
+Note again how the actual text starts at 4 columns in (4 characters
+from the left side). Here's a code sample:
+
+    # Let me re-iterate ...
+    for i in 1 .. 10 { do-something(i) }
+
+As you probably guessed, indented 4 spaces. By the way, instead of
+indenting the block, you can use delimited blocks, if you like:
+
+~~~
+define foobar() {
+    print "Welcome to flavor country!";
+}
+~~~
+
+(which makes copying & pasting easier). You can optionally mark the
+delimited block for Pandoc to syntax highlight it:
+
+~~~python
+import time
+# Quick, count to ten!
+for i in range(10):
+    # (but not *too* quick)
+    time.sleep(0.5)
+    print i
+~~~
+
+
+
+### An h3 header ###
+
+Now a nested list:
+
+ 1. First, get these ingredients:
+
+      * carrots
+      * celery
+      * lentils
+
+ 2. Boil some water.
+
+ 3. Dump everything in the pot and follow
+    this algorithm:
+
+        find wooden spoon
+        uncover pot
+        stir
+        cover pot
+        balance wooden spoon precariously on pot handle
+        wait 10 minutes
+        goto first step (or shut off burner when done)
+
+    Do not bump wooden spoon or it will fall.
+
+Notice again how text always lines up on 4-space indents (including
+that last line which continues item 3 above).
+
+Here's a link to [a website](http://foo.bar), to a [local
+doc](local-doc.html), and to a [section heading in the current
+doc](#an-h2-header). Here's a footnote [^1].
+
+[^1]: Footnote text goes here.
+
+Tables can look like this:
+
+size  material      color
+----  ------------  ------------
+9     leather       brown
+10    hemp canvas   natural
+11    glass         transparent
+
+Table: Shoes, their sizes, and what they're made of
+
+(The above is the caption for the table.) Pandoc also supports
+multi-line tables:
+
+--------  -----------------------
+keyword   text
+--------  -----------------------
+red       Sunsets, apples, and
+          other red or reddish
+          things.
+
+green     Leaves, grass, frogs
+          and other things it's
+          not easy being.
+--------  -----------------------
+
+A horizontal rule follows.
+
+***
+
+Here's a definition list:
+
+apples
+  : Good for making applesauce.
+oranges
+  : Citrus!
+tomatoes
+  : There's no "e" in tomatoe.
+
+Again, text is indented 4 spaces. (Put a blank line between each
+term/definition pair to spread things out more.)
+
+Here's a "line block":
+
+| Line one
+|   Line too
+| Line tree
+
+and images can be specified like so:
+
+![example image](https://picsum.photos/seed/picsum/200/300 "An exemplary image")
+
+Inline math equations go in like so: $\\omega = d\\phi / dt$. Display
+math should get its own line and be put in in double-dollarsigns:
+
+$$I = \\int \\rho R^{2} dV$$
+
+And note that you can backslash-escape any punctuation characters
+which you wish to be displayed literally, ex.: \\\`foo\\\`, \\*bar\\*, etc.`;
+            const input = document.getElementById("input");
+            const fileInput = document.getElementById("fileInput");
+            const headingSelect = document.getElementById("headingSelect");
+            CustomDropdown.enhance(headingSelect);
+            const previewFrame = document.getElementById("previewFrame");
+
+            const inputTotalLines = document.getElementById('inputTotalLines');
+            const inputCurrentLine = document.getElementById('inputCurrentLine');
+            const inputCurrentColumn = document.getElementById('inputCurrentColumn');
+
+            const codeMirrorInput = CodeMirror.fromTextArea(input, {
+                lineNumbers: true,
+                lineWrapping: true,
+                mode: "gfm",
+                styleActiveLine: true,
+                autoCloseBrackets: true,
+                matchBrackets: true
+            });
+            attachFindReplace(codeMirrorInput);
+
+            // Holds the last sanitized render, used by the preview iframe and HTML export/print
+            let renderedHtml = "";
+
+            const MARKDOWN_PREVIEW_STYLES = `
+                @import url("https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap");
+                *, *::before, *::after { box-sizing: border-box; }
+                html, body { scrollbar-width: none; -ms-overflow-style: none; }
+                html::-webkit-scrollbar, body::-webkit-scrollbar { display: none; }
+                :root {
+                    --md-bg: #ffffff;
+                    --md-fg: #111111;
+                    --md-soft: #fff4e0;
+                    --md-on-color: #111111;
+                    --md-yellow: #ffd23f;
+                    --md-pink: #ff6fb5;
+                    --md-cyan: #3bceac;
+                    --md-lilac: #b69cff;
+                    --md-display: "Archivo Black", sans-serif;
+                    --md-mono: "Space Mono", monospace;
+                }
+                body.theme-dark {
+                    --md-bg: #25211a;
+                    --md-fg: #f3e9d2;
+                    --md-soft: #17140f;
+                }
+                body { font-family: var(--md-mono); font-size: 15px; background: var(--md-bg); color: var(--md-fg); margin: 0 auto; padding: 24px 28px 60px; line-height: 1.7; overflow-wrap: break-word; }
+                h1, h2, h3, h4, h5, h6 { font-family: var(--md-display); font-weight: 400; margin: 1.5em 0 0.6em; line-height: 1.2; letter-spacing: -0.01em; }
+                body > :first-child { margin-top: 0; }
+                h1 { font-size: 2em; text-transform: uppercase; padding-bottom: 0.25em; border-bottom: 4px solid var(--md-fg); }
+                h2 { font-size: 1.5em; padding-bottom: 0.25em; border-bottom: 3px dashed var(--md-fg); }
+                h3 { font-size: 1.25em; }
+                h4 { font-size: 1.1em; }
+                h5 { font-size: 1em; }
+                h6 { font-size: 0.9em; text-transform: uppercase; }
+                p, ul, ol, table, blockquote, pre { margin: 0.9em 0; }
+                strong { font-weight: 700; }
+                a { color: inherit; font-weight: 700; text-decoration: underline; text-decoration-color: var(--md-pink); text-decoration-thickness: 3px; text-underline-offset: 3px; }
+                a:hover { background: var(--md-yellow); color: var(--md-on-color); text-decoration-color: var(--md-on-color); }
+                mark { background: var(--md-yellow); color: var(--md-on-color); padding: 0 3px; }
+                img { max-width: 100%; height: auto; border: 3px solid var(--md-fg); box-shadow: 2.5px 2.5px 0 var(--md-fg); }
+                code { font-family: var(--md-mono); font-size: 0.85em; -webkit-box-decoration-break: clone; box-decoration-break: clone; background: var(--md-soft); color: var(--md-fg); border: 2px solid var(--md-fg); padding: 0 5px; }
+                pre { background: var(--md-soft); border: 3px solid var(--md-fg); box-shadow: 2.5px 2.5px 0 var(--md-fg); padding: 14px 16px; margin-right: 5px; overflow-x: auto; line-height: 1.55; }
+                pre code { background: none; border: 0; padding: 0; font-size: 0.85em; white-space: pre; }
+                blockquote { margin-left: 0; margin-right: 0; padding: 6px 16px; background: var(--md-soft); border: 3px solid var(--md-fg); border-left: 10px solid var(--md-pink); }
+                blockquote > :first-child { margin-top: 0; }
+                blockquote > :last-child { margin-bottom: 0; }
+                table { display: block; width: max-content; max-width: 100%; overflow-x: auto; border-collapse: collapse; border: 3px solid var(--md-fg); }
+                th, td { border: 2px solid var(--md-fg); padding: 6px 12px; text-align: left; line-height: 1.45; }
+                th { white-space: nowrap; background: var(--md-fg); color: var(--md-bg); font-family: var(--md-display); font-weight: 400; text-transform: uppercase; font-size: 0.85em; }
+                tr:nth-child(2n) td { background: var(--md-soft); }
+                hr { border: 0; border-top: 3px dashed var(--md-fg); margin: 1.8em 0; }
+                ul, ol { padding-left: 1.6em; }
+                li { margin: 0.25em 0; }
+                li::marker { font-weight: 700; }
+                li:has(> input[type="checkbox"]), li:has(> p > input[type="checkbox"]) { list-style: none; }
+                input[type="checkbox"] { appearance: none; -webkit-appearance: none; display: inline-grid; place-content: center; width: 18px; height: 18px; margin: 0 8px 0 -1.4em; vertical-align: -3px; background: var(--md-bg); border: 3px solid var(--md-fg); }
+                input[type="checkbox"]:checked { background: var(--md-yellow); }
+                input[type="checkbox"]:checked::before { content: "\\2713"; color: var(--md-on-color); font: 400 0.8rem/1 var(--md-display); }
+                ul.contains-task-list { list-style: none; padding-left: 0.5em; }
+                @media (max-width: 480px) { body { padding: 16px 16px 40px; font-size: 14px; } }
+                body.is-empty { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+                .md-empty-state { text-align: center; max-width: 380px; padding: 22px 20px; background: var(--md-bg); border: 3px solid var(--md-fg); box-shadow: 3px 3px 0 var(--md-fg); transform: rotate(-1.5deg); }
+                .md-empty-icon { display: inline-grid; place-items: center; width: 60px; height: 60px; margin-bottom: 14px; font-size: 1.8rem; background: var(--md-yellow); border: 3px solid var(--md-fg); border-radius: 12px; box-shadow: 0 2.5px 0 var(--md-fg); }
+                .md-empty-title { font-family: var(--md-display); font-size: 1.1rem; text-transform: uppercase; color: var(--md-fg); margin-bottom: 8px; }
+                .md-empty-desc { font-size: 0.85rem; line-height: 1.55; color: var(--md-fg); }
+            `;
+
+            const EMPTY_PREVIEW_HTML = `
+                <div class="md-empty-state">
+                    <div class="md-empty-icon">📝</div>
+                    <div class="md-empty-title">Nothing to preview yet</div>
+                    <div class="md-empty-desc">Start typing Markdown in the editor, or upload a .md file, and your live preview will appear here.</div>
+                </div>
+            `;
+
+            // Reflects the site-wide theme toggle, which the preview iframe can't inherit via CSS
+            function isDarkThemeActive() {
+                return document.body.classList.contains("dark-theme");
+            }
+
+            // Builds a standalone HTML document for the preview iframe / HTML export
+            function buildPreviewDocument(bodyHtml) {
+                const isEmpty = !bodyHtml || !bodyHtml.trim();
+                const bodyClasses = [isEmpty ? "is-empty" : "", isDarkThemeActive() ? "theme-dark" : ""].filter(Boolean).join(" ");
+
+                return `<!DOCTYPE html>
+                    <html>
+                        <head>
+                            <meta charset="UTF-8">
+                            <title>${pageTitle} Preview</title>
+                            <style>${MARKDOWN_PREVIEW_STYLES}</style>
+                        </head>
+                        <body class="${bodyClasses}">${isEmpty ? EMPTY_PREVIEW_HTML : bodyHtml}</body>
+                    </html>`;
+            }
+
+            // Renders markdown source into sanitized HTML and updates the preview
+            function renderMarkdown() {
+                try {
+                    const raw = marked.parse(codeMirrorInput.getValue(), { gfm: true, breaks: false });
+                    renderedHtml = DOMPurify.sanitize(raw, { ADD_ATTR: ["target"] });
+                } catch (error) {
+                    console.log("Markdown render error:", error.message);
+                    showErrorToast("Error rendering Markdown");
+                    renderedHtml = "";
+                }
+                previewFrame.classList.toggle("theme-dark", isDarkThemeActive());
+                previewFrame.srcdoc = buildPreviewDocument(renderedHtml);
+            }
+
+            // Loads sample Markdown into the input editor
+            function loadDummyData() {
+                codeMirrorInput.setValue(DUMMY_MARKDOWN);
+            }
+
+            // Clears the markdown input and resets the preview
+            function clearMarkdownInputs() {
+                clearInput(codeMirrorInput);
+            }
+
+            // Downloads the rendered content as a standalone HTML file
+            function downloadRenderedHTML() {
+                try {
+                    if (isInputBlank(codeMirrorInput)) return;
+                    const blob = new Blob([buildPreviewDocument(renderedHtml)], { type: "text/html" });
+                    const url = URL.createObjectURL(blob);
+
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = "markdown_editor.html";
+                    document.body.appendChild(a);
+                    a.click();
+
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                } catch (error) {
+                    console.log("Download HTML error:", error);
+                    showErrorToast("Error downloading HTML");
+                }
+            }
+
+            // Prints the rendered markdown preview as it looks
+            function printMarkdownPreview() {
+                try {
+                    if (isInputBlank(codeMirrorInput)) return;
+                    const printWindow = window.open("", "_blank");
+                    printWindow.document.write(previewFrame.srcdoc);
+                    printWindow.document.close();
+                    printWindow.focus();
+                    printWindow.print();
+                    printWindow.close();
+                } catch (error) {
+                    console.log("Printing preview error:", error.message);
+                    showErrorToast("Error printing preview");
+                }
+            }
+
+            // Wraps the current selection with the given prefix/suffix, or inserts a placeholder
+            function wrapSelection(prefix, suffix, placeholder) {
+                const selection = codeMirrorInput.getSelection();
+                const text = selection || placeholder;
+                const from = codeMirrorInput.getCursor("start");
+                codeMirrorInput.replaceSelection(prefix + text + suffix);
+                if (!selection) {
+                    codeMirrorInput.setSelection(
+                        { line: from.line, ch: from.ch + prefix.length },
+                        { line: from.line, ch: from.ch + prefix.length + placeholder.length }
+                    );
+                }
+                codeMirrorInput.focus();
+            }
+
+            function insertBold() { wrapSelection("**", "**", "bold text"); }
+            function insertItalic() { wrapSelection("*", "*", "italic text"); }
+            function insertStrikethrough() { wrapSelection("~~", "~~", "strikethrough text"); }
+            function insertInlineCode() { wrapSelection("`", "`", "code"); }
+
+            // Prefixes the current line, replacing any previously applied prefix of the same kind
+            function insertLinePrefix(prefix, stripPattern = null) {
+                const cursor = codeMirrorInput.getCursor();
+                const line = codeMirrorInput.getLine(cursor.line);
+                const stripped = stripPattern ? line.replace(stripPattern, "") : line;
+                codeMirrorInput.replaceRange(
+                    prefix + stripped,
+                    { line: cursor.line, ch: 0 },
+                    { line: cursor.line, ch: line.length }
+                );
+                codeMirrorInput.setCursor({ line: cursor.line, ch: codeMirrorInput.getLine(cursor.line).length });
+                codeMirrorInput.focus();
+            }
+
+            function insertBlockquote() { insertLinePrefix("> ", /^(>\s*)+/); }
+            function insertUnorderedList() { insertLinePrefix("- ", /^(-|\*|\+)\s+(\[[ x]\]\s+)?/); }
+            function insertOrderedList() { insertLinePrefix("1. ", /^\d+\.\s+/); }
+            function insertTaskList() { insertLinePrefix("- [ ] ", /^(-|\*|\+)\s+(\[[ x]\]\s+)?/); }
+
+            // Sets (or replaces) the heading level of the current line
+            function insertHeading(level) {
+                if (!level) return;
+                insertLinePrefix("#".repeat(Number(level)) + " ", /^#{1,6}\s*/);
+                headingSelect.value = "";
+                CustomDropdown.refresh(headingSelect);
+            }
+
+            function insertLink() {
+                const selection = codeMirrorInput.getSelection();
+                codeMirrorInput.replaceSelection(`[${selection || "link text"}](https://example.com)`);
+                codeMirrorInput.focus();
+            }
+
+            function insertImage() {
+                const selection = codeMirrorInput.getSelection();
+                codeMirrorInput.replaceSelection(`![${selection || "alt text"}](https://example.com/image.png)`);
+                codeMirrorInput.focus();
+            }
+
+            // Inserts a multi-line snippet on its own line(s), adding a leading blank line if needed
+            function insertOwnLines(snippet) {
+                const cursor = codeMirrorInput.getCursor();
+                const line = codeMirrorInput.getLine(cursor.line);
+                const needsLeadingBreak = line.trim().length > 0;
+                codeMirrorInput.replaceRange((needsLeadingBreak ? "\n" : "") + snippet.trim() + "\n", cursor);
+                codeMirrorInput.focus();
+            }
+
+            function insertHorizontalRule() { insertOwnLines("---"); }
+            function insertCodeBlock() { insertOwnLines("```\ncode here\n```"); }
+            function insertTable() { insertOwnLines("| Column 1 | Column 2 | Column 3 |\n| --- | --- | --- |\n| Row 1 | Data | Data |\n| Row 2 | Data | Data |"); }
+
+            // script.js applies the saved/system theme on DOMContentLoaded, after this runs — re-render then so the preview picks it up on first load
+            const applyTheme = window.themeUpdated;
+            window.themeUpdated = function (toggleChecked) {
+                applyTheme(toggleChecked);
+                renderMarkdown();
+            };
+            window.addEventListener("DOMContentLoaded", renderMarkdown);
+
+            codeMirrorInput.on("change", renderMarkdown);
+            renderMarkdown();
+
+            setupEditors([
+                createEditorConfig(codeMirrorInput, inputTotalLines, inputCurrentLine, inputCurrentColumn)
+            ]);
+        </script>
+
+    </body>
+</html>

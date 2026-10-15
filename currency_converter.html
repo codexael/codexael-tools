@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Codexael Toolstack — Currency Converter</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta http-equiv="Content-Security-Policy" content="connect-src https://api.frankfurter.dev; object-src 'none'; base-uri 'none'; form-action 'none'">
+
+        <!-- Metadata -->
+        <meta name="description" content="Convert between world currencies with up-to-date exchange rates.">
+        <meta name="author" content="Codexael">
+        <meta name="theme-color" content="#fff4e0" media="(prefers-color-scheme: light)">
+        <meta name="theme-color" content="#17140f" media="(prefers-color-scheme: dark)">
+
+        <!-- Open Graph -->
+        <meta property="og:title" content="Codexael Toolstack — Currency Converter">
+        <meta property="og:description" content="Convert between world currencies with up-to-date exchange rates.">
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="https://tools.codexael.com/currency_converter.html">
+        <meta property="og:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+        <meta property="og:image:width" content="1200">
+        <meta property="og:image:height" content="630">
+        <meta property="og:image:type" content="image/png">
+        <meta property="og:image:alt" content="Codexael Toolstack — Currency Converter">
+        <meta property="og:site_name" content="Codexael Toolstack">
+
+        <!-- Twitter Card -->
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="Codexael Toolstack — Currency Converter">
+        <meta name="twitter:description" content="Convert between world currencies with up-to-date exchange rates.">
+        <meta name="twitter:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+
+        <!-- Favicon / App Icon -->
+        <link rel="icon" type="image/svg+xml" href="assets/images/codexael_icon.svg">
+        <link rel="apple-touch-icon" href="assets/images/codexael_icon.svg">
+
+        <!-- Bootstrap 5.2.0-beta1 -->
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+
+        <!-- Bootstrap with Popper 5.2.0-beta1 -->
+        <script src="js/bootstrap.bundle.min.js"></script>
+
+        <!-- Bootstrap Icons 1.11.3 -->
+        <link rel="stylesheet" href="css/bootstrap-icons.min.css">
+
+        <!-- Google fonts -->
+        <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+        <!-- Custom CSS -->
+        <link rel="stylesheet" href="css/keycaps.css">
+
+        <style>
+            .currency-body {
+                flex: 1;
+                min-height: 0;
+                display: flex;
+                flex-direction: column;
+                gap: 18px;
+                padding: 24px 22px 28px;
+                overflow-y: auto;
+            }
+
+            .currency-row {
+                display: flex;
+                align-items: flex-start;
+                gap: 14px;
+            }
+
+            .currency-row .input-cyan,
+            .currency-row .input-stepper,
+            .currency-row .cdrop {
+                margin-bottom: 0;
+            }
+
+            .currency-amount-input {
+                flex: 1 1 55%;
+                min-width: 0;
+            }
+
+            .currency-amount-input input {
+                font-size: 1.05rem;
+            }
+
+            .currency-select {
+                flex: 1 1 45%;
+                min-width: 0;
+            }
+
+            .currency-swap-row {
+                display: flex;
+                justify-content: center;
+            }
+
+            /* The swap key spins half a turn when hovered. */
+            .currency-swap-btn {
+                width: 54px;
+                height: 54px;
+                display: grid;
+                place-items: center;
+                padding: 0;
+                background: var(--pink);
+                color: #111111;
+                border: 3px solid var(--ink);
+                border-radius: 12px;
+                box-shadow: 0 3px 0 var(--ink);
+                font-size: 1.3rem;
+                transition: transform 0.15s, box-shadow 0.08s;
+            }
+
+            .currency-swap-btn:hover {
+                transform: translateY(1px) rotate(180deg);
+                box-shadow: 0 2px 0 var(--ink);
+            }
+
+            .currency-swap-btn:active {
+                transform: translateY(3px) rotate(180deg);
+                box-shadow: 0 0 0 var(--ink);
+            }
+
+            /* The result reads like a lime price tag that keeps dark text in both themes. */
+            .currency-result-box {
+                flex: 1 1 55%;
+                min-width: 0;
+                padding: 6px 14px;
+                background: var(--lime);
+                color: #111111;
+                border: 3px solid var(--ink);
+                box-shadow: 2px 2px 0 var(--ink);
+                font-family: var(--display-font);
+                font-size: 1.35rem;
+                line-height: 1.5;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+            .privacy-note {
+                padding: 10px 12px;
+                border: 2px dashed var(--ink);
+                font-size: 0.75rem;
+                font-weight: 700;
+                line-height: 1.5;
+            }
+
+            /* The rates toggle is a small keycap that sinks when pressed. */
+            .rates-toggle {
+                align-self: flex-start;
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                padding: 5px 12px;
+                background: var(--paper);
+                color: var(--ink);
+                border: 3px solid var(--ink);
+                border-radius: 10px;
+                box-shadow: 0 2px 0 var(--ink);
+                font-size: 0.78rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                transition: transform 0.08s, box-shadow 0.08s, background-color 0.12s;
+            }
+
+            .rates-toggle:hover {
+                transform: translateY(1px);
+                box-shadow: 0 1px 0 var(--ink);
+                background: var(--cyan);
+                color: #111111;
+            }
+
+            .rates-toggle:active {
+                transform: translateY(2px);
+                box-shadow: 0 0 0 var(--ink);
+            }
+
+            .rates-panel {
+                display: flex;
+                flex-direction: column;
+                gap: 14px;
+            }
+
+            /* Bootstrap btn hover and active states would hide the ink border without these values. */
+            .rates-panel .btn {
+                --bs-btn-hover-border-color: var(--ink);
+                --bs-btn-active-border-color: var(--ink);
+                margin-bottom: 0;
+            }
+
+            .rate-edit-list {
+                max-height: 240px;
+                overflow-y: auto;
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                padding: 14px 16px 16px 14px;
+                background: var(--bg);
+                border: 3px solid var(--ink);
+            }
+
+            .rate-edit-row {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                font-size: 0.8rem;
+                font-weight: 700;
+            }
+
+            .rate-edit-row span {
+                flex-shrink: 0;
+            }
+
+            /* The currency code after each field is a small ink tag. */
+            .rate-edit-row span:last-child {
+                min-width: 44px;
+                padding: 1px 6px;
+                background: var(--ink);
+                color: var(--bg);
+                text-align: center;
+            }
+
+            .rate-edit-row input {
+                margin-bottom: 0;
+                padding: 6px 10px;
+                box-shadow: 1.5px 1.5px 0 var(--ink);
+            }
+
+            .rate-edit-row input:focus {
+                box-shadow: 0.5px 0.5px 0 var(--ink);
+            }
+
+            @media (max-width: 480px) {
+                .currency-body {
+                    padding: 20px 16px 24px;
+                }
+
+                .currency-row {
+                    flex-direction: column;
+                    align-items: stretch;
+                    gap: 14px;
+                }
+
+                .currency-amount-input,
+                .currency-select,
+                .currency-result-box {
+                    flex: none;
+                    width: 100%;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <!-- Common layout -->
+        <div id="navbar-container"></div>
+
+        <div class="container-fluid tool-wrapper">
+            <div class="row">
+                <div class="col-md-8 offset-md-2">
+                    <div class="editor-panel" id="converterPanel">
+                        <div class="editor-header">
+                            <span class="editor-title">Currency Converter</span>
+                            <div class="editor-actions">
+                                <button title="Refresh live rates" id="refreshBtn" onclick="refreshLiveRates()"><i class="bi bi-arrow-clockwise icon-btn"></i></button>
+                                <div class="divider"></div>
+                                <button title="Swap currencies" onclick="swapCurrencies()"><i class="bi bi-arrow-down-up icon-btn"></i></button>
+                                <div class="divider"></div>
+                                <button title="Copy result" data-shortcut="copy" onclick="copyResult(this)"><i class="bi bi-copy icon-btn"></i></button>
+                            </div>
+                        </div>
+
+                        <div class="editor-body currency-body invisible-scrollbars">
+
+                            <div class="currency-row">
+                                <div class="input-stepper currency-amount-input">
+                                    <button type="button" data-step="dec" title="Decrease"><i class="bi bi-dash"></i></button>
+                                    <div class="stepper-divider"></div>
+                                    <input type="number" step="any" id="amountInput" value="1" oninput="convert()">
+                                    <div class="stepper-divider"></div>
+                                    <button type="button" data-step="inc" title="Increase"><i class="bi bi-plus"></i></button>
+                                </div>
+                                <select class="form-control currency-select" id="fromSelect" onchange="convert()"></select>
+                            </div>
+
+                            <div class="currency-swap-row">
+                                <button class="currency-swap-btn" title="Swap currencies" onclick="swapCurrencies()"><i class="bi bi-arrow-down-up"></i></button>
+                            </div>
+
+                            <div class="currency-row">
+                                <div class="currency-result-box" id="resultDisplay">0.00</div>
+                                <select class="form-control currency-select" id="toSelect" onchange="convert()"></select>
+                            </div>
+
+                            <div class="privacy-note">
+                                <i class="bi bi-info-circle"></i> Rates are daily reference values from <a href="https://frankfurter.dev" target="_blank" rel="noopener noreferrer">Frankfurter</a>, not real-time market quotes.<br>
+                                <span id="rateSource">Loading latest rates...</span>
+                            </div>
+
+                            <button class="rates-toggle" id="ratesToggle" onclick="toggleCustomizeRates()">
+                                <span id="ratesToggleLabel">Customize rates</span> <i class="bi bi-chevron-down" id="ratesToggleIcon"></i>
+                            </button>
+
+                            <div class="rates-panel d-none" id="ratesPanel">
+                                <div class="rate-edit-list" id="rateEditList"></div>
+                                <button class="btn action-btn-ghost" onclick="saveRates()"><i class="bi bi-save2"></i> Save rates</button>
+                                <button class="btn action-btn-ghost" onclick="resetRates()"><i class="bi bi-arrow-counterclockwise"></i> Reset to latest rates</button>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <div id="footer-container"></div>
+
+        <!-- Common JS -->
+        <script src="js/tool-help.js"></script>
+        <script src="js/storage.js"></script>
+        <script src="js/common.js"></script>
+        <script src="js/custom-dropdown.js"></script>
+        <script src="js/custom-input.js"></script>
+        <script src="js/script.js"></script>
+
+        <!-- Custom JS -->
+        <script>
+
+            const pageTitle = "Currency Converter";
+            const LEGACY_RATES_KEY = "toolstack_currency_rates";
+            const STORAGE_CUSTOM_KEY = "toolstack_currency_custom_rates";
+            const STORAGE_LIVE_KEY = "toolstack_currency_live_rates";
+
+            const RATES_URL = "https://api.frankfurter.dev/v2/rates";
+            const RATES_TIMEOUT_MS = 8000;
+            const RATES_MAX_BYTES = 16384;
+            const RATES_MAX_AGE_MS = 60 * 60 * 1000;
+
+            // These fallback rates are used only when live rates were never loaded.
+            const DEFAULT_RATES = {
+                USD: 1, EUR: 0.92, GBP: 0.79, JPY: 156, INR: 83.5, AUD: 1.53, CAD: 1.37,
+                CHF: 0.90, CNY: 7.24, HKD: 7.82, SGD: 1.35, NZD: 1.65, SEK: 10.4,
+                NOK: 10.6, MXN: 17.0, BRL: 5.4, ZAR: 18.3, AED: 3.67
+            };
+
+            const CURRENCY_INFO = {
+                USD: { symbol: "$", name: "US Dollar" },
+                EUR: { symbol: "€", name: "Euro" },
+                GBP: { symbol: "£", name: "British Pound" },
+                JPY: { symbol: "¥", name: "Japanese Yen" },
+                INR: { symbol: "₹", name: "Indian Rupee" },
+                AUD: { symbol: "A$", name: "Australian Dollar" },
+                CAD: { symbol: "C$", name: "Canadian Dollar" },
+                CHF: { symbol: "Fr", name: "Swiss Franc" },
+                CNY: { symbol: "CN¥", name: "Chinese Yuan" },
+                HKD: { symbol: "HK$", name: "Hong Kong Dollar" },
+                SGD: { symbol: "S$", name: "Singapore Dollar" },
+                NZD: { symbol: "NZ$", name: "New Zealand Dollar" },
+                SEK: { symbol: "kr", name: "Swedish Krona" },
+                NOK: { symbol: "kr", name: "Norwegian Krone" },
+                MXN: { symbol: "Mex$", name: "Mexican Peso" },
+                BRL: { symbol: "R$", name: "Brazilian Real" },
+                ZAR: { symbol: "R", name: "South African Rand" },
+                AED: { symbol: "Dhs", name: "UAE Dirham" }
+            };
+
+            const amountInput = document.getElementById("amountInput");
+            const fromSelect = document.getElementById("fromSelect");
+            const toSelect = document.getElementById("toSelect");
+            const resultDisplay = document.getElementById("resultDisplay");
+
+            const ratesToggle = document.getElementById("ratesToggle");
+            const ratesToggleLabel = document.getElementById("ratesToggleLabel");
+            const ratesToggleIcon = document.getElementById("ratesToggleIcon");
+            const ratesPanel = document.getElementById("ratesPanel");
+            const rateEditList = document.getElementById("rateEditList");
+            const rateSource = document.getElementById("rateSource");
+            const refreshBtn = document.getElementById("refreshBtn");
+
+            let liveRates = null;
+            let customRates = {};
+            let rates = { ...DEFAULT_RATES };
+            let ratesController = null;
+
+            // Checks that a value is a usable exchange rate.
+            function isValidRate(value) {
+                return typeof value === "number" && Number.isFinite(value) && value > 0;
+            }
+
+            // Keeps only known currency codes with usable rates from an untrusted object.
+            function pickValidRates(source) {
+                const picked = {};
+                if (!source || typeof source !== "object") return picked;
+                Object.keys(DEFAULT_RATES).forEach(code => {
+                    if (isValidRate(source[code])) picked[code] = source[code];
+                });
+                return picked;
+            }
+
+            // Returns the rates that custom values are compared against.
+            function baseRates() {
+                return { ...DEFAULT_RATES, ...(liveRates ? liveRates.rates : {}) };
+            }
+
+            // Rebuilds the active rates from the fallback, live and custom layers.
+            function applyRates() {
+                rates = { ...baseRates(), ...customRates, USD: 1 };
+            }
+
+            // Shows where the active rates came from.
+            function renderRateSource(message) {
+                const customCount = Object.keys(customRates).length;
+                const customNote = customCount ? ` ${customCount} custom rate${customCount === 1 ? "" : "s"} applied.` : "";
+                const missing = liveRates ? Object.keys(DEFAULT_RATES).filter(code => !Object.hasOwn(liveRates.rates, code)) : [];
+                const missingNote = missing.length ? ` No live rate for ${missing.join(", ")}, so a built-in fallback rate is used.` : "";
+                if (message) rateSource.textContent = message + missingNote + customNote;
+                else if (liveRates) rateSource.textContent = `Rates as of ${liveRates.date}.${missingNote}${customNote}`;
+                else rateSource.textContent = `Using built-in fallback rates.${customNote}`;
+            }
+
+            // Writes to storage and reports whether it worked, because blocked or full storage throws.
+            function trySetStorage(key, value) {
+                try {
+                    setStorageItem(key, value);
+                    return true;
+                } catch (error) {
+                    return false;
+                }
+            }
+
+            // Removes a storage key and ignores blocked storage.
+            function tryRemoveStorage(key) {
+                try {
+                    removeStorageItem(key);
+                } catch (error) {
+                    // Blocked storage has nothing to remove.
+                }
+            }
+
+            // Checks that a value is a YYYY-MM-DD date string.
+            function isValidDate(value) {
+                return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value);
+            }
+
+            // Loads cached live rates and saved custom rates from storage.
+            function loadStoredRates() {
+                // The old key saved every rate, so it would hide live rates forever and is dropped.
+                tryRemoveStorage(LEGACY_RATES_KEY);
+
+                const cached = getStorageItem(STORAGE_LIVE_KEY, null);
+                if (cached && isValidDate(cached.date) && Number.isFinite(cached.fetchedAt)) {
+                    const cachedRates = pickValidRates(cached.rates);
+                    if (Object.keys(cachedRates).length) liveRates = { date: cached.date, fetchedAt: cached.fetchedAt, rates: cachedRates };
+                }
+
+                customRates = pickValidRates(getStorageItem(STORAGE_CUSTOM_KEY, null));
+                applyRates();
+            }
+
+            // Reads a size-limited JSON reply so a broken service cannot flood the page.
+            async function readJsonReply(response) {
+                const declared = Number(response.headers.get("Content-Length"));
+                if (declared > RATES_MAX_BYTES) throw new Error("Rates service reply was too large");
+
+                const text = await response.text();
+                if (text.length > RATES_MAX_BYTES) throw new Error("Rates service reply was too large");
+
+                try {
+                    return JSON.parse(text);
+                } catch {
+                    throw new Error("Rates service sent an unreadable reply");
+                }
+            }
+
+            // Turns the service reply into a checked rate map with its date.
+            function parseLiveRates(reply) {
+                if (!Array.isArray(reply)) throw new Error("Rates service sent an unexpected reply");
+
+                const parsed = { USD: 1 };
+                let date = "";
+                reply.forEach(item => {
+                    if (!item || item.base !== "USD" || !Object.hasOwn(DEFAULT_RATES, item.quote) || !isValidRate(item.rate)) return;
+                    parsed[item.quote] = item.rate;
+                    if (isValidDate(item.date) && item.date > date) date = item.date;
+                });
+
+                if (Object.keys(parsed).length < 2 || !date) throw new Error("Rates service sent no usable rates");
+                return { date, fetchedAt: Date.now(), rates: parsed };
+            }
+
+            // Fetches the latest rates for all listed currencies and updates the page.
+            async function fetchLiveRates({ quiet = false, revalidate = false } = {}) {
+                if (ratesController) ratesController.abort();
+                if (!navigator.onLine) {
+                    renderRateSource(liveRates ? `You are offline, showing rates as of ${liveRates.date}.` : "You are offline, using built-in fallback rates.");
+                    if (!quiet) showErrorToast("You are offline");
+                    return;
+                }
+
+                const controller = new AbortController();
+                ratesController = controller;
+                const timer = setTimeout(() => controller.abort("timeout"), RATES_TIMEOUT_MS);
+                refreshBtn.disabled = true;
+
+                const quotes = Object.keys(DEFAULT_RATES).filter(code => code !== "USD").join(",");
+                try {
+                    const response = await fetch(`${RATES_URL}?base=USD&quotes=${quotes}`, {
+                        signal: controller.signal,
+                        // A manual refresh asks the server again instead of reusing the browser copy.
+                        cache: revalidate ? "no-cache" : "default",
+                        credentials: "omit",
+                        referrerPolicy: "no-referrer",
+                        redirect: "error",
+                        mode: "cors"
+                    });
+                    if (!response.ok) throw new Error(`Rates service returned HTTP ${response.status}`);
+
+                    liveRates = parseLiveRates(await readJsonReply(response));
+                    const cached = trySetStorage(STORAGE_LIVE_KEY, liveRates);
+                    applyRates();
+                    // An open rates panel is left alone so unsaved edits are not lost.
+                    if (ratesPanel.classList.contains("d-none")) renderRateEditRows();
+                    convert();
+                    renderRateSource();
+                    if (!quiet) showSuccessToast(cached ? "Rates updated" : "Rates updated, but could not be saved for next time");
+                } catch (error) {
+                    // A request replaced by a newer one ends quietly.
+                    if (controller.signal.aborted && controller.signal.reason !== "timeout") return;
+
+                    let message = error.message || "Could not load rates";
+                    if (controller.signal.reason === "timeout") message = "Rates service timed out";
+                    else if (error instanceof TypeError) message = "Could not reach the rates service";
+                    renderRateSource(liveRates ? `${message}, showing rates as of ${liveRates.date}.` : `${message}, using built-in fallback rates.`);
+                    if (!quiet) showErrorToast(message);
+                } finally {
+                    clearTimeout(timer);
+                    if (ratesController === controller) {
+                        ratesController = null;
+                        refreshBtn.disabled = false;
+                    }
+                }
+            }
+
+            // Cached rates are reused for an hour, and a fetch time in the future means the clock changed so the cache is stale.
+            function isCacheStale() {
+                const age = liveRates ? Date.now() - liveRates.fetchedAt : Infinity;
+                return age < 0 || age > RATES_MAX_AGE_MS;
+            }
+
+            // Fetches fresh rates when the user clicks the refresh button.
+            function refreshLiveRates() {
+                renderRateSource("Loading latest rates...");
+                fetchLiveRates({ revalidate: true });
+            }
+
+            function copyText(text, btn) {
+                if (isBlank(text, "Nothing to copy")) return;
+                navigator.clipboard.writeText(text).then(() => {
+                    showSuccessToast("Copied to clipboard");
+                    if (btn) {
+                        const icon = btn.querySelector("i");
+                        const original = icon.className;
+                        icon.className = "bi bi-check-lg";
+                        setTimeout(() => icon.className = original, 1000);
+                    }
+                });
+            }
+
+            function populateSelects() {
+                const codes = Object.keys(DEFAULT_RATES);
+
+                [fromSelect, toSelect].forEach(select => {
+                    select.innerHTML = codes.map(code => {
+                        const info = CURRENCY_INFO[code];
+                        return `<option value="${code}">${code} ${info.symbol} — ${info.name}</option>`;
+                    }).join("");
+                });
+
+                fromSelect.value = "USD";
+                toSelect.value = "EUR";
+            }
+
+            function convert() {
+                const amount = parseFloat(amountInput.value) || 0;
+                const from = fromSelect.value;
+                const to = toSelect.value;
+                const result = amount * (rates[to] / rates[from]);
+
+                resultDisplay.textContent = `${result.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${to}`;
+            }
+
+            function swapCurrencies() {
+                const from = fromSelect.value;
+                fromSelect.value = toSelect.value;
+                toSelect.value = from;
+                CustomDropdown.refresh(fromSelect);
+                CustomDropdown.refresh(toSelect);
+                convert();
+            }
+
+            function copyResult(btn) {
+                copyText(resultDisplay.textContent, btn);
+            }
+
+            function toggleCustomizeRates() {
+                const hidden = ratesPanel.classList.toggle("d-none");
+                // Opening the panel shows the newest rates, including ones that arrived while it was open.
+                if (!hidden) renderRateEditRows();
+                ratesToggleLabel.textContent = hidden ? "Customize rates" : "Hide rate customization";
+                ratesToggleIcon.className = hidden ? "bi bi-chevron-down" : "bi bi-chevron-up";
+            }
+
+            function renderRateEditRows() {
+                rateEditList.innerHTML = Object.keys(DEFAULT_RATES).map(code => `
+                    <div class="rate-edit-row">
+                        <span>1 USD =</span>
+                        <input type="number" step="any" min="0" class="input-cyan" data-code="${code}" value="${rates[code]}">
+                        <span>${code}</span>
+                    </div>
+                `).join("");
+            }
+
+            // Saves only the rates that differ from the latest rates, so untouched rates keep updating.
+            function saveRates() {
+                const base = baseRates();
+                const edited = {};
+                rateEditList.querySelectorAll("input[data-code]").forEach(input => {
+                    const code = input.dataset.code;
+                    const value = parseFloat(input.value);
+                    if (code !== "USD" && isValidRate(value) && value !== base[code]) edited[code] = value;
+                });
+
+                customRates = edited;
+                const saved = trySetStorage(STORAGE_CUSTOM_KEY, customRates);
+                applyRates();
+                renderRateEditRows();
+                convert();
+                renderRateSource();
+                if (saved) showSuccessToast("Rates saved");
+                else showWarningToast("Rates applied, but browser storage is blocked so they will not be kept");
+            }
+
+            // Removes all custom rates and goes back to the latest rates.
+            function resetRates() {
+                tryRemoveStorage(STORAGE_CUSTOM_KEY);
+                customRates = {};
+                applyRates();
+                renderRateEditRows();
+                convert();
+                renderRateSource();
+                showInfoToast("Rates reset to latest rates");
+            }
+
+            loadStoredRates();
+            populateSelects();
+            CustomDropdown.enhance(fromSelect, { search: true });
+            CustomDropdown.enhance(toSelect, { search: true });
+            renderRateEditRows();
+            convert();
+            renderRateSource();
+
+            if (isCacheStale()) {
+                if (!liveRates) renderRateSource("Loading latest rates...");
+                fetchLiveRates({ quiet: true });
+            }
+
+            // Rates are loaded again when the connection comes back after a failure.
+            window.addEventListener("online", () => {
+                if (isCacheStale()) fetchLiveRates({ quiet: true });
+            });
+        </script>
+
+    </body>
+</html>

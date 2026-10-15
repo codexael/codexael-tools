@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Codexael Toolstack — Random Masterpiece</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta http-equiv="Content-Security-Policy" content="connect-src https://collectionapi.metmuseum.org; img-src 'self' data: https://images.metmuseum.org; object-src 'none'; base-uri 'none'; form-action 'none'">
+
+        <!-- Metadata -->
+        <meta name="description" content="Discover a random work of art from The Met, with its artist and story.">
+        <meta name="author" content="Codexael">
+        <meta name="theme-color" content="#fff4e0" media="(prefers-color-scheme: light)">
+        <meta name="theme-color" content="#17140f" media="(prefers-color-scheme: dark)">
+
+        <!-- Open Graph -->
+        <meta property="og:title" content="Codexael Toolstack — Random Masterpiece from The Met">
+        <meta property="og:description" content="Discover a random work of art from The Met, with its artist and story.">
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="https://tools.codexael.com/random_masterpiece.html">
+        <meta property="og:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+        <meta property="og:image:width" content="1200">
+        <meta property="og:image:height" content="630">
+        <meta property="og:image:type" content="image/png">
+        <meta property="og:image:alt" content="Codexael Toolstack — Random Masterpiece from The Met">
+        <meta property="og:site_name" content="Codexael Toolstack">
+
+        <!-- Twitter Card -->
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="Codexael Toolstack — Random Masterpiece from The Met">
+        <meta name="twitter:description" content="Discover a random work of art from The Met, with its artist and story.">
+        <meta name="twitter:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+
+        <!-- Favicon / App Icon -->
+        <link rel="icon" type="image/svg+xml" href="assets/images/codexael_icon.svg">
+        <link rel="apple-touch-icon" href="assets/images/codexael_icon.svg">
+
+        <!-- Bootstrap 5.2.0-beta1 -->
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+
+        <!-- Bootstrap with Popper 5.2.0-beta1 -->
+        <script src="js/bootstrap.bundle.min.js"></script>
+
+        <!-- Bootstrap Icons 1.11.3 -->
+        <link rel="stylesheet" href="css/bootstrap-icons.min.css">
+
+        <!-- Google fonts -->
+        <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+        <!-- Custom CSS -->
+        <link rel="stylesheet" href="css/keycaps.css">
+
+        <style>
+            .art-body {
+                flex: 1;
+                min-height: 0;
+                display: flex;
+                flex-direction: column;
+                gap: 18px;
+                padding: 24px 22px 28px;
+                overflow-y: auto;
+            }
+
+            .art-body.loading .art-card,
+            .art-body.loading .photo-frame { opacity: 0.55; }
+
+            /* The artwork details read like a museum wall label on an orange card. */
+            .art-card {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+                padding: 20px 22px;
+                background: var(--orange);
+                color: #111111;
+                border: 3px solid var(--ink);
+                border-radius: 12px;
+                box-shadow: 4px 4px 0 var(--ink);
+                overflow-wrap: anywhere;
+            }
+
+            .art-kind {
+                align-self: flex-start;
+                padding: 2px 10px;
+                background: #111111;
+                color: #ffffff;
+                font-family: var(--display-font);
+                font-size: 0.72rem;
+                letter-spacing: 0.06em;
+                text-transform: uppercase;
+            }
+
+            .art-title {
+                margin: 0;
+                font-family: var(--display-font);
+                font-size: 1.35rem;
+                line-height: 1.3;
+                text-wrap: balance;
+            }
+
+            .art-artist {
+                margin: 0;
+                font-size: 1rem;
+                font-weight: 700;
+            }
+
+            .art-artist span {
+                font-weight: 400;
+                font-size: 0.85rem;
+            }
+
+            .art-details {
+                display: grid;
+                grid-template-columns: auto 1fr;
+                gap: 2px 14px;
+                margin: 4px 0 0;
+                font-size: 0.85rem;
+            }
+
+            .art-details dt { font-weight: 700; }
+            .art-details dd { margin: 0; min-width: 0; }
+
+            /* The frame shrinks to the artwork's own size and stays centred. */
+            .photo-frame {
+                align-self: center;
+                width: fit-content;
+                max-width: 100%;
+                overflow: hidden;
+                background: var(--paper);
+                border: 3px solid var(--ink);
+                border-radius: 12px;
+                box-shadow: 4px 4px 0 var(--ink);
+            }
+
+            .photo-frame img {
+                display: block;
+                max-width: 100%;
+                max-height: 480px;
+                width: auto;
+                height: auto;
+            }
+
+            /* Before the first artwork arrives the frame holds a fixed-size message. */
+            .photo-message {
+                width: 280px;
+                max-width: 100%;
+                min-height: 180px;
+                display: grid;
+                place-items: center;
+                margin: 0;
+                padding: 16px 20px;
+                font-size: 0.85rem;
+                font-weight: 700;
+                text-align: center;
+            }
+
+            .art-actions {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 12px;
+            }
+
+            /* Bootstrap btn hover and active states would hide the ink border without these values. */
+            .art-actions .btn {
+                --bs-btn-hover-border-color: var(--ink);
+                --bs-btn-active-border-color: var(--ink);
+                width: auto;
+                flex: 0 1 auto;
+                margin-bottom: 0;
+            }
+
+            .art-actions #newArtBtn {
+                flex: 1 1 200px;
+            }
+
+            .fact-meta {
+                font-size: 0.75rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.04em;
+            }
+
+            .privacy-note {
+                padding: 10px 12px;
+                border: 2px dashed var(--ink);
+                font-size: 0.75rem;
+                font-weight: 700;
+                line-height: 1.5;
+            }
+
+            @media (max-width: 480px) {
+                .art-body {
+                    padding: 20px 16px 24px;
+                }
+
+                .photo-frame img {
+                    max-height: 320px;
+                }
+
+                .art-actions .btn,
+                .art-actions #newArtBtn {
+                    flex: 1 1 100%;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <!-- Common layout -->
+        <div id="navbar-container"></div>
+
+        <div class="container-fluid tool-wrapper">
+            <div class="row">
+                <div class="col-md-8 offset-md-2">
+                    <div class="editor-panel">
+                        <div class="editor-header">
+                            <span class="editor-title">Random Masterpiece</span>
+                            <div class="editor-actions">
+                                <button title="New artwork" id="headerNewBtn" onclick="loadArtwork()"><i class="bi bi-arrow-clockwise icon-btn"></i></button>
+                                <div class="divider"></div>
+                                <button title="Copy artwork details" data-shortcut="copy" onclick="copyArtwork(this)"><i class="bi bi-copy icon-btn"></i></button>
+                            </div>
+                        </div>
+
+                        <div class="editor-body art-body invisible-scrollbars loading" id="artBody">
+
+                            <div class="art-card" aria-live="polite">
+                                <span class="art-kind" id="artKind">THE MET</span>
+                                <h2 class="art-title" id="artTitle">Finding a masterpiece...</h2>
+                                <p class="art-artist" id="artArtist" hidden></p>
+                                <dl class="art-details" id="artDetails" hidden></dl>
+                            </div>
+
+                            <div class="photo-frame" id="photoFrame">
+                                <p class="photo-message" id="photoMessage">The artwork appears here together with its details.</p>
+                            </div>
+
+                            <div class="art-actions">
+                                <button class="btn action-btn-primary" id="newArtBtn" data-shortcut="run" onclick="loadArtwork()"><i class="bi bi-shuffle"></i> New artwork</button>
+                                <button class="btn action-btn-ghost" onclick="openMuseumPage()"><i class="bi bi-bank"></i> View at The Met</button>
+                                <button class="btn action-btn-ghost" onclick="openFullImage()"><i class="bi bi-arrows-fullscreen"></i> Full size</button>
+                                <button class="btn action-btn-ghost" onclick="shareArtwork()"><i class="bi bi-share"></i> Share</button>
+                            </div>
+
+                            <div class="fact-meta" id="artMeta">Artworks seen this visit: 0</div>
+
+                            <div class="privacy-note">
+                                <i class="bi bi-info-circle"></i> Artworks and images come from the <a href="https://metmuseum.github.io/" target="_blank" rel="noopener noreferrer">Metropolitan Museum of Art Collection API</a>, picked at random from the museum's highlights. No data about you is sent with the requests.
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <div id="footer-container"></div>
+
+        <!-- Common JS -->
+        <script src="js/tool-help.js"></script>
+        <script src="js/storage.js"></script>
+        <script src="js/common.js"></script>
+        <script src="js/script.js"></script>
+        <script src="js/api-client.js"></script>
+
+        <!-- Custom JS -->
+        <script>
+
+            const pageTitle = "Random Masterpiece";
+
+            const SEARCH_URL = "https://collectionapi.metmuseum.org/public/collection/v1.1/search?isHighlight=true&hasImages=true&q=*&limit=1&offset=";
+            const OBJECT_URL = "https://collectionapi.metmuseum.org/public/collection/v1/objects/";
+            const SEARCH_MAX_BYTES = 4096;
+            const OBJECT_MAX_BYTES = 131072;
+            const IMAGE_LOAD_TIMEOUT_MS = 15000;
+            const MAX_ATTEMPTS = 4;
+
+            const artBody = document.getElementById("artBody");
+            const artKind = document.getElementById("artKind");
+            const artTitle = document.getElementById("artTitle");
+            const artArtist = document.getElementById("artArtist");
+            const artDetails = document.getElementById("artDetails");
+            const photoFrame = document.getElementById("photoFrame");
+            const photoMessage = document.getElementById("photoMessage");
+            const artMeta = document.getElementById("artMeta");
+            const newArtBtn = document.getElementById("newArtBtn");
+            const headerNewBtn = document.getElementById("headerNewBtn");
+
+            // The number of highlights is updated from each search reply, so this is only a starting guess.
+            let highlightTotal = 2301;
+            let currentArt = null;
+            let artCount = 0;
+            let artController = null;
+
+            // Returns the address only when it is https on one of the allowed hosts.
+            function safeUrl(value, hosts) {
+                if (typeof value !== "string" || !value) return null;
+                try {
+                    const url = new URL(value);
+                    return url.protocol === "https:" && hosts.includes(url.hostname) ? url.href : null;
+                } catch {
+                    return null;
+                }
+            }
+
+            function cleanText(value) {
+                return typeof value === "string" ? value.trim() : "";
+            }
+
+            // Picks one random highlight and returns its object number.
+            async function fetchRandomId(signal) {
+                const offset = Math.floor(Math.random() * highlightTotal);
+                const reply = await fetchPublicJson(SEARCH_URL + offset, { serviceName: "The Met collection", maxBytes: SEARCH_MAX_BYTES, signal });
+                if (Number.isInteger(reply?.total) && reply.total > 0) highlightTotal = reply.total;
+                const id = reply?.objectIDs?.[0];
+                return Number.isInteger(id) ? id : null;
+            }
+
+            // Fetches one artwork and keeps only the fields the page shows, or returns null when it has no usable image.
+            async function fetchArtworkDetails(id, signal) {
+                const reply = await fetchPublicJson(OBJECT_URL + id, { serviceName: "The Met collection", maxBytes: OBJECT_MAX_BYTES, signal });
+                const image = safeUrl(reply?.primaryImageSmall, ["images.metmuseum.org"]);
+                const title = cleanText(reply?.title);
+                if (!image || !title) return null;
+
+                return {
+                    id,
+                    title,
+                    image,
+                    fullImage: safeUrl(reply.primaryImage, ["images.metmuseum.org"]) || image,
+                    pageUrl: safeUrl(reply.objectURL, ["www.metmuseum.org", "metmuseum.org"]),
+                    artist: cleanText(reply.artistDisplayName),
+                    artistBio: cleanText(reply.artistDisplayBio),
+                    department: cleanText(reply.department),
+                    details: [
+                        ["Date", cleanText(reply.objectDate)],
+                        ["Culture", cleanText(reply.culture)],
+                        ["Medium", cleanText(reply.medium)],
+                        ["Size", cleanText(reply.dimensions).split("\n")[0]]
+                    ].filter(([, value]) => value && !/unavailable/i.test(value))
+                };
+            }
+
+            // Downloads an image in the background and resolves with an image element that is ready to show.
+            function preloadImage(art, signal) {
+                return new Promise((resolve, reject) => {
+                    const img = new Image();
+                    const timer = setTimeout(() => fail(new ApiError("The artwork image took too long to load", "timeout")), IMAGE_LOAD_TIMEOUT_MS);
+                    const onAbort = () => fail(new ApiError("Request was cancelled", "aborted"));
+
+                    function finish() {
+                        clearTimeout(timer);
+                        signal.removeEventListener("abort", onAbort);
+                    }
+
+                    function fail(error) {
+                        finish();
+                        img.onload = img.onerror = null;
+                        img.src = "";
+                        reject(error);
+                    }
+
+                    img.onload = async () => {
+                        // Decoding first means the artwork paints in the same frame as its details.
+                        try { await img.decode(); } catch { /* An image that loaded can still be shown. */ }
+                        if (signal.aborted) return;
+                        finish();
+                        resolve(img);
+                    };
+                    img.onerror = () => fail(new ApiError(navigator.onLine ? "The artwork image could not load" : "You are offline", navigator.onLine ? "network" : "offline"));
+
+                    if (signal.aborted) return onAbort();
+                    signal.addEventListener("abort", onAbort, { once: true });
+                    img.alt = art.artist ? `${art.title} by ${art.artist}` : art.title;
+                    img.referrerPolicy = "no-referrer";
+                    img.src = art.image;
+                });
+            }
+
+            // Finds a random highlight with a usable image and downloads the image, trying another artwork when one fails.
+            async function fetchReadyArtwork(signal) {
+                let lastError = new ApiError("The Met collection sent no usable artwork", "invalid");
+                for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+                    const id = await fetchRandomId(signal);
+                    if (!id || id === currentArt?.id) continue;
+
+                    // An artwork that was removed from the collection is skipped.
+                    let art;
+                    try {
+                        art = await fetchArtworkDetails(id, signal);
+                    } catch (error) {
+                        if (error.status !== 404) throw error;
+                        lastError = error;
+                        continue;
+                    }
+                    if (!art) continue;
+
+                    // An image that will not load is skipped unless the request was cancelled or the user went offline.
+                    try {
+                        return { art, img: await preloadImage(art, signal) };
+                    } catch (error) {
+                        if (error.kind === "aborted" || error.kind === "offline") throw error;
+                        lastError = error;
+                    }
+                }
+                throw lastError;
+            }
+
+            // Turns or clears the busy state on the cards and both new artwork buttons.
+            function setLoading(isLoading) {
+                artBody.classList.toggle("loading", isLoading);
+                newArtBtn.disabled = isLoading;
+                headerNewBtn.disabled = isLoading;
+            }
+
+            // Swaps in the new details and image in the same step so they always appear together.
+            function showArtwork(art, img) {
+                currentArt = art;
+                artCount++;
+
+                artKind.textContent = art.department ? `THE MET · ${art.department}` : "THE MET";
+                artTitle.textContent = art.title;
+
+                artArtist.replaceChildren();
+                if (art.artist) {
+                    artArtist.append(art.artist);
+                    if (art.artistBio) {
+                        const bio = document.createElement("span");
+                        bio.textContent = ` (${art.artistBio})`;
+                        artArtist.append(bio);
+                    }
+                }
+                artArtist.hidden = !art.artist;
+
+                artDetails.replaceChildren(...art.details.flatMap(([label, value]) => {
+                    const term = document.createElement("dt");
+                    term.textContent = label;
+                    const detail = document.createElement("dd");
+                    detail.textContent = value;
+                    return [term, detail];
+                }));
+                artDetails.hidden = art.details.length === 0;
+
+                photoFrame.replaceChildren(img);
+                artMeta.textContent = `Artworks seen this visit: ${artCount}`;
+            }
+
+            // Loads a new artwork and shows it only when its details and image are both ready.
+            async function loadArtwork() {
+                if (artController) artController.abort();
+
+                const controller = new AbortController();
+                artController = controller;
+                setLoading(true);
+
+                try {
+                    const { art, img } = await fetchReadyArtwork(controller.signal);
+                    showArtwork(art, img);
+                } catch (error) {
+                    // A request replaced by a newer one ends quietly.
+                    if (error.kind === "aborted") return;
+
+                    showErrorToast(error.message);
+                    if (!currentArt) {
+                        artTitle.textContent = error.kind === "offline"
+                            ? "You are offline. An artwork will load when your connection comes back."
+                            : `${error.message}. Click New artwork to try again.`;
+                        photoMessage.textContent = "No artwork yet.";
+                    }
+                } finally {
+                    if (artController === controller) {
+                        artController = null;
+                        setLoading(false);
+                    }
+                }
+            }
+
+            // Builds a one-line description such as "Wheat Field with Cypresses by Vincent van Gogh (1889)".
+            function describeArtwork(art) {
+                const date = art.details.find(([label]) => label === "Date")?.[1];
+                return `${art.title}${art.artist ? ` by ${art.artist}` : ""}${date ? ` (${date})` : ""}`;
+            }
+
+            function copyText(text, btn) {
+                if (isBlank(text, "Nothing to copy")) return;
+                navigator.clipboard.writeText(text).then(() => {
+                    showSuccessToast("Copied to clipboard");
+                    if (btn) {
+                        const icon = btn.querySelector("i");
+                        const original = icon.className;
+                        icon.className = "bi bi-check-lg";
+                        setTimeout(() => icon.className = original, 1000);
+                    }
+                }).catch(() => showErrorToast("Could not copy, your browser blocked the clipboard"));
+            }
+
+            function copyArtwork(btn) {
+                if (!currentArt) return showInfoToast("No artwork to copy yet");
+                copyText(currentArt.pageUrl ? `${describeArtwork(currentArt)}\n${currentArt.pageUrl}` : describeArtwork(currentArt), btn);
+            }
+
+            // Opens a link in a new tab, or explains why there is nothing to open.
+            function openLink(url, missingMessage) {
+                if (!url) return showInfoToast(missingMessage);
+                window.open(url, "_blank", "noopener,noreferrer");
+            }
+
+            function openMuseumPage() {
+                openLink(currentArt?.pageUrl, "No museum page for this artwork");
+            }
+
+            function openFullImage() {
+                openLink(currentArt?.fullImage, "No artwork to open yet");
+            }
+
+            // Uses the device share sheet when available and falls back to copying the details with a link.
+            function shareArtwork() {
+                if (!currentArt) return showInfoToast("No artwork to share yet");
+                const shareText = `🖼️ ${describeArtwork(currentArt)}, from The Met`;
+                if (navigator.share) {
+                    navigator.share({ title: "Random Masterpiece", text: shareText, url: location.href }).catch(() => {});
+                } else {
+                    copyText(`${shareText}\n${location.href}`);
+                }
+            }
+
+            loadArtwork();
+
+            // An artwork is loaded again when the connection comes back and nothing is on screen yet.
+            window.addEventListener("online", () => {
+                if (!currentArt && !artController) loadArtwork();
+            });
+        </script>
+
+    </body>
+</html>

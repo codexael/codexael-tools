@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Codexael Toolstack — Page Not Found</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="robots" content="noindex">
+
+        <!-- Metadata -->
+        <meta name="description" content="Every tool is one key away. Formatters, converters, generators and calculators you can drive from the keyboard alone.">
+        <meta name="author" content="Codexael">
+        <meta name="theme-color" content="#fff4e0" media="(prefers-color-scheme: light)">
+        <meta name="theme-color" content="#17140f" media="(prefers-color-scheme: dark)">
+
+        <!-- Open Graph -->
+        <meta property="og:title" content="Codexael Toolstack — Every tool is one key away">
+        <meta property="og:description" content="Keyboard-first developer and everyday tools. No mouse, no menus, no waiting.">
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="https://tools.codexael.com/index.html">
+        <meta property="og:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+        <meta property="og:image:width" content="1200">
+        <meta property="og:image:height" content="630">
+        <meta property="og:image:type" content="image/png">
+        <meta property="og:image:alt" content="Codexael Toolstack — Every tool is one key away">
+        <meta property="og:site_name" content="Codexael Toolstack">
+
+        <!-- Twitter Card -->
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="Codexael Toolstack — Every tool is one key away">
+        <meta name="twitter:description" content="Keyboard-first developer and everyday tools. No mouse, no menus, no waiting.">
+        <meta name="twitter:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+
+        <!-- Favicon / App Icon -->
+        <link rel="icon" type="image/svg+xml" href="assets/images/codexael_icon.svg">
+        <link rel="apple-touch-icon" href="assets/images/codexael_icon.svg">
+
+        <!-- Bootstrap 5.2.0-beta1 -->
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+
+        <!-- Bootstrap with Popper 5.2.0-beta1 -->
+        <script src="js/bootstrap.bundle.min.js"></script>
+
+        <!-- Bootstrap Icons 1.11.3 -->
+        <link rel="stylesheet" href="css/bootstrap-icons.min.css">
+
+        <!-- Google fonts -->
+        <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+        <!-- Custom CSS -->
+        <link rel="stylesheet" href="css/keycaps.css">
+    </head>
+    <body>
+        <!-- Common layout -->
+        <div id="navbar-container"></div>
+
+        <main class="wrap">
+            <section class="lost">
+                <div class="big-keys" aria-hidden="true">
+                    <span class="big-key" style="--c:var(--pink)">4</span>
+                    <span class="big-key" style="--c:var(--yellow)">0</span>
+                    <span class="big-key" style="--c:var(--cyan)">4</span>
+                </div>
+                <h1>Page <span class="hl">not found</span></h1>
+                <p class="lost-path">
+                    There is no Toolstack page at <code class="cap" id="notFoundPath"></code>
+                </p>
+                <div class="hero-actions">
+                    <button type="button" class="key-btn" data-command-palette-open>
+                        <i class="bi bi-search" aria-hidden="true"></i> Search tools <kbd id="notFoundShortcut"></kbd>
+                    </button>
+                    <a href="index.html" class="key-btn key-btn-sec">
+                        <i class="bi bi-house-fill" aria-hidden="true"></i> Go home<span class="stk" style="--c:var(--lime)" aria-hidden="true">safe</span>
+                    </a>
+                </div>
+            </section>
+
+            <section id="notFoundSuggestions" hidden>
+                <div class="cat"><span>Did you mean</span><hr></div>
+                <div class="keys" id="notFoundSuggestionList"></div>
+            </section>
+        </main>
+
+        <div id="footer-container"></div>
+
+        <script src="js/storage.js"></script>
+        <script src="js/common.js"></script>
+        <script src="js/script.js"></script>
+
+        <script>
+            const MAX_SUGGESTIONS = 3;
+
+            // Runs after common.js has built the navbar, because the tool list is read from it.
+            window.addEventListener("DOMContentLoaded", () => {
+                document.getElementById("notFoundPath").textContent = safeDecode(location.pathname);
+                document.getElementById("notFoundShortcut").textContent = getCommandPaletteShortcutLabel();
+                renderSuggestions(getSuggestedTools(location.pathname));
+            });
+
+            // Decodes an address part, and returns it unchanged when it holds a broken escape sequence.
+            function safeDecode(text) {
+                try {
+                    return decodeURIComponent(text);
+                } catch (error) {
+                    return text;
+                }
+            }
+
+            // Splits the last part of the missing address into search words, for example "jsn_formater.html" into "jsn" and "formater".
+            function getSearchTerms(pathname) {
+                const lastSegment = safeDecode(pathname.split("/").pop() || "");
+                return lastSegment
+                    .replace(/\.[a-z0-9]+$/i, "")
+                    .toLowerCase()
+                    .split(/[^a-z0-9]+/)
+                    .filter(term => term.length >= 2);
+            }
+
+            // Scores each tool by how many search words it matches, and ignores weak matches from very short words.
+            function getSuggestedTools(pathname) {
+                const terms = getSearchTerms(pathname);
+                if (terms.length === 0) return [];
+
+                return getCommandPaletteTools()
+                    .filter(tool => tool.file !== "index.html")
+                    .map(tool => ({
+                        tool,
+                        score: terms.reduce((total, term) => {
+                            const termScore = getCommandPaletteScore(tool, [term]);
+                            return total + (termScore >= 2 || (termScore === 1 && term.length >= 4) ? termScore : 0);
+                        }, 0)
+                    }))
+                    .filter(entry => entry.score > 0)
+                    .sort((a, b) => b.score - a.score)
+                    .slice(0, MAX_SUGGESTIONS)
+                    .map(entry => entry.tool);
+            }
+
+            // Shows the suggested tools as keycaps, or keeps the section hidden when nothing matches.
+            function renderSuggestions(tools) {
+                if (tools.length === 0) return;
+
+                const list = document.getElementById("notFoundSuggestionList");
+                tools.forEach(tool => {
+                    const link = document.createElement("a");
+                    link.href = tool.file;
+                    link.className = "key";
+                    link.dataset.cat = tool.category;
+
+                    const icon = document.createElement("i");
+                    icon.className = `bi ${tool.icon} ic`;
+                    icon.setAttribute("aria-hidden", "true");
+
+                    const name = document.createElement("b");
+                    name.textContent = tool.name;
+
+                    const category = document.createElement("small");
+                    category.textContent = tool.category;
+
+                    link.append(icon, name, category);
+                    list.appendChild(link);
+                });
+                document.getElementById("notFoundSuggestions").hidden = false;
+            }
+        </script>
+    </body>
+</html>

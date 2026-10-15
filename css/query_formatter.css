@@ -1,0 +1,186 @@
+/* Side panels (Parameters, and Tables or Keyspaces) in the center column. */
+.qf-panel {
+    height: auto !important;
+    margin-bottom: 14px;
+    text-align: left;
+}
+
+.qf-panel-body {
+    background: var(--paper);
+    color: var(--ink);
+    padding: 10px;
+    text-align: left;
+    font-size: 0.8rem;
+}
+
+.qf-hint {
+    font-size: 0.72rem;
+    line-height: 1.45;
+    margin-bottom: 10px;
+}
+
+/* Example values in the hint read as small bordered tags. */
+.qf-hint code {
+    display: inline-block;
+    padding: 0 3px;
+    background: var(--bg);
+    color: inherit;
+    border: 2px solid var(--ink);
+    font-family: var(--mono-font);
+    font-size: 0.68rem;
+}
+
+.qf-param-row {
+    margin-bottom: 10px;
+}
+
+.qf-param-row label {
+    display: block;
+    margin-bottom: 4px;
+    font-family: var(--mono-font);
+    font-size: 0.75rem;
+    font-weight: 700;
+    word-break: break-all;
+}
+
+/* Parameter fields match the thick keycaps text boxes. */
+.qf-param-row input {
+    width: 100%;
+    padding: 5px 8px;
+    background: var(--paper);
+    color: var(--ink);
+    border: 3px solid var(--ink);
+    box-shadow: 2px 2px 0 var(--ink);
+    font: 700 0.78rem var(--mono-font);
+    outline: none;
+    transition: background-color 0.12s, transform 0.08s, box-shadow 0.08s;
+}
+
+.qf-param-row input:focus {
+    background: var(--lime);
+    color: #111111;
+    transform: translate(1px, 1px);
+    box-shadow: 1px 1px 0 var(--ink);
+}
+
+.qf-param-row input:focus-visible {
+    outline: 4px solid var(--blue);
+    outline-offset: 4px;
+}
+
+.qf-panel-body .action-btn-primary {
+    margin-bottom: 0;
+}
+
+/* One table or keyspace entry; clicking it selects the next place it appears in the input. */
+.qf-object {
+    display: block;
+    width: 100%;
+    margin-bottom: 10px;
+    padding: 7px 9px;
+    text-align: left;
+    background: var(--paper);
+    color: var(--ink);
+    border: 2.5px solid var(--ink);
+    border-radius: 8px;
+    box-shadow: 0 2px 0 var(--ink);
+    cursor: pointer;
+    transition: transform 0.08s, box-shadow 0.08s, background-color 0.12s;
+}
+
+.qf-object:last-child {
+    margin-bottom: 0;
+}
+
+.qf-object:hover {
+    transform: translateY(1px);
+    box-shadow: 0 1px 0 var(--ink);
+    background: var(--yellow);
+    color: #111111;
+}
+
+.qf-object:active {
+    transform: translateY(2px);
+    box-shadow: 0 0 0 var(--ink);
+}
+
+.qf-object:focus-visible {
+    outline: 3px solid var(--blue);
+    outline-offset: 3px;
+}
+
+.qf-object-path {
+    font-family: var(--mono-font);
+    font-size: 0.75rem;
+    font-weight: 700;
+    word-break: break-all;
+}
+
+.qf-object-parts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 6px;
+}
+
+/* Path parts such as schema, table, bucket or collection are small lilac tags. */
+.qf-part {
+    padding: 0 5px;
+    background: var(--lilac);
+    color: #111111;
+    border: 2px solid var(--ink);
+    font-size: 0.66rem;
+    font-weight: 700;
+    word-break: break-all;
+}
+
+.qf-part b {
+    margin-right: 3px;
+    font-weight: 700;
+    opacity: 0.7;
+}
+
+.qf-object-meta {
+    margin-top: 6px;
+    font-size: 0.68rem;
+    opacity: 0.8;
+}
+
+/* A table or keyspace warning is an orange sticker. */
+.qf-object-note {
+    display: inline-block;
+    margin-top: 6px;
+    padding: 0 5px;
+    background: var(--orange);
+    color: #111111;
+    border: 2px solid var(--ink);
+    font-size: 0.66rem;
+    font-weight: 700;
+}
+
+/* Table and keyspace names marked inside the input editor get a lilac fill. */
+.cm-qf-object {
+    background: rgba(182, 156, 255, 0.4);
+}
+
+/* Query token colours for the light editor surface, which beat the site rule that makes editor text one colour. */
+.CodeMirror span.cm-keyword { color: #7c3aed !important; }
+.CodeMirror span.cm-atom,
+.CodeMirror span.cm-number { color: #c2410c !important; }
+.CodeMirror span.cm-string { color: #15803d !important; }
+.CodeMirror span.cm-comment { color: #6b7280 !important; font-style: italic !important; }
+.CodeMirror span.cm-builtin,
+.CodeMirror span.cm-type { color: #1d4ed8 !important; }
+.CodeMirror span.cm-variable-2 { color: #0f766e !important; }
+.CodeMirror span.cm-variable-3 { color: #be185d !important; }
+
+/* Query token colours for the dark editor surface. */
+body.dark-theme .CodeMirror span.cm-keyword { color: #cba6f7 !important; }
+body.dark-theme .CodeMirror span.cm-atom,
+body.dark-theme .CodeMirror span.cm-number { color: #fab387 !important; }
+body.dark-theme .CodeMirror span.cm-string { color: #a6e3a1 !important; }
+body.dark-theme .CodeMirror span.cm-comment { color: #7f849c !important; }
+body.dark-theme .CodeMirror span.cm-builtin,
+body.dark-theme .CodeMirror span.cm-type { color: #89b4fa !important; }
+body.dark-theme .CodeMirror span.cm-variable-2 { color: #94e2d5 !important; }
+body.dark-theme .CodeMirror span.cm-variable-3 { color: #f5c2e7 !important; }

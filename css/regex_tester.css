@@ -1,0 +1,344 @@
+/* Regex tester page styles built on the keycaps design system. */
+
+/* The three columns sit in one row with a gap wide enough for the hard shadows. */
+.tool-wrapper > .row {
+    --bs-gutter-y: 0;
+    margin: 0;
+    gap: 24px;
+}
+
+/* The pattern column gets a fixed width and the two panels share the rest. */
+@media (min-width: 768px) {
+    .tool-wrapper > .row { flex-wrap: nowrap; }
+
+    #inputEditor,
+    #outputEditor {
+        flex: 1 1 0;
+        width: auto;
+        max-width: none;
+        min-width: 0;
+    }
+
+    .tool-wrapper .center-col {
+        flex: 0 0 clamp(200px, 19vw, 250px);
+        width: auto;
+        max-width: none;
+        padding: 0 12px 12px 0;
+    }
+}
+
+/* The results panel matches the height of the test string panel. */
+#outputEditor {
+    --panel-c: var(--cyan);
+    height: var(--panel-h);
+}
+
+/* Everything in the pattern column is centred. */
+.center-col .center-actions-label { margin: 0 auto 10px; }
+.center-col .center-actions-wrapper { text-align: center; }
+#builderContainer { text-align: center !important; }
+.center-col .center-actions-wrapper:first-child { margin-top: 2px; }
+
+/* The pattern field uses the mono font so regex symbols line up. */
+#patternInput { font-size: 0.88rem; }
+
+/* Error sticker shown under an invalid pattern. */
+.regex-error-msg {
+    display: none;
+    margin: -2px 0 6px;
+    padding: 3px 8px;
+    background: var(--red);
+    color: var(--on-color);
+    border: 2.5px solid var(--ink);
+    box-shadow: 1.5px 1.5px 0 var(--ink);
+    font-size: 0.72rem;
+    font-weight: 700;
+    line-height: 1.4;
+    text-align: center;
+    overflow-wrap: anywhere;
+    transform: rotate(-1deg);
+}
+
+.regex-error-msg.visible { display: block; }
+
+/* The library description reads like a small note stuck under the dropdown. */
+.lib-desc:not(:empty) {
+    margin: -2px 2px 6px 0;
+    padding: 6px 9px;
+    background: var(--lilac);
+    color: var(--on-color);
+    border: 2.5px solid var(--ink);
+    box-shadow: 1.5px 1.5px 0 var(--ink);
+    font-size: 0.72rem;
+    font-weight: 700;
+    line-height: 1.4;
+    text-align: center;
+    transform: rotate(-1deg);
+}
+
+/* Five flag keys fit on one row inside the narrow pattern column. */
+.center-col .flag-group { justify-content: center; gap: 6px; }
+.center-col .flag-toggle label { width: 32px; height: 32px; }
+
+/* Builder group names are drawn as small ink labels. */
+.token-group-label {
+    display: table;
+    margin: 14px auto 8px;
+    padding: 1px 8px;
+    background: var(--ink);
+    color: var(--bg);
+    font-family: var(--display-font);
+    font-size: 0.68rem;
+    text-transform: uppercase;
+}
+
+.token-group-label:first-child { margin-top: 0; }
+
+.token-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px 6px;
+    margin-bottom: 6px;
+}
+
+/* Each token group gets its own hover colour. */
+.token-grid:nth-child(2) { --c: var(--yellow); }
+.token-grid:nth-child(4) { --c: var(--pink); }
+.token-grid:nth-child(6) { --c: var(--cyan); }
+.token-grid:nth-child(8) { --c: var(--lilac); }
+
+/* Builder tokens are small keycaps that sink when pressed. */
+.token-btn {
+    min-width: 30px;
+    padding: 3px 7px;
+    background: var(--paper);
+    color: var(--ink);
+    border: 2.5px solid var(--ink);
+    border-radius: 7px;
+    box-shadow: 0 1.5px 0 var(--ink);
+    font: 700 0.75rem var(--mono-font);
+    white-space: nowrap;
+    transition: transform 0.08s, box-shadow 0.08s, background-color 0.12s;
+}
+
+.token-btn:hover { background: var(--c, var(--yellow)); color: var(--on-color); transform: translateY(0.5px); box-shadow: 0 1px 0 var(--ink); }
+.token-btn:active { transform: translateY(1.5px); box-shadow: 0 0 0 var(--ink); }
+.token-btn:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
+
+/* Output tabs are drawn as keycaps where the open tab sinks in. */
+.output-tabs {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.output-tab {
+    position: relative;
+    display: flex;
+    align-items: center;
+    padding: 4px 9px;
+    background: var(--paper);
+    color: var(--ink);
+    border: 2.5px solid var(--ink);
+    border-radius: 8px;
+    box-shadow: 0 2px 0 var(--ink);
+    font: 700 0.72rem var(--mono-font);
+    text-transform: uppercase;
+    white-space: nowrap;
+    transition: transform 0.08s, box-shadow 0.08s, background-color 0.12s;
+}
+
+.output-tab:hover { transform: translateY(1px); box-shadow: 0 1px 0 var(--ink); }
+.output-tab.active { background: var(--yellow); color: var(--on-color); transform: translateY(2px); box-shadow: 0 0 0 var(--ink), inset 0 1.5px 0 rgba(0, 0, 0, 0.2); }
+.output-tab:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; }
+
+/* The match count is a tilted sticker slapped on the corner of the matches tab. */
+.badge-count {
+    position: absolute;
+    top: -15px;
+    right: -14px;
+    z-index: 2;
+    padding: 0 5px;
+    background: var(--paper);
+    color: var(--ink);
+    border: 2px solid var(--ink);
+    box-shadow: 1px 1px 0 var(--ink);
+    font-size: 0.6rem;
+    font-weight: 700;
+    line-height: 1.5;
+    white-space: nowrap;
+    transform: rotate(6deg);
+    pointer-events: none;
+}
+
+.badge-ok { background: var(--lime); color: var(--on-color); }
+.badge-none { background: var(--paper); color: var(--ink); }
+.badge-err { background: var(--red); color: var(--on-color); }
+
+/* Result bodies fill the space between the panel header and footer. */
+.match-body,
+.snippet-body {
+    flex: 1 1 auto;
+    height: auto;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+.match-body { padding: 16px 18px 18px 14px !important; }
+
+/* Each match is a receipt card with dashed rows. */
+.match-item {
+    margin-bottom: 16px;
+    padding: 10px 12px;
+    background: var(--paper);
+    color: var(--ink);
+    border: 3px solid var(--ink);
+    box-shadow: 2px 2px 0 var(--ink);
+    font-size: 0.8rem;
+    text-align: left;
+    cursor: pointer;
+    transition: transform 0.08s, box-shadow 0.08s, background-color 0.12s;
+}
+
+.match-item:last-child { margin-bottom: 0; }
+.match-item:hover { transform: translate(1px, 1px); box-shadow: 1px 1px 0 var(--ink); }
+.match-item.active { background: var(--yellow); color: var(--on-color); transform: translate(2px, 2px); box-shadow: 0 0 0 var(--ink); }
+
+/* The matched text is shown as a marker highlight. */
+.match-item .match-val {
+    display: inline;
+    padding: 1px 5px;
+    background: var(--yellow);
+    color: var(--on-color);
+    font-weight: 700;
+    line-height: 1.7;
+    overflow-wrap: anywhere;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+}
+
+.match-item.active .match-val { background: var(--pink); outline: 2px solid var(--on-color); }
+
+.match-item .match-meta {
+    margin-top: 8px;
+    padding-top: 6px;
+    border-top: 2px dashed currentColor;
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.match-item .match-groups { margin-top: 6px; }
+
+/* Capture groups are listed as dashed receipt rows. */
+.group-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 5px 0;
+    border-top: 2px dashed currentColor;
+    font-size: 0.75rem;
+}
+
+.group-label {
+    flex: 0 0 auto;
+    min-width: 64px;
+    max-width: 45%;
+    padding: 0 5px;
+    background: var(--c, var(--pink));
+    color: var(--on-color);
+    border: 2px solid var(--ink);
+    font-size: 0.66rem;
+    font-weight: 700;
+    line-height: 1.5;
+    text-align: center;
+    text-transform: uppercase;
+    overflow-wrap: anywhere;
+    transform: rotate(-2deg);
+}
+
+/* Group labels cycle colours so each group number keeps its own colour. */
+.group-row:nth-child(4n + 2) .group-label { --c: var(--cyan); }
+.group-row:nth-child(4n + 3) .group-label { --c: var(--lilac); }
+.group-row:nth-child(4n + 4) .group-label { --c: var(--orange); }
+
+.group-val {
+    min-width: 0;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+}
+
+/* Empty and error states show a big tilted keycap above the message. */
+.no-matches {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    height: 100%;
+    padding: 2rem 1.5rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+.no-matches i {
+    width: 64px;
+    height: 64px;
+    display: grid;
+    place-items: center;
+    background: var(--yellow);
+    color: var(--on-color);
+    border: 3px solid var(--ink);
+    border-radius: 12px;
+    box-shadow: 0 3px 0 var(--ink);
+    font-size: 1.8rem;
+    transform: rotate(-4deg);
+}
+
+.no-matches.match-error i { background: var(--red); }
+
+/* Matches in the test string use the marker look from the template. */
+.CodeMirror .cm-regex-match {
+    background: var(--yellow);
+    box-shadow: 0 -1px 0 rgba(17, 17, 17, 0.35) inset;
+}
+
+/* The selected match is pink with an ink ring like the current find hit. */
+.CodeMirror .cm-regex-match-selected {
+    background: var(--pink);
+    outline: 2px solid var(--ink);
+}
+
+/* Dark mode uses see-through fills so the cream editor text stays readable. */
+body.dark-theme .CodeMirror .cm-regex-match {
+    background: rgba(255, 210, 63, 0.3);
+    box-shadow: 0 -1px 0 var(--yellow) inset;
+}
+
+body.dark-theme .CodeMirror .cm-regex-match-selected {
+    background: rgba(255, 111, 181, 0.4);
+    box-shadow: 0 -1px 0 var(--pink) inset;
+    outline: 2px solid var(--pink);
+}
+
+/* Code snippet output is shown as plain mono text. */
+.snippet-body { padding: 14px 16px !important; }
+
+.snippet-pre {
+    margin: 0;
+    color: var(--ink);
+    font: 400 0.82rem/1.7 var(--mono-font);
+    white-space: pre;
+    text-align: left;
+}
+
+.snippet-pre code { color: inherit; font: inherit; }
+
+/* Phone layout stacks the columns and lets the pattern column grow freely. */
+@media (max-width: 767px) {
+    .tool-wrapper .center-col { padding: 0 8px 8px 0; }
+    #outputEditor { height: max(480px, 70vh); }
+}

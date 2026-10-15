@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Codexael Toolstack</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Metadata -->
+    <meta name="description" content="Format, convert, generate and calculate in your browser. Free, fast and no sign-up.">
+    <meta name="author" content="Codexael">
+    <meta name="theme-color" content="#fff4e0" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#17140f" media="(prefers-color-scheme: dark)">
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="Codexael Toolstack — Every tool is one key away">
+    <meta property="og:description" content="Format, convert, generate and calculate in your browser. Free, fast and no sign-up.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://tools.codexael.com/index.html">
+    <meta property="og:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:type" content="image/png">
+    <meta property="og:image:alt" content="Codexael Toolstack — Every tool is one key away">
+    <meta property="og:site_name" content="Codexael Toolstack">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Codexael Toolstack — Every tool is one key away">
+    <meta name="twitter:description" content="Format, convert, generate and calculate in your browser. Free, fast and no sign-up.">
+    <meta name="twitter:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+
+    <!-- Favicon / App Icon -->
+    <link rel="icon" type="image/svg+xml" href="assets/images/codexael_icon.svg">
+    <link rel="apple-touch-icon" href="assets/images/codexael_icon.svg">
+
+    <!-- Bootstrap 5.2.0-beta1 -->
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+
+    <!-- Bootstrap with Popper 5.2.0-beta1 -->
+    <script src="js/bootstrap.bundle.min.js"></script>
+
+    <!-- Bootstrap Icons 1.11.3 -->
+    <link rel="stylesheet" href="css/bootstrap-icons.min.css">
+
+    <!-- Google fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/keycaps.css">
+</head>
+
+<body>
+    <!-- Common layout -->
+    <div id="navbar-container"></div>
+
+    <main class="wrap">
+        <!-- Hero Section -->
+        <section class="hero">
+            <div>
+                <h1>Every tool<br>is <span class="hl">one key</span><br>away.</h1>
+                <p>No mouse, no menus, no waiting. Your hands never leave the keyboard.</p>                <div class="hero-actions">
+                    <button type="button" class="key-btn" id="aboutToolstackBtn" data-bs-toggle="modal"
+                        data-bs-target="#welcomeModal">
+                        <i class="bi bi-info-circle-fill" aria-hidden="true"></i> About Toolstack
+                    </button>
+                    <button type="button" class="key-btn key-btn-sec" id="clearDataBtn" data-bs-toggle="modal"
+                        data-bs-target="#clearDataModal">
+                        <i class="bi bi-trash3-fill" aria-hidden="true"></i> Clear my data<span class="stk"
+                            style="--c:var(--red)" aria-hidden="true">careful</span>
+                    </button>
+                </div>
+            </div>
+            <div class="sticker">
+                <h3>HOUSE RULES ✌</h3>
+                <ul>
+                    <li>No sign-up. Ever.</li>
+                    <li>No uploads. Data stays local.*</li>
+                    <li>No ads yelling at you.</li>
+                    <li>Just tools that work.</li>
+                </ul>
+                <p class="fine">* IP lookup asks a public service for location data, Currency Converter asks a public
+                    service for the latest exchange rates, and Scrum Poker connects players peer to peer.</p>
+            </div>
+        </section>
+
+        <!-- Tools Grid -->
+        <label class="search">
+            <i class="bi bi-search" aria-hidden="true"></i>
+            <input type="search" id="toolSearch" placeholder="FIND A TOOL… (press / to focus)" aria-label="Search tools"
+                autocomplete="off">
+        </label>
+        <p class="search-empty" id="toolSearchEmpty" hidden>NOTHING HERE. TRY ANOTHER WORD.</p>
+
+        <div id="toolsGrid">
+
+            <section class="tool-group" id="favouritesGroup" hidden>
+                <div class="cat"><span>★ Favourites</span>
+                    <hr>
+                </div>
+                <div class="keys"></div>
+            </section>
+
+            <section class="tool-group">
+                <div class="cat"><span>Formatters</span>
+                    <hr>
+                </div>
+                <div class="keys">
+                    <a href="json_formatter.html" class="key" data-cat="Formatters" data-key="J" aria-keyshortcuts="J">
+                        <span class="letter" aria-hidden="true">J</span>
+                        <i class="bi bi-filetype-json ic" aria-hidden="true"></i>
+                        <b>JSON Formatter</b><small>Beautify & validate JSON instantly.</small>
+                    </a>
+                    <a href="xml_formatter.html" class="key" data-cat="Formatters" data-key="X" aria-keyshortcuts="X">
+                        <span class="letter" aria-hidden="true">X</span>
+                        <i class="bi bi-filetype-xml ic" aria-hidden="true"></i>
+                        <b>XML Formatter</b><small>Beautify & validate XML instantly.</small>
+                    </a>
+                    <a href="html_formatter.html" class="key" data-cat="Formatters" data-key="H" aria-keyshortcuts="H">
+                        <span class="letter" aria-hidden="true">H</span>
+                        <i class="bi bi-filetype-html ic" aria-hidden="true"></i>
+                        <b>HTML Formatter & Viewer</b><small>Format, beautify and preview HTML content.</small>
+                    </a>
+                    <a href="query_formatter.html" class="key" data-cat="Formatters" data-key="L"
+                        aria-keyshortcuts="L">
+                        <span class="letter" aria-hidden="true">L</span>
+                        <i class="bi bi-filetype-sql ic" aria-hidden="true"></i>
+                        <b>Query Formatter</b><small>Format PostgreSQL, SQL Server, MySQL, SQLite & N1QL queries, fill
+                            parameters & list tables.</small>
+                    </a>
+                </div>
+            </section>
+
+            <section class="tool-group">
+                <div class="cat"><span>Generators</span>
+                    <hr>
+                </div>
+                <div class="keys">
+                    <a href="qr_generator.html" class="key" data-cat="Generators" data-key="Q" aria-keyshortcuts="Q">
+                        <span class="letter" aria-hidden="true">Q</span>
+                        <i class="bi bi-qr-code ic" aria-hidden="true"></i>
+                        <b>QR Generator</b><small>Generate QR codes instantly.</small>
+                    </a>
+                    <a href="barcode_generator.html" class="key" data-cat="Generators" data-key="B"
+                        aria-keyshortcuts="B">
+                        <span class="letter" aria-hidden="true">B</span>
+                        <i class="bi bi-upc ic" aria-hidden="true"></i>
+                        <b>Barcode Generator</b><small>Generate Barcodes instantly.</small>
+                    </a>
+                    <a href="checksum_generator.html" class="key" data-cat="Generators" data-key="K"
+                        aria-keyshortcuts="K">
+                        <span class="letter" aria-hidden="true">K</span>
+                        <i class="bi bi-shield-check ic" aria-hidden="true"></i>
+                        <b>Checksum Generator</b><small>Generate & verify file or text checksums.</small>
+                    </a>
+                    <a href="uuid_generator.html" class="key" data-cat="Generators" data-key="G" aria-keyshortcuts="G">
+                        <span class="letter" aria-hidden="true">G</span>
+                        <i class="bi bi-fingerprint ic" aria-hidden="true"></i>
+                        <b>UUID Generator</b><small>Generate & validate UUIDs/GUIDs (v1, v4, v7).</small>
+                    </a>
+                    <a href="color_picker.html" class="key" data-cat="Generators" data-key="P" aria-keyshortcuts="P">
+                        <span class="letter" aria-hidden="true">P</span>
+                        <i class="bi bi-eyedropper ic" aria-hidden="true"></i>
+                        <b>Color Picker</b><small>Pick colors and extract palettes from any image.</small>
+                    </a>
+                </div>
+            </section>
+
+            <section class="tool-group">
+                <div class="cat"><span>Converters</span>
+                    <hr>
+                </div>
+                <div class="keys">
+                    <a href="base64_text_converter.html" class="key" data-cat="Converters" data-key="E"
+                        aria-keyshortcuts="E">
+                        <span class="letter" aria-hidden="true">E</span>
+                        <i class="bi bi-code-slash ic" aria-hidden="true"></i>
+                        <b>Base64 Text Converter</b><small>Base64 text encoding/decoding.</small>
+                    </a>
+                    <a href="base64_image_converter.html" class="key" data-cat="Converters" data-key="A"
+                        aria-keyshortcuts="A">
+                        <span class="letter" aria-hidden="true">A</span>
+                        <i class="bi bi-image ic" aria-hidden="true"></i>
+                        <b>Base64 Image Converter</b><small>Base64 image encoding/decoding.</small>
+                    </a>
+                    <a href="data_converter.html" class="key" data-cat="Converters" data-key="D" aria-keyshortcuts="D">
+                        <span class="letter" aria-hidden="true">D</span>
+                        <i class="bi bi-translate ic" aria-hidden="true"></i>
+                        <b>Data Converter</b><small>Convert data formats instantly.</small>
+                    </a>
+                    <a href="hash_calculator.html" class="key" data-cat="Converters" data-key="S" aria-keyshortcuts="S">
+                        <span class="letter" aria-hidden="true">S</span>
+                        <i class="bi bi-hash ic" aria-hidden="true"></i>
+                        <b>Hash Calculator</b><small>Generate MD5, SHA & HMAC hashes instantly.</small>
+                    </a>
+                    <a href="docx_converter.html" class="key" data-cat="Converters" data-key="W" aria-keyshortcuts="W">
+                        <span class="letter" aria-hidden="true">W</span>
+                        <i class="bi bi-file-word ic" aria-hidden="true"></i>
+                        <b>Doc/PDF to MD</b><small>Convert Word documents and PDFs to Markdown.</small>
+                    </a>
+                </div>
+            </section>
+
+            <section class="tool-group">
+                <div class="cat"><span>Editors</span>
+                    <hr>
+                </div>
+                <div class="keys">
+                    <a href="text_editor.html" class="key" data-cat="Editors" data-key="T" aria-keyshortcuts="T">
+                        <span class="letter" aria-hidden="true">T</span>
+                        <i class="bi bi-pencil-square ic" aria-hidden="true"></i>
+                        <b>Text Editor</b><small>Edit, replace, convert, sort & compare text.</small>
+                    </a>
+                    <a href="regex_tester.html" class="key" data-cat="Editors" data-key="R" aria-keyshortcuts="R">
+                        <span class="letter" aria-hidden="true">R</span>
+                        <i class="bi bi-regex ic" aria-hidden="true"></i>
+                        <b>Regex Tester</b><small>Build, test & export regular expressions with live match
+                            highlighting.</small>
+                    </a>
+                    <a href="markdown_editor.html" class="key" data-cat="Editors" data-key="M" aria-keyshortcuts="M">
+                        <span class="letter" aria-hidden="true">M</span>
+                        <i class="bi bi-markdown ic" aria-hidden="true"></i>
+                        <b>Markdown Editor</b><small>Design Markdown with a full toolbar & preview how it will
+                            render.</small>
+                    </a>
+                </div>
+            </section>
+
+            <section class="tool-group">
+                <div class="cat"><span>Productivity</span>
+                    <hr>
+                </div>
+                <div class="keys">
+                    <a href="notes.html" class="key" data-cat="Productivity" data-key="N" aria-keyshortcuts="N">
+                        <span class="letter" aria-hidden="true">N</span>
+                        <i class="bi bi-journal-text ic" aria-hidden="true"></i>
+                        <b>Notes</b><small>Quick notes that save automatically in your browser.</small>
+                    </a>
+                    <a href="todo_list.html" class="key" data-cat="Productivity" data-key="O" aria-keyshortcuts="O">
+                        <span class="letter" aria-hidden="true">O</span>
+                        <i class="bi bi-check2-square ic" aria-hidden="true"></i>
+                        <b>Todo List</b><small>Create and track your to-do list with ease.</small>
+                    </a>
+                    <a href="scrum_poker.html" class="key" data-cat="Productivity" data-key="V" aria-keyshortcuts="V">
+                        <span class="letter" aria-hidden="true">V</span>
+                        <i class="bi bi-suit-spade-fill ic" aria-hidden="true"></i>
+                        <b>Scrum Poker</b><small>Estimate stories together with live planning poker rooms.</small>
+                    </a>
+                    <a href="unit_converter.html" class="key" data-cat="Productivity" data-key="U"
+                        aria-keyshortcuts="U">
+                        <span class="letter" aria-hidden="true">U</span>
+                        <i class="bi bi-rulers ic" aria-hidden="true"></i>
+                        <b>Unit Converter</b><small>Convert length, weight, temperature & more.</small>
+                    </a>
+                    <a href="currency_converter.html" class="key" data-cat="Productivity" data-key="$"
+                        aria-keyshortcuts="Shift+4">
+                        <span class="letter" aria-hidden="true">$</span>
+                        <i class="bi bi-currency-exchange ic" aria-hidden="true"></i>
+                        <b>Currency Converter</b><small>Convert between world currencies instantly.</small>
+                    </a>
+                    <a href="timestamp_converter.html" class="key" data-cat="Productivity" data-key="Z"
+                        aria-keyshortcuts="Z">
+                        <span class="letter" aria-hidden="true">Z</span>
+                        <i class="bi bi-clock-history ic" aria-hidden="true"></i>
+                        <b>Timestamp Converter</b><small>Convert Unix timestamps to dates and back, across any
+                            timezone.</small>
+                    </a>
+                    <a href="date_difference_calculator.html" class="key" data-cat="Productivity" data-key="Y"
+                        aria-keyshortcuts="Y">
+                        <span class="letter" aria-hidden="true">Y</span>
+                        <i class="bi bi-calendar2-range ic" aria-hidden="true"></i>
+                        <b>Date Difference Calculator</b><small>Find the gap between two dates in years, days, weekdays
+                            & more.</small>
+                    </a>
+                    <a href="calculator.html" class="key" data-cat="Productivity" data-key="C" aria-keyshortcuts="C">
+                        <span class="letter" aria-hidden="true">C</span>
+                        <i class="bi bi-calculator ic" aria-hidden="true"></i>
+                        <b>Calculator</b><small>A simple calculator for everyday calculations.</small>
+                    </a>
+                    <a href="percentage_calculator.html" class="key" data-cat="Productivity" data-key="%"
+                        aria-keyshortcuts="Shift+5">
+                        <span class="letter" aria-hidden="true">%</span>
+                        <i class="bi bi-percent ic" aria-hidden="true"></i>
+                        <b>Percentage Calculator</b><small>Calculate percentages, increases & discounts.</small>
+                    </a>
+                    <a href="ip_address_lookup.html" class="key" data-cat="Productivity" data-key="I"
+                        aria-keyshortcuts="I">
+                        <span class="letter" aria-hidden="true">I</span>
+                        <i class="bi bi-globe2 ic" aria-hidden="true"></i>
+                        <b>IP Address Lookup</b><small>Analyse IPs & subnets, and look up location & ISP.</small>
+                    </a>
+                    <a href="cron_parser.html" class="key" data-cat="Productivity" data-key="*"
+                        aria-keyshortcuts="Shift+8">
+                        <span class="letter" aria-hidden="true">*</span>
+                        <i class="bi bi-alarm ic" aria-hidden="true"></i>
+                        <b>Cron Parser</b><small>Explain cron expressions and see their next run times.</small>
+                    </a>                </div>
+            </section>
+
+            <section class="tool-group">
+                <div class="cat"><span>Fun</span>
+                    <hr>
+                </div>
+                <div class="keys">
+                    <a href="cat_facts.html" class="key" data-cat="Fun" data-key="F" aria-keyshortcuts="F">
+                        <span class="letter" aria-hidden="true">F</span>
+                        <i class="bi bi-emoji-smile ic" aria-hidden="true"></i>
+                        <b>Cat Facts</b><small>Get a random cat photo and cat fact together.</small>
+                    </a>
+                    <a href="dog_facts.html" class="key" data-cat="Fun" data-key="!" aria-keyshortcuts="Shift+1">
+                        <span class="letter" aria-hidden="true">!</span>
+                        <i class="bi bi-image ic" aria-hidden="true"></i>
+                        <b>Dog Facts</b><small>Get a random dog photo and dog fact together.</small>
+                    </a>
+                    <a href="trivia_quiz.html" class="key" data-cat="Fun" data-key="#" aria-keyshortcuts="Shift+3">
+                        <span class="letter" aria-hidden="true">#</span>
+                        <i class="bi bi-patch-question ic" aria-hidden="true"></i>
+                        <b>Trivia Quiz</b><small>Test yourself in 24 categories and beat your best score.</small>
+                    </a>
+                    <a href="advice_slip.html" class="key" data-cat="Fun" data-key="&amp;" aria-keyshortcuts="Shift+7">
+                        <span class="letter" aria-hidden="true">&amp;</span>
+                        <i class="bi bi-lightbulb ic" aria-hidden="true"></i>
+                        <b>Advice Slip</b><small>Get a random piece of life advice to copy and share.</small>
+                    </a>
+                    <a href="useless_facts.html" class="key" data-cat="Fun" data-key="@" aria-keyshortcuts="Shift+2">
+                        <span class="letter" aria-hidden="true">@</span>
+                        <i class="bi bi-emoji-dizzy ic" aria-hidden="true"></i>
+                        <b>Useless Facts</b><small>Get a random useless fact or the fact of the day.</small>
+                    </a>
+                    <a href="random_masterpiece.html" class="key" data-cat="Fun" data-key="~" aria-keyshortcuts="Shift+`">
+                        <span class="letter" aria-hidden="true">~</span>
+                        <i class="bi bi-palette ic" aria-hidden="true"></i>
+                        <b>Random Masterpiece</b><small>Discover a random masterpiece from The Met with its story.</small>
+                    </a>
+                    <a href="postal_code_lookup.html" class="key" data-cat="Fun" data-key="=" aria-keyshortcuts="=">
+                        <span class="letter" aria-hidden="true">=</span>
+                        <i class="bi bi-mailbox ic" aria-hidden="true"></i>
+                        <b>ZIP / PIN Code Lookup</b><small>Find the city, area and state for a postal code in about 70 countries.</small>
+                    </a>
+                    <a href="ifsc_code_finder.html" class="key" data-cat="Fun" data-key="+" aria-keyshortcuts="Shift+=">
+                        <span class="letter" aria-hidden="true">+</span>
+                        <i class="bi bi-bank ic" aria-hidden="true"></i>
+                        <b>IFSC Code Finder</b><small>Find the bank, branch, address and MICR for any IFSC code.</small>
+                    </a>
+                    <a href="gold_silver_price.html" class="key" data-cat="Fun" data-key="^" aria-keyshortcuts="Shift+6">
+                        <span class="letter" aria-hidden="true">^</span>
+                        <i class="bi bi-coin ic" aria-hidden="true"></i>
+                        <b>Gold &amp; Silver Price Today</b><small>Live gold, silver and platinum prices with 24K and 22K rates.</small>
+                    </a>
+                    <a href="riddle_of_the_day.html" class="key" data-cat="Fun" data-key="-" aria-keyshortcuts="-">
+                        <span class="letter" aria-hidden="true">-</span>
+                        <i class="bi bi-puzzle ic" aria-hidden="true"></i>
+                        <b>Riddle of the Day</b><small>A new riddle every day with a hidden answer to reveal.</small>
+                    </a>
+                    <a href="wikipedia_today.html" class="key" data-cat="Fun" data-key="[" aria-keyshortcuts="[">
+                        <span class="letter" aria-hidden="true">[</span>
+                        <i class="bi bi-wikipedia ic" aria-hidden="true"></i>
+                        <b>Wikipedia Today</b><small>Featured article, picture, news and most-read for any day.</small>
+                    </a>
+                    <a href="wildlife_near_you.html" class="key" data-cat="Fun" data-key="]" aria-keyshortcuts="]">
+                        <span class="letter" aria-hidden="true">]</span>
+                        <i class="bi bi-binoculars ic" aria-hidden="true"></i>
+                        <b>Wildlife Spotted Near You</b><small>See birds, insects and plants people spotted near you.</small>
+                    </a>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <div id="footer-container"></div>
+
+    <div class="key-toast" id="keyToast" role="status" aria-live="polite"></div>
+
+    <!-- Welcome / Info Modal -->
+    <div class="modal fade" id="welcomeModal" tabindex="-1" aria-labelledby="welcomeModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content welcome-modal-content">
+                <div class="modal-header welcome-modal-header">
+                    <h5 class="modal-title" id="welcomeModalLabel">👋 Welcome to Toolstack</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body welcome-modal-body" id="welcomeModalBody">
+                    <!-- Populated by js/changelog.js — see the version-popup script below. -->
+                </div>
+                <div class="modal-footer welcome-modal-footer">
+                    <button type="button" class="welcome-cta-btn" data-bs-dismiss="modal">Got it, let's explore
+                        →</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom JS -->
+    <script src="js/storage.js"></script>
+    <script src="js/changelog.js"></script>
+    <script src="js/common.js"></script>
+    <script src="js/script.js"></script>
+
+    <!-- Custom JS -->
+    <script>
+
+        // Returns every tool keycap on the page, in any group.
+        function getToolCards() {
+            return Array.from(document.querySelectorAll("#toolsGrid .key"));
+        }
+
+        // Adds a favourite star to each tool card, remembers its home group and applies the initial card order.
+        window.addEventListener("DOMContentLoaded", () => {
+            const favourites = getFavouriteTools();
+
+            getToolCards().forEach((card, position) => {
+                card.dataset.position = position;
+                card.homeGrid = card.parentElement;
+                const filename = card.getAttribute("href");
+                const starBtn = document.createElement("button");
+                starBtn.type = "button";
+                starBtn.className = "favourite-btn";
+                setFavouriteButtonState(starBtn, favourites.includes(filename));
+                starBtn.addEventListener("click", event => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    setFavouriteButtonState(starBtn, toggleFavouriteTool(filename));
+                    reorderToolCards();
+                });
+                card.prepend(starBtn);
+            });
+
+            reorderToolCards();
+        });
+
+        // Updates the star icon and labels to match the favourite state.
+        function setFavouriteButtonState(starBtn, isFavourite) {
+            const label = isFavourite ? "Remove from favourites" : "Add to favourites";
+            starBtn.classList.toggle("is-favourite", isFavourite);
+            starBtn.innerHTML = `<i class="bi ${isFavourite ? "bi-star-fill" : "bi-star"}"></i>`;
+            starBtn.title = label;
+            starBtn.setAttribute("aria-label", label);
+            starBtn.setAttribute("aria-pressed", isFavourite);
+        }
+
+        // Moves favourite tools into the favourites row, then sorts each group by visit count and original position.
+        function reorderToolCards() {
+            const favouritesGrid = document.querySelector("#favouritesGroup .keys");
+            const usageCounts = getToolUsageCounts();
+            const favourites = getFavouriteTools();
+
+            getToolCards()
+                .map(card => {
+                    const filename = card.getAttribute("href");
+                    return {
+                        card,
+                        position: Number(card.dataset.position),
+                        isFavourite: favourites.includes(filename),
+                        count: usageCounts[filename] || 0
+                    };
+                })
+                .sort((a, b) => b.count - a.count || a.position - b.position)
+                .forEach(entry => (entry.isFavourite ? favouritesGrid : entry.card.homeGrid).appendChild(entry.card));
+
+            updateToolGroups();
+        }
+
+        // Hides any group with no visible tool and shows the empty message when nothing is visible at all.
+        function updateToolGroups() {
+            let visibleCount = 0;
+            document.querySelectorAll("#toolsGrid .tool-group").forEach(group => {
+                const count = group.querySelectorAll(".key:not(.d-none)").length;
+                group.hidden = count === 0;
+                visibleCount += count;
+            });
+            document.getElementById("toolSearchEmpty").hidden = visibleCount > 0;
+        }
+
+        // Filters tool cards by name and description as the user types.
+        window.addEventListener("DOMContentLoaded", () => {
+            const searchInput = document.getElementById("toolSearch");
+
+            const filterTools = () => {
+                const terms = searchInput.value.trim().toLowerCase().split(/\s+/).filter(Boolean);
+                getToolCards().forEach(card => {
+                    const text = `${card.querySelector("b").textContent} ${card.querySelector("small").textContent}`.toLowerCase();
+                    const isMatch = terms.every(term => text.includes(term));
+                    card.classList.toggle("d-none", !isMatch);
+                });
+                updateToolGroups();
+            };
+
+            searchInput.addEventListener("input", filterTools);
+
+            searchInput.addEventListener("keydown", event => {
+                if (event.key === "Escape") {
+                    searchInput.value = "";
+                    filterTools();
+                    searchInput.blur();
+                } else if (event.key === "Enter") {
+                    // Opens the first visible tool so a quick search can jump straight to it.
+                    const firstMatch = document.querySelector("#toolsGrid .key:not(.d-none)");
+                    if (firstMatch) window.location.href = firstMatch.getAttribute("href");
+                }
+            });
+
+            // Focuses the search box when "/" is pressed outside any text field.
+            document.addEventListener("keydown", event => {
+                const target = event.target;
+                const isTyping = target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName);
+                if (event.key === "/" && !isTyping && !document.querySelector(".modal.show")) {
+                    event.preventDefault();
+                    searchInput.focus();
+                }
+            });
+        });
+
+        // Presses the matching keycap and opens its tool when its key is typed outside any text field.
+        window.addEventListener("DOMContentLoaded", () => {
+            const keyToast = document.getElementById("keyToast");
+            let isOpening = false;
+
+            document.addEventListener("keydown", event => {
+                if (isOpening || event.repeat || event.ctrlKey || event.metaKey || event.altKey) return;
+                if (isTypingTarget(event.target) || isOverlayOpen()) return;
+
+                const card = getToolCards().find(item => item.dataset.key === event.key.toUpperCase());
+                if (!card) return;
+
+                event.preventDefault();
+                isOpening = true;
+                card.classList.add("pressed");
+                keyToast.textContent = `→ OPENING ${card.querySelector("b").textContent.toUpperCase()}`;
+                keyToast.classList.add("show");
+                setTimeout(() => window.location.href = card.getAttribute("href"), 350);
+            });
+
+            // Releases the pressed key when the browser restores this page from its back-forward cache.
+            window.addEventListener("pageshow", event => {
+                if (!event.persisted) return;
+                isOpening = false;
+                keyToast.classList.remove("show");
+                getToolCards().forEach(card => card.classList.remove("pressed"));
+            });
+        });
+
+        // Show the welcome / "what's new" modal automatically based on the last version this browser has seen.
+        window.addEventListener("DOMContentLoaded", () => {
+            const welcomeModalEl = document.getElementById("welcomeModal");
+            const welcomeModal = new bootstrap.Modal(welcomeModalEl);
+            const titleEl = document.getElementById("welcomeModalLabel");
+            const bodyEl = document.getElementById("welcomeModalBody");
+
+            const lastSeenVersion = getLastSeenVersion();
+            const isNewVisitor = lastSeenVersion === null;
+            const pendingEntries = getEntriesAfter(lastSeenVersion);
+            const hasPendingUpdates = !isNewVisitor && pendingEntries.length > 0;
+
+            const showFullCatalog = () => {
+                titleEl.textContent = "👋 Welcome to Toolstack";
+                bodyEl.innerHTML = renderWelcomeModalBody(true, getCatalogEntries());
+            };
+
+            if (hasPendingUpdates) {
+                titleEl.textContent = "🎉 What's new in Toolstack";
+                bodyEl.innerHTML = renderWelcomeModalBody(false, pendingEntries);
+                welcomeModal.show();
+            } else {
+                showFullCatalog();
+                if (isNewVisitor) welcomeModal.show();
+            }
+
+            welcomeModalEl.addEventListener("hidden.bs.modal", () => {
+                setLastSeenVersion(APP_VERSION);
+                // Reset to the full catalog so a later manual "About Toolstack" click shows everything, not just the delta above.
+                showFullCatalog();
+            });
+        });
+
+        // Returns one catalog entry that lists each tool once, in navbar order, with the title and description from its home page key.
+        function getCatalogEntries() {
+            const seen = new Set();
+            const items = getCommandPaletteTools()
+                .filter(tool => tool.file !== "index.html" && !seen.has(tool.file) && seen.add(tool.file))
+                .map(tool => {
+                    const key = document.querySelector(`#toolsGrid a.key[href="${tool.file}"]`);
+                    const title = key && key.querySelector("b") ? key.querySelector("b").textContent.trim() : tool.name;
+                    const desc = key && key.querySelector("small") ? key.querySelector("small").textContent.replace(/\s+/g, " ").trim() : "";
+                    return { category: tool.category, title: escapeHtml(title), desc: escapeHtml(desc), link: tool.file, icon: tool.icon };
+                });
+            return [{ version: APP_VERSION, items }];
+        }
+
+        function renderWelcomeModalBody(isFullCatalog, entries) {
+            const intro = isFullCatalog
+                ? `<p class="welcome-intro">Toolstack bundles all the handy developer utilities you reach for daily into one fast, free, browser-based toolkit — format, validate, convert, encode, decode, and generate, all in one place.</p>`
+                : `<p class="welcome-intro">Here's what's new since your last visit.</p>`;
+
+            const sections = groupItemsByCategory(entries).map(group => `
+                    <div class="welcome-feature-section">
+                        <div class="welcome-category-label">${group.category}</div>
+                        <div class="welcome-feature-grid">
+                            ${group.items.map(item => renderWelcomeFeatureItem(item, isFullCatalog)).join("")}
+                        </div>
+                    </div>
+                `).join("");
+
+            return intro + sections;
+        }
+
+        function renderWelcomeFeatureItem(item, isFullCatalog) {
+            const badge = isFullCatalog ? "" : `<span class="welcome-version-badge">v${item.version}</span>`;
+            return `
+                    <a href="${item.link}" class="welcome-feature-item">
+                        <span class="icon-wrap"><i class="bi ${item.icon}"></i></span>
+                        <div>
+                            <div class="welcome-feature-title">${item.title}${badge}</div>
+                            <div class="welcome-feature-desc">${item.desc}</div>
+                        </div>
+                    </a>
+                `;
+        }
+
+    </script>
+
+</body>
+
+</html>
