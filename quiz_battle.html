@@ -1,0 +1,1206 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Codexael Toolstack - Quiz Battle</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta http-equiv="Content-Security-Policy" content="connect-src https://opentdb.com https://0.peerjs.com wss://0.peerjs.com; object-src 'none'; base-uri 'none'; form-action 'none'">
+
+        <!-- Metadata -->
+        <meta name="description" content="Race your friends through live quiz rounds and climb the leaderboard. 2-16 players, free.">
+        <meta name="author" content="Codexael">
+        <meta name="theme-color" content="#fff4e0" media="(prefers-color-scheme: light)">
+        <meta name="theme-color" content="#17140f" media="(prefers-color-scheme: dark)">
+
+        <!-- Open Graph -->
+        <meta property="og:title" content="Codexael Toolstack — Quiz Battle: Live Multiplayer Quiz">
+        <meta property="og:description" content="Race your friends through live quiz rounds and climb the leaderboard. 2-16 players, free.">
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="https://tools.codexael.com/quiz_battle.html">
+        <meta property="og:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+        <meta property="og:image:width" content="1200">
+        <meta property="og:image:height" content="630">
+        <meta property="og:image:type" content="image/png">
+        <meta property="og:image:alt" content="Codexael Toolstack — Quiz Battle: Live Multiplayer Quiz">
+        <meta property="og:site_name" content="Codexael Toolstack">
+
+        <!-- Twitter Card -->
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="Codexael Toolstack — Quiz Battle: Live Multiplayer Quiz">
+        <meta name="twitter:description" content="Race your friends through live quiz rounds and climb the leaderboard. 2-16 players, free.">
+        <meta name="twitter:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+
+        <!-- Favicon / App Icon -->
+        <link rel="icon" type="image/svg+xml" href="assets/images/codexael_icon.svg">
+        <link rel="apple-touch-icon" href="assets/images/codexael_icon.svg">
+
+        <!-- Bootstrap 5.2.0-beta1 -->
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+
+        <!-- Bootstrap with Popper 5.2.0-beta1 -->
+        <script src="js/bootstrap.bundle.min.js"></script>
+
+        <!-- Bootstrap Icons 1.11.3 -->
+        <link rel="stylesheet" href="css/bootstrap-icons.min.css">
+
+        <!-- PeerJS 1.5.4 -->
+        <script src="js/peerjs.min.js"></script>
+
+        <!-- Google fonts -->
+        <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+        <!-- Custom CSS -->
+        <link rel="stylesheet" href="css/keycaps.css">
+        <link rel="stylesheet" href="css/party-games.css">
+
+        <style>
+            /* The custom question box is tall enough to paste a whole quiz. */
+            .qb-custom-input {
+                min-height: 160px;
+                margin-bottom: 0;
+                resize: vertical;
+                font-size: 0.8rem;
+                font-weight: 400;
+            }
+
+            .qb-errors {
+                margin: 0;
+                padding: 10px 12px 10px 28px;
+                background: var(--red);
+                color: #111111;
+                border: 3px solid var(--ink);
+                font-size: 0.78rem;
+                font-weight: 700;
+            }
+
+            .qb-count {
+                float: right;
+                font-family: var(--display-font);
+            }
+
+            /* The result line under a revealed question shows the points a player just won. */
+            .qb-result {
+                padding: 10px 12px;
+                background: var(--paper);
+                border: 3px solid var(--ink);
+                box-shadow: 2px 2px 0 var(--ink);
+                font-weight: 700;
+                text-align: center;
+            }
+
+            .qb-result.is-right {
+                background: var(--lime);
+                color: #111111;
+            }
+
+            .qb-result.is-wrong {
+                background: var(--red);
+                color: #111111;
+            }
+
+            /* The podium shows the top three players on steps of different heights. */
+            .qb-podium {
+                display: grid;
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                align-items: end;
+                gap: 10px;
+            }
+
+            .qb-step {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: flex-start;
+                gap: 4px;
+                padding: 10px 6px;
+                background: var(--member-c, var(--paper));
+                color: #111111;
+                border: 3px solid var(--ink);
+                box-shadow: 3px 3px 0 var(--ink);
+                text-align: center;
+            }
+
+            .qb-step.is-1 { min-height: 150px; order: 2; }
+            .qb-step.is-2 { min-height: 120px; order: 1; }
+            .qb-step.is-3 { min-height: 95px; order: 3; }
+
+            .qb-step-rank {
+                font-family: var(--display-font);
+                font-size: 1.4rem;
+            }
+
+            .qb-step-name {
+                max-width: 100%;
+                font-size: 0.82rem;
+                font-weight: 700;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+            .qb-step-points {
+                font-size: 0.75rem;
+                font-weight: 700;
+            }
+
+            @media (max-width: 575px) {
+                .qb-podium {
+                    gap: 6px;
+                }
+
+                .qb-step-rank {
+                    font-size: 1.1rem;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <!-- Common layout -->
+        <div id="navbar-container"></div>
+
+        <div class="container-fluid tool-wrapper">
+
+            <!-- Setup view -->
+            <div class="row" id="partySetup"></div>
+
+            <!-- Room view -->
+            <div class="row g-3 g-md-0 gx-md-3 gx-0 d-none party-room" id="partyRoom">
+
+                <div class="col-md-8 editor-panel party-game-panel" id="gamePanel" style="--panel-c: var(--yellow)">
+                    <div class="editor-header">
+                        <span class="editor-title">Quiz Battle</span>
+                        <div class="editor-actions">
+                            <button title="Copy result" data-shortcut="copy" id="copyResultBtn"><i class="bi bi-copy icon-btn"></i></button>
+                            <button title="Fullscreen" onclick="toggleEditorFullScreen('gamePanel')"><i class="bi bi-arrows-fullscreen icon-btn"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="party-body invisible-scrollbars" id="gameBody"></div>
+
+                    <div class="editor-footer">
+                        <div class="status">
+                            <span>Question <b id="footerQuestion">0</b></span>
+                            <span>Phase <b id="footerPhase">Lobby</b></span>
+                            <span>Source <b id="footerSource">-</b></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4 editor-panel party-side-panel" id="partyPanel"></div>
+
+            </div>
+        </div>
+
+        <div id="footer-container"></div>
+
+        <!-- Common JS -->
+        <script src="js/tool-help.js"></script>
+        <script src="js/storage.js"></script>
+        <script src="js/common.js"></script>
+        <script src="js/script.js"></script>
+        <script src="js/api-client.js"></script>
+        <script src="js/party-room.js"></script>
+
+        <!-- Custom JS -->
+        <script>
+            const pageTitle = "Quiz Battle";
+
+            const MIN_PLAYERS = 2;
+            const MAX_PLAYERS = 16;
+            const MAX_POINTS = 1000;
+            const MIN_POINTS = 500;
+            const STREAK_STEP = 100;
+            const STREAK_CAP = 5;
+            const REVEAL_MS = 4000;
+            const BOARD_MS = 4000;
+            const TIMER_TICK_MS = 250;
+            const MAX_QUESTION_LENGTH = 250;
+            const MAX_OPTION_LENGTH = 100;
+            const MAX_CUSTOM_LENGTH = 30000;
+            const MAX_CUSTOM_QUESTIONS = 100;
+            const MAX_SHOWN_ERRORS = 8;
+            const CUSTOM_STORAGE_KEY = "toolstack_quiz_custom";
+
+            const TRIVIA_URL = "https://opentdb.com/api.php";
+            const TRIVIA_MAX_BYTES = 65536;
+
+            // The trivia service allows one request every 5 seconds from the same address.
+            const RATE_LIMIT_MS = 5200;
+
+            const SOURCES = { builtin: "Built-in", opentdb: "Open Trivia DB", custom: "Custom" };
+            const PHASE_LABELS = { lobby: "Lobby", loading: "Loading", question: "Question", reveal: "Answer", board: "Leaderboard", final: "Final" };
+
+            // Each built-in question is a category, the question, the right answer and three wrong answers.
+            const BUILT_IN = [
+                ["General", "How many days are in a leap year?", "366", "365", "364", "367"],
+                ["General", "How many minutes are in one day?", "1440", "1240", "1400", "1640"],
+                ["General", "How many hours are in one week?", "168", "144", "172", "156"],
+                ["General", "How many zeros are in one million?", "6", "5", "7", "9"],
+                ["General", "Which animal is called the \"ship of the desert\"?", "Camel", "Horse", "Elephant", "Donkey"],
+                ["General", "What is the tallest animal in the world?", "Giraffe", "Elephant", "Ostrich", "Camel"],
+                ["General", "Which bird is a common symbol of peace?", "Dove", "Eagle", "Parrot", "Crow"],
+                ["General", "How many colours are in a rainbow?", "7", "6", "8", "5"],
+                ["General", "Which month has the fewest days?", "February", "April", "June", "November"],
+                ["General", "What is the main ingredient of guacamole?", "Avocado", "Tomato", "Cucumber", "Pea"],
+                ["General", "Which colour do you get when you mix blue and yellow?", "Green", "Purple", "Orange", "Brown"],
+                ["General", "How many sides does a hexagon have?", "6", "5", "7", "8"],
+                ["General", "In which language was the word \"robot\" first used?", "Czech", "English", "German", "Japanese"],
+                ["Science", "What is the chemical symbol for gold?", "Au", "Ag", "Gd", "Go"],
+                ["Science", "Which planet is known as the Red Planet?", "Mars", "Jupiter", "Venus", "Mercury"],
+                ["Science", "Which gas do plants take in from the air to make food?", "Carbon dioxide", "Oxygen", "Nitrogen", "Helium"],
+                ["Science", "How many bones are in an adult human body?", "206", "186", "226", "256"],
+                ["Science", "What is the largest planet in our solar system?", "Jupiter", "Saturn", "Neptune", "Earth"],
+                ["Science", "What is the hardest natural material?", "Diamond", "Quartz", "Iron", "Granite"],
+                ["Science", "At what temperature does water boil at sea level?", "100 °C", "90 °C", "80 °C", "120 °C"],
+                ["Science", "Which organ pumps blood around the body?", "Heart", "Liver", "Lungs", "Kidney"],
+                ["Science", "Which force keeps us on the ground?", "Gravity", "Magnetism", "Friction", "Inertia"],
+                ["Science", "What is the closest star to Earth?", "The Sun", "Proxima Centauri", "Sirius", "Polaris"],
+                ["Science", "Which planet is famous for its large rings?", "Saturn", "Mars", "Venus", "Mercury"],
+                ["Science", "Roughly how fast does light travel?", "300,000 km per second", "30,000 km per second", "3,000 km per second", "3,000,000 km per second"],
+                ["Science", "What is H2O better known as?", "Water", "Salt", "Hydrogen peroxide", "Ammonia"],
+                ["Geography", "What is the capital of Australia?", "Canberra", "Sydney", "Melbourne", "Perth"],
+                ["Geography", "Which is the largest ocean on Earth?", "Pacific Ocean", "Atlantic Ocean", "Indian Ocean", "Arctic Ocean"],
+                ["Geography", "Mount Everest sits on the border of Nepal and which other country?", "China", "India", "Bhutan", "Pakistan"],
+                ["Geography", "What is the capital of Japan?", "Tokyo", "Osaka", "Kyoto", "Seoul"],
+                ["Geography", "Which is the largest hot desert in the world?", "Sahara", "Gobi", "Thar", "Kalahari"],
+                ["Geography", "Which is the smallest country in the world?", "Vatican City", "Monaco", "Malta", "San Marino"],
+                ["Geography", "What is the capital of Canada?", "Ottawa", "Toronto", "Vancouver", "Montreal"],
+                ["Geography", "On which continent is Egypt?", "Africa", "Asia", "Europe", "South America"],
+                ["Geography", "Which country is shaped like a boot?", "Italy", "Spain", "Greece", "Portugal"],
+                ["Geography", "What is the capital of Brazil?", "Brasília", "Rio de Janeiro", "São Paulo", "Salvador"],
+                ["Geography", "Which is the largest continent by area?", "Asia", "Africa", "North America", "Europe"],
+                ["Geography", "Which river flows through London?", "Thames", "Seine", "Danube", "Rhine"],
+                ["Geography", "Which is the longest river in Africa?", "Nile", "Congo", "Niger", "Zambezi"],
+                ["Tech", "What does \"CPU\" stand for?", "Central Processing Unit", "Computer Personal Unit", "Central Program Utility", "Core Power Unit"],
+                ["Tech", "Which company makes the iPhone?", "Apple", "Samsung", "Google", "Nokia"],
+                ["Tech", "What does \"HTML\" stand for?", "HyperText Markup Language", "High Text Machine Language", "Hyperlink Tool Markup Language", "Home Tool Markup Language"],
+                ["Tech", "What does \"www\" stand for in a web address?", "World Wide Web", "World Web Wide", "Wide World Web", "Web World Wide"],
+                ["Tech", "Which language is mainly used to style web pages?", "CSS", "Python", "SQL", "C++"],
+                ["Tech", "How many bits are in one byte?", "8", "4", "16", "10"],
+                ["Tech", "Who started Microsoft together with Paul Allen?", "Bill Gates", "Steve Jobs", "Larry Page", "Mark Zuckerberg"],
+                ["Tech", "What does \"USB\" stand for?", "Universal Serial Bus", "United System Bus", "Universal Signal Board", "Unified Serial Board"],
+                ["Tech", "Which shortcut usually copies text on Windows?", "Ctrl + C", "Ctrl + V", "Ctrl + X", "Ctrl + P"],
+                ["Tech", "Which company develops the Android operating system?", "Google", "Apple", "Microsoft", "Amazon"],
+                ["Tech", "Which version control tool did Linus Torvalds create?", "Git", "Subversion", "Mercurial", "Docker"],
+                ["Tech", "In binary, what is 1 + 1?", "10", "2", "11", "01"],
+                ["Tech", "What does \"PDF\" stand for?", "Portable Document Format", "Printed Document File", "Public Data Format", "Page Display File"],
+                ["Movies & Music", "Who directed the film \"Jurassic Park\"?", "Steven Spielberg", "James Cameron", "George Lucas", "Ridley Scott"],
+                ["Movies & Music", "Which band sang \"Hey Jude\"?", "The Beatles", "The Rolling Stones", "Queen", "ABBA"],
+                ["Movies & Music", "In \"The Lion King\", what is the name of Simba's father?", "Mufasa", "Scar", "Rafiki", "Timon"],
+                ["Movies & Music", "Which film series uses the line \"May the Force be with you\"?", "Star Wars", "Star Trek", "The Matrix", "Avatar"],
+                ["Movies & Music", "Who is known as the \"King of Pop\"?", "Michael Jackson", "Elvis Presley", "Prince", "Freddie Mercury"],
+                ["Movies & Music", "How many strings does a standard guitar have?", "6", "4", "5", "7"],
+                ["Movies & Music", "Which instrument has 88 keys?", "Piano", "Harp", "Accordion", "Xylophone"],
+                ["Movies & Music", "What is the name of the toy cowboy in \"Toy Story\"?", "Woody", "Buzz", "Jessie", "Andy"],
+                ["Movies & Music", "Which film won the first Oscar for Best Animated Feature?", "Shrek", "Toy Story", "Finding Nemo", "Up"],
+                ["Movies & Music", "Who sang \"Shape of You\"?", "Ed Sheeran", "Justin Bieber", "Bruno Mars", "Shawn Mendes"],
+                ["Movies & Music", "Who played Jack in the 1997 film \"Titanic\"?", "Leonardo DiCaprio", "Brad Pitt", "Tom Cruise", "Johnny Depp"],
+                ["Movies & Music", "Which school does Harry Potter go to?", "Hogwarts", "Durmstrang", "Beauxbatons", "Ilvermorny"],
+                ["Movies & Music", "Freddie Mercury was the lead singer of which band?", "Queen", "The Who", "Led Zeppelin", "Pink Floyd"],
+                ["Sports", "How many players does a football (soccer) team have on the field?", "11", "10", "9", "12"],
+                ["Sports", "In which sport do you hit a shuttlecock?", "Badminton", "Tennis", "Squash", "Table tennis"],
+                ["Sports", "How many rings are on the Olympic flag?", "5", "4", "6", "7"],
+                ["Sports", "Which country won the 2022 FIFA World Cup?", "Argentina", "France", "Brazil", "Croatia"],
+                ["Sports", "How long is a marathon?", "42.195 km", "40 km", "45 km", "38.5 km"],
+                ["Sports", "In tennis, what is a score of zero called?", "Love", "Nil", "Zero", "Duck"],
+                ["Sports", "In which sport can you score a \"spare\"?", "Bowling", "Golf", "Darts", "Snooker"],
+                ["Sports", "How many points is a touchdown worth in American football?", "6", "3", "7", "2"],
+                ["Sports", "What is the highest standard break in snooker?", "147", "155", "100", "180"],
+                ["Sports", "In which sport would you see a slam dunk?", "Basketball", "Volleyball", "Tennis", "Rugby"],
+                ["Sports", "Which city hosted the Summer Olympics that were held in 2021?", "Tokyo", "Paris", "Beijing", "Rio de Janeiro"],
+                ["Sports", "How many holes are in a standard round of golf?", "18", "9", "12", "21"],
+                ["Sports", "In which country did the ancient Olympic Games begin?", "Greece", "Italy", "Egypt", "France"],
+                ["India", "What is the capital of India?", "New Delhi", "Mumbai", "Kolkata", "Chennai"],
+                ["India", "What is the national animal of India?", "Tiger", "Elephant", "Lion", "Peacock"],
+                ["India", "Which river flows through Varanasi?", "Ganga", "Yamuna", "Godavari", "Narmada"],
+                ["India", "In which city is the Taj Mahal?", "Agra", "Delhi", "Jaipur", "Lucknow"],
+                ["India", "Who was the first Prime Minister of India?", "Jawaharlal Nehru", "Mahatma Gandhi", "Sardar Patel", "Indira Gandhi"],
+                ["India", "Which Indian city is known as the \"Pink City\"?", "Jaipur", "Udaipur", "Jodhpur", "Mysuru"],
+                ["India", "In which year did India become independent?", "1947", "1950", "1942", "1952"],
+                ["India", "What is the national bird of India?", "Peacock", "Parrot", "Eagle", "Swan"],
+                ["India", "Which Indian state is famous for its backwaters?", "Kerala", "Goa", "Assam", "Punjab"],
+                ["India", "Who wrote India's national anthem \"Jana Gana Mana\"?", "Rabindranath Tagore", "Bankim Chandra Chatterjee", "Sarojini Naidu", "Subramania Bharati"],
+                ["India", "Which Indian mission landed near the Moon's south pole in 2023?", "Chandrayaan-3", "Mangalyaan", "Chandrayaan-1", "Gaganyaan"],
+                ["India", "Which festival is known as the festival of lights?", "Diwali", "Holi", "Onam", "Pongal"],
+                ["India", "Which cricketer is called the \"Master Blaster\"?", "Sachin Tendulkar", "Virat Kohli", "MS Dhoni", "Kapil Dev"],
+                ["India", "What is the national flower of India?", "Lotus", "Rose", "Marigold", "Jasmine"]
+            ];
+
+            const gameBody = document.getElementById("gameBody");
+
+            // This holds the newest view from the referee, and every client draws only from it.
+            let view = null;
+            let viewDeadline = null;
+            let viewTotalMs = 0;
+            let timerInterval = null;
+
+            // This keeps the pasted custom questions on the room creator's page between renders.
+            let customDraft = "";
+            let customErrors = [];
+
+            // This remembers when the referee last asked the trivia service, so the rate limit holds across games.
+            let lastTriviaRequestAt = 0;
+
+            try {
+                customDraft = getStorageString(CUSTOM_STORAGE_KEY, "") || "";
+            } catch (error) {
+                // This ignores blocked storage because the saved questions are only a convenience.
+            }
+
+            // ---------- Referee state ----------
+
+            // This holds the whole game, and only the referee keeps it.
+            const game = {
+                phase: "lobby",
+                settings: { source: "builtin", difficulty: "any", count: "10", time: "20" },
+                gameNo: 0,
+                sourceLabel: "",
+                questions: [],
+                index: -1,
+                playerIds: [],
+                answers: new Map(),
+                sentAt: 0,
+                scores: new Map(),
+                gains: new Map(),
+                correct: new Map(),
+                streaks: new Map(),
+                results: new Map(),
+                customQuestions: null,
+                usedBuiltIn: new Set(),
+                loadController: null,
+                deadline: 0,
+                totalMs: 0,
+                timer: null
+            };
+
+            const FRESH_GAME = { ...game, settings: { ...game.settings } };
+
+            function resetGame() {
+                clearTimeout(game.timer);
+                if (game.loadController) game.loadController.abort();
+                Object.assign(game, FRESH_GAME, {
+                    settings: { ...FRESH_GAME.settings },
+                    questions: [],
+                    playerIds: [],
+                    answers: new Map(),
+                    scores: new Map(),
+                    gains: new Map(),
+                    correct: new Map(),
+                    streaks: new Map(),
+                    results: new Map(),
+                    usedBuiltIn: new Set()
+                });
+            }
+
+            function inGame(id) {
+                return game.playerIds.includes(id);
+            }
+
+            function currentQuestion() {
+                return game.questions[game.index] || null;
+            }
+
+            function questionMs() {
+                return Number(game.settings.time) * 1000;
+            }
+
+            function setPhaseTimer(ms, onEnd) {
+                clearTimeout(game.timer);
+                game.totalMs = ms;
+                game.deadline = Date.now() + ms;
+                game.timer = setTimeout(onEnd, ms);
+            }
+
+            function clearPhaseTimer() {
+                clearTimeout(game.timer);
+                game.deadline = 0;
+                game.totalMs = 0;
+            }
+
+            // This turns a question with its right and wrong answers into four shuffled options and the index of the right one.
+            function makeQuestion(raw) {
+                const options = partyShuffle([raw.right, ...raw.wrong]);
+                return { text: raw.text, category: raw.category, options, answer: options.indexOf(raw.right) };
+            }
+
+            // This picks built-in questions that this room has not seen yet, and starts over when too few are left.
+            function pickBuiltIn(count) {
+                let fresh = BUILT_IN.map((_, i) => i).filter(i => !game.usedBuiltIn.has(i));
+                if (fresh.length < count) {
+                    game.usedBuiltIn = new Set();
+                    fresh = BUILT_IN.map((_, i) => i);
+                }
+
+                const picked = partyShuffle(fresh).slice(0, count);
+                picked.forEach(i => game.usedBuiltIn.add(i));
+
+                return picked.map(i => {
+                    const [category, text, right, ...wrong] = BUILT_IN[i];
+                    return { category, text, right, wrong };
+                });
+            }
+
+            // This reads pasted custom questions and returns the good ones with a list of errors for the bad lines.
+            function parseCustomQuestions(text) {
+                const questions = [];
+                const errors = [];
+
+                String(text ?? "").split(/\r?\n/).forEach((line, i) => {
+                    if (!line.trim()) return;
+
+                    const parts = line.split("|").map(part => partyCleanText(part, MAX_CUSTOM_LENGTH));
+                    const answers = parts.slice(1);
+
+                    if (parts.length !== 5) errors.push(`Line ${i + 1}: needs 5 parts split by "|", but has ${parts.length}`);
+                    else if (parts.some(part => !part)) errors.push(`Line ${i + 1}: one of the parts is empty`);
+                    else if (parts[0].length > MAX_QUESTION_LENGTH) errors.push(`Line ${i + 1}: the question is longer than ${MAX_QUESTION_LENGTH} characters`);
+                    else if (answers.some(answer => answer.length > MAX_OPTION_LENGTH)) errors.push(`Line ${i + 1}: an answer is longer than ${MAX_OPTION_LENGTH} characters`);
+                    else if (new Set(answers.map(answer => answer.toLowerCase())).size !== answers.length) errors.push(`Line ${i + 1}: the four answers must all be different`);
+                    else questions.push({ category: "Custom", text: parts[0], right: answers[0], wrong: answers.slice(1) });
+                });
+
+                if (!questions.length && !errors.length) errors.push("Paste at least one question first");
+                if (questions.length > MAX_CUSTOM_QUESTIONS) errors.push(`Use at most ${MAX_CUSTOM_QUESTIONS} questions`);
+
+                return { questions, errors };
+            }
+
+            // ---------- Open Trivia DB ----------
+
+            // This waits for a pause and stops early when the request is cancelled.
+            function waitFor(ms, signal) {
+                return new Promise((resolve, reject) => {
+                    if (signal.aborted) {
+                        reject(new ApiError("Request was cancelled", "aborted"));
+                        return;
+                    }
+
+                    const timer = setTimeout(resolve, ms);
+                    signal.addEventListener("abort", () => {
+                        clearTimeout(timer);
+                        reject(new ApiError("Request was cancelled", "aborted"));
+                    }, { once: true });
+                });
+            }
+
+            // This decodes a URL-encoded text from the service and fails on broken text.
+            function decodeTriviaText(value, maxLength) {
+                if (typeof value !== "string") throw new ApiError("The trivia service sent a broken question", "invalid");
+                try {
+                    return partyCleanText(decodeURIComponent(value), maxLength);
+                } catch (error) {
+                    throw new ApiError("The trivia service sent a broken question", "invalid");
+                }
+            }
+
+            function parseTriviaQuestion(raw) {
+                if (!raw || !Array.isArray(raw.incorrect_answers) || raw.incorrect_answers.length !== 3) {
+                    throw new ApiError("The trivia service sent a broken question", "invalid");
+                }
+
+                const question = {
+                    category: decodeTriviaText(raw.category, 40).replace(/^(Entertainment|Science): /, "") || "Trivia",
+                    text: decodeTriviaText(raw.question, MAX_QUESTION_LENGTH),
+                    right: decodeTriviaText(raw.correct_answer, MAX_OPTION_LENGTH),
+                    wrong: raw.incorrect_answers.map(answer => decodeTriviaText(answer, MAX_OPTION_LENGTH))
+                };
+
+                if (!question.text || !question.right || question.wrong.some(answer => !answer)) {
+                    throw new ApiError("The trivia service sent a broken question", "invalid");
+                }
+
+                return question;
+            }
+
+            // This asks the service once while keeping to its limit of one request every 5 seconds.
+            async function requestTrivia(url, signal) {
+                const waitMs = lastTriviaRequestAt + RATE_LIMIT_MS - Date.now();
+                if (waitMs > 0) await waitFor(waitMs, signal);
+                lastTriviaRequestAt = Date.now();
+                return fetchPublicJson(url, { serviceName: "The trivia service", maxBytes: TRIVIA_MAX_BYTES, signal });
+            }
+
+            // This fetches and checks a full quiz, and asks once more when the service says it is busy.
+            async function fetchTriviaQuestions(count, difficulty, signal) {
+                const params = new URLSearchParams({ amount: String(count), type: "multiple", encode: "url3986" });
+                if (difficulty !== "any") params.set("difficulty", difficulty);
+                const url = `${TRIVIA_URL}?${params}`;
+
+                let reply = await requestTrivia(url, signal);
+                if (reply && reply.response_code === 5) reply = await requestTrivia(url, signal);
+
+                switch (reply && reply.response_code) {
+                    case 0: break;
+                    case 1: throw new ApiError("The trivia service does not have enough questions for these settings", "invalid");
+                    case 5: throw new ApiError("The trivia service is busy", "rate-limit");
+                    default: throw new ApiError("The trivia service could not make a quiz", "invalid");
+                }
+
+                if (!Array.isArray(reply.results) || !reply.results.length) throw new ApiError("The trivia service sent no questions", "invalid");
+                return reply.results.slice(0, count).map(parseTriviaQuestion);
+            }
+
+            // This loads questions from the trivia service and falls back to the built-in pack on any failure.
+            async function loadTriviaGame(count) {
+                const controller = new AbortController();
+                game.loadController = controller;
+                game.phase = "loading";
+                clearPhaseTimer();
+                publish();
+
+                try {
+                    const questions = await fetchTriviaQuestions(count, game.settings.difficulty, controller.signal);
+                    if (game.loadController !== controller) return;
+                    game.loadController = null;
+                    beginGame(questions, SOURCES.opentdb);
+                } catch (error) {
+                    // This ends quietly when the load was cancelled or replaced.
+                    if (game.loadController !== controller || error.kind === "aborted") return;
+                    game.loadController = null;
+
+                    const reason = error.kind === "offline" ? "You are offline" : (error.message || "The trivia service failed");
+                    showErrorToast(`${reason}, so the built-in questions are used instead`);
+                    party.emit({ type: "notice", text: "The trivia service did not answer, so the built-in questions are used" }, party.players.filter(p => !p.host).map(p => p.id));
+                    beginGame(pickBuiltIn(count), SOURCES.builtin);
+                }
+            }
+
+            // ---------- Game flow ----------
+
+            // This starts a game from the chosen source, where customText is only sent by the room creator for custom questions.
+            function startGame(customText) {
+                if (party.players.length < MIN_PLAYERS) {
+                    party.emit({ type: "notice", text: `Quiz Battle needs at least ${MIN_PLAYERS} players` }, [party.myId]);
+                    return;
+                }
+
+                const count = Number(game.settings.count);
+
+                if (game.settings.source === "custom") {
+                    if (typeof customText === "string") {
+                        const parsed = parseCustomQuestions(customText.slice(0, MAX_CUSTOM_LENGTH));
+                        if (parsed.errors.length) {
+                            party.emit({ type: "notice", text: parsed.errors[0] }, [party.myId]);
+                            return;
+                        }
+                        game.customQuestions = parsed.questions;
+                    }
+
+                    if (!game.customQuestions || !game.customQuestions.length) {
+                        party.emit({ type: "notice", text: "Paste your custom questions first" }, [party.myId]);
+                        return;
+                    }
+
+                    beginGame(game.customQuestions.slice(0, count), SOURCES.custom);
+                    return;
+                }
+
+                if (game.settings.source === "opentdb") {
+                    loadTriviaGame(count);
+                    return;
+                }
+
+                beginGame(pickBuiltIn(count), SOURCES.builtin);
+            }
+
+            function beginGame(rawQuestions, label) {
+                if (party.players.length < MIN_PLAYERS) {
+                    backToLobby(`Quiz Battle needs at least ${MIN_PLAYERS} players`);
+                    return;
+                }
+
+                game.gameNo += 1;
+                game.sourceLabel = label;
+                game.questions = rawQuestions.map(makeQuestion);
+                game.index = -1;
+                game.playerIds = party.players.map(p => p.id);
+                game.scores = new Map(game.playerIds.map(id => [id, 0]));
+                game.correct = new Map();
+                game.streaks = new Map();
+                nextQuestion();
+            }
+
+            function nextQuestion() {
+                game.index += 1;
+
+                if (game.index >= game.questions.length) {
+                    finishGame();
+                    return;
+                }
+
+                game.phase = "question";
+                game.answers = new Map();
+                game.results = new Map();
+                game.gains = new Map();
+                game.sentAt = Date.now();
+                setPhaseTimer(questionMs(), revealAnswer);
+                publish();
+            }
+
+            function allAnswered() {
+                return game.playerIds.every(id => game.answers.has(id));
+            }
+
+            function addPoints(id, points) {
+                if (!points) return;
+                game.scores.set(id, (game.scores.get(id) || 0) + points);
+                game.gains.set(id, (game.gains.get(id) || 0) + points);
+            }
+
+            // This scores every answer, where faster right answers earn more and a run of right answers adds a bonus.
+            function revealAnswer() {
+                clearPhaseTimer();
+
+                const question = currentQuestion();
+                game.gains = new Map();
+                game.results = new Map();
+
+                for (const id of game.playerIds) {
+                    const answer = game.answers.get(id);
+
+                    if (!answer || answer.choice !== question.answer) {
+                        game.streaks.set(id, 0);
+                        game.results.set(id, { choice: answer ? answer.choice : null, right: false, points: 0, bonus: 0, streak: 0 });
+                        continue;
+                    }
+
+                    const share = Math.min(1, Math.max(0, answer.ms / questionMs()));
+                    const points = Math.round(MAX_POINTS - (MAX_POINTS - MIN_POINTS) * share);
+                    const streak = (game.streaks.get(id) || 0) + 1;
+                    const bonus = Math.min(streak - 1, STREAK_CAP) * STREAK_STEP;
+
+                    game.streaks.set(id, streak);
+                    game.correct.set(id, (game.correct.get(id) || 0) + 1);
+                    game.results.set(id, { choice: answer.choice, right: true, points, bonus, streak });
+                    addPoints(id, points + bonus);
+                }
+
+                game.phase = "reveal";
+                setPhaseTimer(REVEAL_MS, isLastQuestion() ? finishGame : showBoard);
+                publish();
+            }
+
+            function isLastQuestion() {
+                return game.index >= game.questions.length - 1;
+            }
+
+            function showBoard() {
+                game.phase = "board";
+                setPhaseTimer(BOARD_MS, nextQuestion);
+                publish();
+            }
+
+            function finishGame() {
+                clearPhaseTimer();
+                game.phase = "final";
+                game.gains = new Map();
+                publish();
+            }
+
+            function backToLobby(reason) {
+                clearPhaseTimer();
+                if (game.loadController) game.loadController.abort();
+                game.loadController = null;
+                game.phase = "lobby";
+                game.playerIds = [];
+                game.questions = [];
+                game.index = -1;
+                if (reason) party.emit({ type: "notice", text: reason });
+                publish();
+            }
+
+            function buildView(id) {
+                const question = currentQuestion();
+                const showQuestion = (game.phase === "question" || game.phase === "reveal") && question;
+                const revealed = game.phase === "reveal";
+                const answer = game.answers.get(id);
+
+                return {
+                    phase: game.phase,
+                    settings: { ...game.settings },
+                    gameNo: game.gameNo,
+                    sourceLabel: game.sourceLabel || SOURCES[game.settings.source],
+                    index: game.index,
+                    total: game.questions.length,
+                    inGame: inGame(id),
+                    playerIds: [...game.playerIds],
+                    question: showQuestion ? { text: question.text, category: question.category, options: [...question.options] } : null,
+                    answer: revealed ? question.answer : null,
+                    counts: revealed ? question.options.map((_, i) => [...game.answers.values()].filter(a => a.choice === i).length) : null,
+                    answeredIds: game.phase === "question" ? [...game.answers.keys()] : [],
+                    myChoice: showQuestion && answer ? answer.choice : null,
+                    myResult: revealed || game.phase === "board" ? game.results.get(id) || null : null,
+                    isLast: isLastQuestion(),
+                    scores: Object.fromEntries(game.scores),
+                    correct: Object.fromEntries(game.correct),
+                    gains: revealed || game.phase === "board" ? Object.fromEntries(game.gains) : {},
+                    remainingMs: game.deadline ? Math.max(0, game.deadline - Date.now()) : 0,
+                    totalMs: game.totalMs
+                };
+            }
+
+            function publish() {
+                party.publish(buildView);
+            }
+
+            // This applies one move from a player after checking that the move is allowed right now.
+            function handleAction(player, action) {
+                if (!action || typeof action.type !== "string") return;
+
+                switch (action.type) {
+                    case "setting": {
+                        if (!player.host || game.phase !== "lobby") return;
+                        const allowed = { source: Object.keys(SOURCES), difficulty: ["any", "easy", "medium", "hard"], count: ["5", "10", "15", "20"], time: ["10", "15", "20", "30"] };
+                        if (!allowed[action.key] || !allowed[action.key].includes(String(action.value))) return;
+                        game.settings[action.key] = String(action.value);
+                        publish();
+                        return;
+                    }
+
+                    case "start":
+                        if (!player.host || (game.phase !== "lobby" && game.phase !== "final")) return;
+                        startGame(typeof action.custom === "string" ? action.custom : null);
+                        return;
+
+                    case "lobby":
+                        if (!player.host || (game.phase !== "final" && game.phase !== "loading")) return;
+                        backToLobby("");
+                        return;
+
+                    case "answer": {
+                        if (game.phase !== "question" || !inGame(player.id) || game.answers.has(player.id)) return;
+                        const choice = Number(action.choice);
+                        if (!Number.isInteger(choice) || choice < 0 || choice >= currentQuestion().options.length) return;
+                        game.answers.set(player.id, { choice, ms: Date.now() - game.sentAt });
+
+                        if (allAnswered()) revealAnswer();
+                        else publish();
+                        return;
+                    }
+
+                    case "next":
+                        if (!player.host) return;
+                        if (game.phase === "reveal") {
+                            if (isLastQuestion()) finishGame();
+                            else showBoard();
+                        } else if (game.phase === "board") {
+                            clearPhaseTimer();
+                            nextQuestion();
+                        }
+                        return;
+                }
+            }
+
+            function handleLeave(player) {
+                game.scores.delete(player.id);
+                game.correct.delete(player.id);
+                game.gains.delete(player.id);
+
+                if (!inGame(player.id)) {
+                    publish();
+                    return;
+                }
+
+                game.playerIds = game.playerIds.filter(id => id !== player.id);
+                game.answers.delete(player.id);
+
+                // This ends the game with the scores so far when too few players are left.
+                if (game.playerIds.length < MIN_PLAYERS && game.phase !== "final") {
+                    party.emit({ type: "notice", text: `${player.name} left, and Quiz Battle needs at least ${MIN_PLAYERS} players` });
+                    finishGame();
+                    return;
+                }
+
+                if (game.phase === "question" && allAnswered()) {
+                    revealAnswer();
+                    return;
+                }
+
+                publish();
+            }
+
+            // ---------- Room ----------
+
+            const party = createPartyRoom({
+                gameId: "quiz",
+                title: "Quiz Battle",
+                icon: "bi-trophy",
+                colour: "var(--yellow)",
+                intro: "Everyone gets the same question at the same time. Pick the right answer fast to win more points, and keep a streak going for a bonus.",
+                minPlayers: MIN_PLAYERS,
+                maxPlayers: MAX_PLAYERS,
+                onEnter() {
+                    customErrors = [];
+                    if (party.isHost) {
+                        resetGame();
+                        publish();
+                    }
+                    startTimerLoop();
+                },
+                onExit() {
+                    resetGame();
+                    view = null;
+                    customErrors = [];
+                    clearInterval(timerInterval);
+                    gameBody.innerHTML = "";
+                },
+                onView(next) {
+                    if (!next || typeof next.phase !== "string") return;
+
+                    view = next;
+                    viewDeadline = partyDeadlineFrom(next.remainingMs);
+                    viewTotalMs = next.totalMs;
+                    render();
+                },
+                onEvent(event) {
+                    if (event && event.type === "notice") showInfoToast(String(event.text));
+                },
+                host: {
+                    onJoin: () => publish(),
+                    onLeave: handleLeave,
+                    onAction: handleAction
+                }
+            });
+
+            // ---------- Rendering ----------
+
+            function nameOf(id) {
+                const player = party.getPlayer(id);
+                return player ? player.name : "Someone who left";
+            }
+
+            // This returns the players of the current game ranked by points, each with their rank where ties share a rank.
+            function standings() {
+                const rows = view.playerIds
+                    .map(id => party.getPlayer(id))
+                    .filter(Boolean)
+                    .map(p => ({ id: p.id, name: p.name, order: p.order, self: p.id === party.myId, points: view.scores[p.id] || 0, correct: view.correct[p.id] || 0, gain: view.gains[p.id] || 0 }))
+                    .sort((a, b) => b.points - a.points || a.order - b.order);
+
+                rows.forEach(row => row.rank = 1 + rows.filter(other => other.points > row.points).length);
+                return rows;
+            }
+
+            function renderLobby() {
+                const canEdit = party.isHost;
+                const enoughPlayers = party.players.length >= MIN_PLAYERS;
+                const source = view.settings.source;
+
+                let sourceBlock = "";
+                if (source === "opentdb") {
+                    sourceBlock = `
+                        <div>
+                            <span class="party-label">Difficulty</span>
+                            ${partySegmentHtml("difficulty", [["any", "Any"], ["easy", "Easy"], ["medium", "Medium"], ["hard", "Hard"]], view.settings.difficulty, !canEdit)}
+                        </div>
+                        <div class="party-hint">Questions come from the free Open Trivia Database. If it cannot be reached, the built-in questions are used.</div>`;
+                } else if (source === "custom") {
+                    sourceBlock = canEdit
+                        ? `<div>
+                               <label class="party-label" for="customInput">Your questions</label>
+                               <textarea class="input-cyan qb-custom-input" id="customInput" spellcheck="false" autocomplete="off" placeholder="One question per line:&#10;Question | Right answer | Wrong 1 | Wrong 2 | Wrong 3&#10;&#10;What is 2 + 2? | 4 | 3 | 5 | 22">${partyEscapeHtml(customDraft)}</textarea>
+                           </div>
+                           ${customErrors.length ? `<ul class="qb-errors">${customErrors.slice(0, MAX_SHOWN_ERRORS).map(error => `<li>${partyEscapeHtml(error)}</li>`).join("")}${customErrors.length > MAX_SHOWN_ERRORS ? `<li>And ${customErrors.length - MAX_SHOWN_ERRORS} more</li>` : ""}</ul>` : ""}
+                           <div class="party-hint">The answers are shuffled for every game. The other players never see the right answer before the reveal.</div>`
+                        : `<div class="party-hint">The room creator is writing custom questions.</div>`;
+                } else {
+                    sourceBlock = `<div class="party-hint">A mixed pack of ${BUILT_IN.length} questions on General, Science, Geography, Tech, Movies & Music, Sports and India.</div>`;
+                }
+
+                return `
+                    <div class="party-stage" style="--stage-c: var(--yellow)">
+                        <span class="party-stage-kicker">How to play</span>
+                        <p class="party-stage-text">Everyone sees the same question. Pick an answer with a click or keys 1 to 4. A right answer gives 500 to 1000 points, more for speed, and every right answer in a row adds a 100 point bonus.</p>
+                    </div>
+
+                    <div class="party-settings">
+                        <div>
+                            <span class="party-label">Questions from</span>
+                            ${partySegmentHtml("source", Object.entries(SOURCES), source, !canEdit)}
+                        </div>
+                        ${sourceBlock}
+                        <div>
+                            <span class="party-label">Number of questions</span>
+                            ${partySegmentHtml("count", [["5", "5"], ["10", "10"], ["15", "15"], ["20", "20"]], view.settings.count, !canEdit)}
+                        </div>
+                        <div>
+                            <span class="party-label">Time per question</span>
+                            ${partySegmentHtml("time", [["10", "10s"], ["15", "15s"], ["20", "20s"], ["30", "30s"]], view.settings.time, !canEdit)}
+                        </div>
+                    </div>
+
+                    ${canEdit
+                        ? `<button type="button" class="btn action-btn-primary" data-act="start"${enoughPlayers ? "" : " disabled"}><i class="bi bi-play-fill"></i> Start quiz</button>
+                           <div class="party-hint text-center">${enoughPlayers ? "Everyone in the room plays this game." : `Waiting for at least ${MIN_PLAYERS} players.`}</div>`
+                        : `<div class="party-empty-hint">Waiting for the room creator to start the quiz</div>`}`;
+            }
+
+            function renderLoading() {
+                return `
+                    <div class="party-stage" style="--stage-c: var(--cyan)">
+                        <span class="party-stage-kicker">Getting ready</span>
+                        <h2 class="party-stage-title"><i class="bi bi-hourglass-split"></i> Loading questions</h2>
+                        <p class="party-stage-text">The room creator is fetching questions from Open Trivia DB. This can take a few seconds.</p>
+                    </div>
+                    ${party.isHost ? `<button type="button" class="btn action-btn-ghost" data-act="lobby"><i class="bi bi-x-lg"></i> Cancel</button>` : ""}`;
+            }
+
+            function renderQuestionStage() {
+                return `
+                    <div class="party-stage">
+                        <span class="party-stage-kicker">Question ${view.index + 1} of ${view.total} · ${partyEscapeHtml(view.question.category)}</span>
+                        <h2 class="party-stage-title">${partyEscapeHtml(view.question.text)}</h2>
+                    </div>`;
+            }
+
+            function renderQuestion() {
+                const canAnswer = view.inGame && view.myChoice === null;
+                const answered = view.answeredIds.length;
+
+                return `
+                    ${renderQuestionStage()}
+                    ${partyTimerHtml("phaseTimer")}
+                    <div class="party-choices">${view.question.options.map((option, i) => `
+                        <button type="button" class="party-choice${view.myChoice === i ? " is-selected" : ""}" data-act="answer" data-choice="${i}"${canAnswer ? "" : " disabled"}>
+                            <span class="party-choice-key">${i + 1}</span>${partyEscapeHtml(option)}
+                        </button>`).join("")}
+                    </div>
+                    <div class="party-hint text-center">${!view.inGame
+                        ? "<i class=\"bi bi-eye\"></i> You joined during this game, so you watch until the next one."
+                        : view.myChoice !== null ? "Your answer is locked in. Waiting for the others." : "Pick an answer with a click or keys 1 to 4."}
+                        ${answered} of ${view.playerIds.length} answered.</div>`;
+            }
+
+            function renderMyResult() {
+                const result = view.myResult;
+                if (!view.inGame || !result) return "";
+
+                if (!result.right) {
+                    return `<div class="qb-result is-wrong"><i class="bi bi-x-circle-fill"></i> ${result.choice === null ? "No answer in time" : "Not quite"}, so no points this time.</div>`;
+                }
+
+                return `<div class="qb-result is-right"><i class="bi bi-check-circle-fill"></i> Right! +${result.points} points${result.bonus ? ` and a +${result.bonus} streak bonus (${result.streak} in a row)` : ""}.</div>`;
+            }
+
+            function renderReveal() {
+                return `
+                    ${renderQuestionStage()}
+                    <div class="party-choices">${view.question.options.map((option, i) => {
+                        const isAnswer = view.answer === i;
+                        const isMine = view.myChoice === i;
+                        const count = view.counts[i];
+                        return `
+                            <div class="party-choice${isAnswer ? " is-correct" : isMine ? " is-wrong" : ""}">
+                                <span class="party-choice-key">${i + 1}</span>${partyEscapeHtml(option)}
+                                <span class="qb-count">${count}</span>
+                                <span class="party-choice-voters">${count === 1 ? "1 player picked this" : `${count} players picked this`}${isMine ? " · your answer" : ""}</span>
+                            </div>`;
+                    }).join("")}
+                    </div>
+                    ${renderMyResult()}
+                    ${partyTimerHtml("phaseTimer")}
+                    ${renderHostNext(view.isLast ? "Final results" : "Leaderboard")}`;
+            }
+
+            function renderHostNext(label) {
+                return party.isHost
+                    ? `<button type="button" class="btn action-btn-primary" data-act="next"><i class="bi bi-skip-forward-fill"></i> ${label}</button>`
+                    : "";
+            }
+
+            function renderBoard() {
+                const rows = standings();
+
+                return `
+                    <div class="party-stage" style="--stage-c: var(--cyan)">
+                        <span class="party-stage-kicker">After question ${view.index + 1} of ${view.total}</span>
+                        <h2 class="party-stage-title">Leaderboard</h2>
+                    </div>
+                    ${partyScoreboardHtml(rows)}
+                    ${partyTimerHtml("phaseTimer")}
+                    ${renderHostNext("Next question")}`;
+            }
+
+            function renderPodium(rows) {
+                return `<div class="qb-podium">${rows.slice(0, 3).map((row, i) => `
+                    <div class="qb-step is-${i + 1} ${partyColourClass(row.order)}">
+                        <span class="qb-step-rank">${["🥇", "🥈", "🥉"][i]}</span>
+                        <span class="qb-step-name" title="${partyEscapeHtml(row.name)}">${partyEscapeHtml(row.name)}${row.self ? " (you)" : ""}</span>
+                        <span class="qb-step-points">${row.points} pts · ${row.correct}/${view.total}</span>
+                    </div>`).join("")}
+                </div>`;
+            }
+
+            function renderFinal() {
+                const rows = standings();
+                const me = rows.find(row => row.self);
+                const winner = rows[0];
+
+                return `
+                    <div class="party-stage" style="--stage-c: var(--lime)">
+                        <span class="party-stage-kicker">Game over · ${partyEscapeHtml(view.sourceLabel)}</span>
+                        <h2 class="party-stage-title">${winner ? `${partyEscapeHtml(winner.name)} wins!` : "Game over"}</h2>
+                        <p class="party-stage-text">${me ? `You placed <b>#${me.rank} of ${rows.length}</b> with <b>${me.correct}/${view.total}</b> right and <b>${me.points}</b> points.` : "You watched this game, so you play in the next one."}</p>
+                    </div>
+
+                    ${renderPodium(rows)}
+
+                    <div>
+                        <span class="party-label">Final scores</span>
+                        ${partyScoreboardHtml(rows)}
+                    </div>
+
+                    <div class="party-row">
+                        <button type="button" class="btn action-btn-ghost" data-act="share"><i class="bi bi-share"></i> Share result</button>
+                        ${party.isHost ? `
+                            <button type="button" class="btn action-btn-ghost" data-act="lobby"><i class="bi bi-sliders"></i> Change settings</button>
+                            <button type="button" class="btn action-btn-primary" data-act="start"${party.players.length >= MIN_PLAYERS ? "" : " disabled"}><i class="bi bi-arrow-repeat"></i> Play again</button>` : ""}
+                    </div>
+                    ${party.isHost ? "" : `<div class="party-hint text-center">Waiting for the room creator to start the next game.</div>`}`;
+            }
+
+            function render() {
+                if (!view) return;
+
+                const active = document.activeElement;
+                const focused = active && active.id;
+                const selection = active && active.tagName === "TEXTAREA" ? [active.selectionStart, active.selectionEnd, active.scrollTop] : null;
+
+                switch (view.phase) {
+                    case "lobby": gameBody.innerHTML = renderLobby(); break;
+                    case "loading": gameBody.innerHTML = renderLoading(); break;
+                    case "question": gameBody.innerHTML = renderQuestion(); break;
+                    case "reveal": gameBody.innerHTML = renderReveal(); break;
+                    case "board": gameBody.innerHTML = renderBoard(); break;
+                    case "final": gameBody.innerHTML = renderFinal(); break;
+                }
+
+                // This keeps the cursor in the custom question box when a new view arrives.
+                const input = focused && document.getElementById(focused);
+                if (input && input.tagName === "TEXTAREA" && selection) {
+                    input.focus();
+                    input.setSelectionRange(selection[0], selection[1]);
+                    input.scrollTop = selection[2];
+                }
+
+                updateTimer();
+                renderBadges();
+                renderFooter();
+            }
+
+            function renderBadges() {
+                const badges = {};
+
+                for (const player of party.players) {
+                    const badge = { chip: view.scores[player.id] || 0 };
+                    const playing = view.playerIds.includes(player.id);
+
+                    if (view.phase === "question" && playing) {
+                        const done = view.answeredIds.includes(player.id);
+                        badge.icon = done ? "bi-check-circle-fill" : "bi-hourglass-split";
+                        badge.iconTitle = done ? "Answered" : "Thinking";
+                    } else if (view.phase !== "lobby" && view.phase !== "loading" && !playing) {
+                        badge.note = "watching";
+                    }
+
+                    badges[player.id] = badge;
+                }
+
+                party.setBadges(badges);
+            }
+
+            function renderFooter() {
+                const inProgress = view.index >= 0 && view.phase !== "lobby" && view.phase !== "loading";
+                document.getElementById("footerQuestion").textContent = inProgress ? `${Math.min(view.index + 1, view.total)}/${view.total}` : "0";
+                document.getElementById("footerPhase").textContent = PHASE_LABELS[view.phase] || "-";
+                document.getElementById("footerSource").textContent = view.sourceLabel;
+            }
+
+            function updateTimer() {
+                updatePartyTimer(document.getElementById("phaseTimer"), viewDeadline, viewTotalMs);
+            }
+
+            function startTimerLoop() {
+                clearInterval(timerInterval);
+                timerInterval = setInterval(updateTimer, TIMER_TICK_MS);
+            }
+
+            function serializeResult() {
+                if (!view || view.phase !== "final") return "";
+
+                const rows = standings();
+                const me = rows.find(row => row.self);
+                if (me) return `🏆 I placed #${me.rank} of ${rows.length} in Quiz Battle with ${me.correct}/${view.total} right`;
+                return rows.length ? `🏆 ${rows[0].name} won Quiz Battle with ${rows[0].points} points` : "";
+            }
+
+            // ---------- UI events ----------
+
+            // This checks the pasted questions on the room creator's page and starts the game when they are all good.
+            function requestStart() {
+                if (view.settings.source !== "custom" || view.phase !== "lobby") {
+                    party.act({ type: "start" });
+                    return;
+                }
+
+                const parsed = parseCustomQuestions(customDraft);
+                customErrors = parsed.errors;
+
+                if (customErrors.length) {
+                    showErrorToast(customErrors.length === 1 ? customErrors[0] : `${customErrors.length} lines need fixing`);
+                    render();
+                    return;
+                }
+
+                render();
+                party.act({ type: "start", custom: customDraft });
+            }
+
+            function sendAnswer(choice) {
+                if (!view || view.phase !== "question" || !view.inGame || view.myChoice !== null) return;
+                if (!Number.isInteger(choice) || choice < 0 || choice >= view.question.options.length) return;
+                party.act({ type: "answer", choice });
+            }
+
+            bindPartySegments(gameBody, (key, value) => party.act({ type: "setting", key, value }));
+
+            gameBody.addEventListener("click", event => {
+                const button = event.target.closest("[data-act]");
+                if (!button || button.disabled) return;
+
+                switch (button.dataset.act) {
+                    case "start": requestStart(); break;
+                    case "lobby": party.act({ type: "lobby" }); break;
+                    case "next": party.act({ type: "next" }); break;
+                    case "answer": sendAnswer(Number(button.dataset.choice)); break;
+                    case "share": partyShareText(serializeResult(), button); break;
+                }
+            });
+
+            gameBody.addEventListener("input", event => {
+                if (event.target.id !== "customInput") return;
+                customDraft = event.target.value.slice(0, MAX_CUSTOM_LENGTH);
+
+                try {
+                    setStorageString(CUSTOM_STORAGE_KEY, customDraft);
+                } catch (error) {
+                    // This ignores blocked storage because the questions still work for this visit.
+                }
+            });
+
+            // This lets number keys 1 to 4 pick an answer, unless the player is typing or a dialog is open.
+            document.addEventListener("keydown", event => {
+                if (!view || view.phase !== "question" || event.ctrlKey || event.metaKey || event.altKey) return;
+                if (isTypingTarget(event.target) || isOverlayOpen()) return;
+
+                const number = Number(event.key);
+                if (!Number.isInteger(number) || number < 1 || number > view.question.options.length) return;
+
+                event.preventDefault();
+                sendAnswer(number - 1);
+            });
+
+            document.getElementById("copyResultBtn").addEventListener("click", event => partyCopyText(serializeResult(), event.currentTarget));
+        </script>
+    </body>
+</html>

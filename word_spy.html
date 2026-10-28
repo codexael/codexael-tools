@@ -1,0 +1,1417 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Codexael Toolstack - Word Spy</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <!-- Metadata -->
+        <meta name="description" content="Give one-word clues to help your team find its agents before the other team does. 4-16 players.">
+        <meta name="author" content="Codexael">
+        <meta name="theme-color" content="#fff4e0" media="(prefers-color-scheme: light)">
+        <meta name="theme-color" content="#17140f" media="(prefers-color-scheme: dark)">
+
+        <!-- Open Graph -->
+        <meta property="og:title" content="Codexael Toolstack — Word Spy: Team Word Game Online">
+        <meta property="og:description" content="Give one-word clues to help your team find its agents before the other team does. 4-16 players.">
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="https://tools.codexael.com/word_spy.html">
+        <meta property="og:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+        <meta property="og:image:width" content="1200">
+        <meta property="og:image:height" content="630">
+        <meta property="og:image:type" content="image/png">
+        <meta property="og:image:alt" content="Codexael Toolstack — Word Spy: Team Word Game Online">
+        <meta property="og:site_name" content="Codexael Toolstack">
+
+        <!-- Twitter Card -->
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="Codexael Toolstack — Word Spy: Team Word Game Online">
+        <meta name="twitter:description" content="Give one-word clues to help your team find its agents before the other team does. 4-16 players.">
+        <meta name="twitter:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+
+        <!-- Favicon / App Icon -->
+        <link rel="icon" type="image/svg+xml" href="assets/images/codexael_icon.svg">
+        <link rel="apple-touch-icon" href="assets/images/codexael_icon.svg">
+
+        <!-- Bootstrap 5.2.0-beta1 -->
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+
+        <!-- Bootstrap with Popper 5.2.0-beta1 -->
+        <script src="js/bootstrap.bundle.min.js"></script>
+
+        <!-- Bootstrap Icons 1.11.3 -->
+        <link rel="stylesheet" href="css/bootstrap-icons.min.css">
+
+        <!-- PeerJS 1.5.4 -->
+        <script src="js/peerjs.min.js"></script>
+
+        <!-- Google fonts -->
+        <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+        <!-- Custom CSS -->
+        <link rel="stylesheet" href="css/keycaps.css">
+        <link rel="stylesheet" href="css/party-games.css">
+
+        <style>
+            /* These colours mark each team and each kind of card. */
+            .ws-team-red,
+            .ws-kind-red {
+                --team-c: var(--red);
+                --kind-c: var(--red);
+            }
+
+            .ws-team-blue,
+            .ws-kind-blue {
+                --team-c: var(--blue);
+                --kind-c: var(--blue);
+            }
+
+            .ws-kind-neutral {
+                --kind-c: #d9c9a3;
+            }
+
+            .ws-kind-assassin {
+                --kind-c: #111111;
+            }
+
+            /* Lobby teams */
+
+            .ws-teams {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 12px;
+            }
+
+            .ws-team {
+                min-width: 0;
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                padding: 12px;
+                background: var(--paper);
+                border: 3px solid var(--ink);
+                border-top: 10px solid var(--team-c);
+                box-shadow: 2.5px 2.5px 0 var(--ink);
+            }
+
+            .ws-team-head {
+                display: flex;
+                justify-content: space-between;
+                gap: 8px;
+                font-family: var(--display-font);
+                font-size: 0.85rem;
+                text-transform: uppercase;
+            }
+
+            .ws-team-list {
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+                flex: 1;
+            }
+
+            .ws-team-member {
+                min-width: 0;
+                display: flex;
+                flex-wrap: wrap;
+                align-items: center;
+                gap: 6px;
+                padding: 4px 8px;
+                background: var(--paper);
+                border: 2px solid var(--ink);
+                border-left: 6px solid var(--member-c, var(--ink));
+                font-size: 0.8rem;
+                font-weight: 700;
+            }
+
+            .ws-team-member.is-self {
+                background: var(--bg);
+            }
+
+            .ws-team-name {
+                flex: 1 1 auto;
+                min-width: 0;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+            .ws-spy-tag {
+                padding: 0 5px;
+                background: var(--team-c);
+                color: #111111;
+                border: 2px solid var(--ink);
+                font-size: 0.66rem;
+                text-transform: uppercase;
+            }
+
+            .ws-team .action-btn-ghost {
+                margin-bottom: 0;
+                padding: 6px 8px;
+                font-size: 0.78rem;
+            }
+
+            /* Game status */
+
+            .ws-status {
+                display: grid;
+                grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+                gap: 10px;
+            }
+
+            .ws-count {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                padding: 8px;
+                background: var(--team-c);
+                color: #111111;
+                border: 3px solid var(--ink);
+                box-shadow: 2px 2px 0 var(--ink);
+                font-size: 0.7rem;
+                font-weight: 700;
+                text-transform: uppercase;
+            }
+
+            .ws-count b {
+                font-family: var(--display-font);
+                font-size: 1.6rem;
+                line-height: 1.1;
+            }
+
+            .ws-count.is-turn {
+                outline: 3px dashed var(--ink);
+                outline-offset: 3px;
+                transform: rotate(-2deg);
+            }
+
+            .ws-turn {
+                max-width: 12ch;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 0.72rem;
+                font-weight: 700;
+                text-align: center;
+                text-transform: uppercase;
+            }
+
+            /* Board */
+
+            .ws-board {
+                display: grid;
+                grid-template-columns: repeat(5, minmax(0, 1fr));
+                gap: 8px;
+            }
+
+            .ws-card {
+                position: relative;
+                min-width: 0;
+                min-height: 64px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 4px;
+                padding: 6px 4px 10px;
+                background: var(--paper);
+                color: var(--ink);
+                border: 3px solid var(--ink);
+                border-radius: 10px;
+                box-shadow: 0 3px 0 var(--ink);
+                font-size: clamp(0.6rem, 1.5vw, 0.82rem);
+                font-weight: 700;
+                text-align: center;
+                text-transform: uppercase;
+                transition: transform 0.08s, box-shadow 0.08s, background-color 0.12s;
+            }
+
+            .ws-card-word {
+                max-width: 100%;
+                line-height: 1.15;
+                overflow-wrap: anywhere;
+            }
+
+            .ws-card:hover:not(:disabled) {
+                background: var(--yellow);
+                color: #111111;
+                transform: translateY(1px);
+                box-shadow: 0 2px 0 var(--ink);
+            }
+
+            .ws-card:disabled {
+                cursor: default;
+            }
+
+            .ws-card.is-picked,
+            .ws-card.is-picked:hover:not(:disabled) {
+                background: var(--yellow);
+                color: #111111;
+                outline: 3px dashed var(--ink);
+                outline-offset: 2px;
+            }
+
+            /* A spymaster sees the key as a coloured band along the bottom of each hidden card. */
+            .ws-card.has-key:not(.is-revealed) {
+                box-shadow: inset 0 -9px 0 var(--kind-c), 0 3px 0 var(--ink);
+            }
+
+            .ws-card-key-icon {
+                position: absolute;
+                top: 3px;
+                right: 4px;
+                font-size: 0.7rem;
+            }
+
+            .ws-card.is-revealed {
+                background: var(--kind-c);
+                color: #111111;
+                box-shadow: none;
+                transform: translateY(3px);
+            }
+
+            .ws-card.is-revealed.ws-kind-assassin {
+                color: #ffffff;
+            }
+
+            .ws-card.is-revealed .ws-card-word {
+                opacity: 0.8;
+            }
+
+            .ws-pointers {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 2px;
+            }
+
+            .ws-pointer {
+                width: 18px;
+                height: 18px;
+                display: grid;
+                place-items: center;
+                background: var(--member-c, var(--yellow));
+                color: #111111;
+                border: 2px solid var(--ink);
+                border-radius: 50%;
+                font-family: var(--display-font);
+                font-size: 0.55rem;
+            }
+
+            /* Clue log */
+
+            .ws-log {
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+            }
+
+            .ws-log-entry {
+                display: flex;
+                flex-wrap: wrap;
+                align-items: center;
+                gap: 6px;
+                padding: 6px 10px;
+                background: var(--paper);
+                border: 3px solid var(--ink);
+                border-left: 8px solid var(--team-c);
+                box-shadow: 1.5px 1.5px 0 var(--ink);
+                font-size: 0.8rem;
+            }
+
+            .ws-log-clue {
+                font-family: var(--display-font);
+                text-transform: uppercase;
+                overflow-wrap: anywhere;
+            }
+
+            .ws-log-guess {
+                padding: 0 5px;
+                background: var(--kind-c);
+                color: #111111;
+                border: 2px solid var(--ink);
+                font-size: 0.68rem;
+                font-weight: 700;
+                text-transform: uppercase;
+            }
+
+            .ws-log-guess.ws-kind-assassin {
+                color: #ffffff;
+            }
+
+            .ws-log-muted {
+                opacity: 0.6;
+                font-style: italic;
+            }
+
+            .ws-end-btn.is-picked {
+                outline: 3px dashed var(--ink);
+                outline-offset: 2px;
+            }
+
+            @media (max-width: 575px) {
+                .ws-teams {
+                    grid-template-columns: 1fr;
+                }
+
+                .ws-board {
+                    gap: 4px;
+                }
+
+                .ws-card {
+                    min-height: 54px;
+                    padding: 4px 2px 9px;
+                    border-width: 2px;
+                    border-radius: 8px;
+                }
+
+                .ws-pointer {
+                    width: 15px;
+                    height: 15px;
+                    border-width: 1.5px;
+                }
+            }
+
+            @media (prefers-reduced-motion: reduce) {
+                .ws-card {
+                    transition: none;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <!-- Common layout -->
+        <div id="navbar-container"></div>
+
+        <div class="container-fluid tool-wrapper">
+
+            <!-- Setup view -->
+            <div class="row" id="partySetup"></div>
+
+            <!-- Room view -->
+            <div class="row g-3 g-md-0 gx-md-3 gx-0 d-none party-room" id="partyRoom">
+
+                <div class="col-md-8 editor-panel party-game-panel" id="gamePanel" style="--panel-c: var(--blue)">
+                    <div class="editor-header">
+                        <span class="editor-title">Word Spy</span>
+                        <div class="editor-actions">
+                            <button title="Copy result" data-shortcut="copy" id="copyResultBtn"><i class="bi bi-copy icon-btn"></i></button>
+                            <button title="Fullscreen" onclick="toggleEditorFullScreen('gamePanel')"><i class="bi bi-arrows-fullscreen icon-btn"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="party-body invisible-scrollbars" id="gameBody"></div>
+
+                    <div class="editor-footer">
+                        <div class="status">
+                            <span>Game <b id="footerRound">0</b></span>
+                            <span>Phase <b id="footerPhase">Lobby</b></span>
+                            <span>Turn <b id="footerTurn">-</b></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4 editor-panel party-side-panel" id="partyPanel"></div>
+
+            </div>
+        </div>
+
+        <div id="footer-container"></div>
+
+        <!-- Common JS -->
+        <script src="js/tool-help.js"></script>
+        <script src="js/storage.js"></script>
+        <script src="js/common.js"></script>
+        <script src="js/script.js"></script>
+        <script src="js/party-room.js"></script>
+
+        <!-- Custom JS -->
+        <script>
+            const pageTitle = "Word Spy";
+
+            const MIN_PLAYERS = 4;
+            const MAX_PLAYERS = 16;
+            const MIN_TEAM_SIZE = 2;
+            const BOARD_SIZE = 25;
+            const START_AGENTS = 9;
+            const OTHER_AGENTS = 8;
+            const BYSTANDERS = 7;
+            const MAX_CLUE_LENGTH = 20;
+            const UNLIMITED = "inf";
+            const END_TURN = "end";
+            const TIMER_TICK_MS = 250;
+
+            const TEAMS = ["red", "blue"];
+            const TEAM_LABELS = { red: "Red", blue: "Blue" };
+            const KIND_LABELS = { red: "Red agent", blue: "Blue agent", neutral: "Bystander", assassin: "Assassin" };
+            const PHASE_LABELS = { lobby: "Lobby", clue: "Clue", guess: "Guessing", result: "Result" };
+            const CLUE_NUMBERS = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", UNLIMITED];
+            const TIMER_OPTIONS = [["0", "No timer"], ["60", "60s"], ["90", "90s"], ["120", "120s"]];
+
+            // This list holds short, simple nouns, and each game draws 25 of them at random.
+            const WORDS = [
+                "Apple", "Arrow", "Anchor", "Angel", "Ant", "Army", "Atlas", "Baby", "Badge", "Ball",
+                "Band", "Bank", "Bar", "Bark", "Bat", "Bath", "Beach", "Bear", "Bed", "Bee",
+                "Bell", "Belt", "Bench", "Berry", "Bike", "Bill", "Bird", "Blade", "Block", "Board",
+                "Boat", "Bolt", "Bone", "Book", "Boot", "Bottle", "Bow", "Box", "Brain", "Bread",
+                "Brick", "Bridge", "Brush", "Bubble", "Bucket", "Bug", "Bull", "Bus", "Butter", "Button",
+                "Cake", "Camel", "Camera", "Camp", "Candle", "Candy", "Cap", "Car", "Card", "Carpet",
+                "Carrot", "Castle", "Cat", "Cave", "Chain", "Chair", "Chalk", "Cheese", "Chest", "Chicken",
+                "Circle", "Circus", "Cliff", "Clock", "Cloud", "Clown", "Coach", "Coat", "Code", "Coin",
+                "Comet", "Cook", "Copper", "Cotton", "Court", "Cow", "Crab", "Crane", "Crown", "Cup",
+                "Curtain", "Dance", "Desert", "Desk", "Diamond", "Dice", "Doctor", "Dog", "Doll", "Dolphin",
+                "Door", "Dragon", "Dream", "Dress", "Drill", "Drum", "Duck", "Eagle", "Earth", "Egg",
+                "Engine", "Eye", "Face", "Fair", "Fan", "Farm", "Feather", "Fence", "Field", "Film",
+                "Fire", "Fish", "Flag", "Flute", "Fly", "Fog", "Foot", "Forest", "Fork", "Fox",
+                "Frog", "Game", "Garden", "Gas", "Ghost", "Giant", "Gift", "Glass", "Glove", "Goat",
+                "Gold", "Grape", "Grass", "Guitar", "Hammer", "Hand", "Hat", "Hawk", "Heart", "Helmet",
+                "Hill", "Hole", "Honey", "Hook", "Horn", "Horse", "Hose", "Hotel", "House", "Ice",
+                "Iron", "Island", "Jacket", "Jam", "Jar", "Jet", "Jewel", "Judge", "Juice", "Kettle",
+                "Key", "King", "Kite", "Knife", "Knight", "Ladder", "Lake", "Lamp", "Laser", "Leaf",
+                "Lemon", "Letter", "Light", "Lion", "Lock", "Log", "Magnet", "Map", "Marble", "Mask",
+                "Match", "Medal", "Milk", "Mine", "Mint", "Mirror", "Money", "Monkey", "Moon", "Mouse",
+                "Mouth", "Mud", "Nail", "Needle", "Nest", "Net", "Night", "Nose", "Note", "Nurse",
+                "Nut", "Ocean", "Oil", "Onion", "Orange", "Owl", "Paint", "Palace", "Pan", "Paper",
+                "Park", "Parrot", "Party", "Pea", "Pearl", "Pen", "Pencil", "Penguin", "Piano", "Pie",
+                "Pig", "Pilot", "Pin", "Pipe", "Pirate", "Pizza", "Plane", "Planet", "Plant", "Plate",
+                "Pocket", "Poison", "Pole", "Police", "Pool", "Port", "Post", "Pot", "Potato", "Pump",
+                "Queen", "Rabbit", "Radio", "Rain", "Ring", "River", "Road", "Robot", "Rock", "Rocket",
+                "Roof", "Root", "Rope", "Rose", "Ruler", "Saddle", "Sail", "Salt", "Sand", "Saw",
+                "Scale", "School", "Screen", "Seal", "Shadow", "Shark", "Sheep", "Shell", "Ship", "Shirt",
+                "Shoe", "Shop", "Silver", "Sink", "Skate", "Skirt", "Sky", "Snake", "Snow", "Soap",
+                "Sock", "Soldier", "Soup", "Space", "Spider", "Spoon", "Spring", "Square", "Stamp", "Star",
+                "Steam", "Stick", "Stone", "Storm", "Straw", "Street", "String", "Sugar", "Sun", "Swan",
+                "Sword", "Table", "Tail", "Tank", "Tea", "Tent", "Thread", "Throne", "Thumb", "Ticket",
+                "Tiger", "Toast", "Tooth", "Torch", "Tower", "Town", "Toy", "Track", "Train", "Tree",
+                "Truck", "Trumpet", "Tube", "Turkey", "Turtle", "Umbrella", "Unicorn", "Van", "Vase", "Violin",
+                "Wall", "Wallet", "Watch", "Water", "Wave", "Web", "Whale", "Wheel", "Whip", "Whistle",
+                "Window", "Wind", "Wing", "Witch", "Wolf", "Wood", "Worm", "Yard", "Yacht", "Zebra"
+            ];
+
+            const gameBody = document.getElementById("gameBody");
+
+            // This holds the newest view from the referee, and every client draws only from it.
+            let view = null;
+            let viewDeadline = null;
+            let viewTotalMs = 0;
+            let timerInterval = null;
+
+            // This is the number a spymaster has picked for the clue they are typing.
+            let clueNumber = "1";
+
+            function otherTeam(team) {
+                return team === "red" ? "blue" : "red";
+            }
+
+            function numberLabel(number) {
+                return number === UNLIMITED ? "∞" : String(number);
+            }
+
+            // This returns the first reason a game cannot start yet, or null when both teams are ready.
+            function teamProblem(teams, spymasters) {
+                for (const team of TEAMS) {
+                    const members = Object.keys(teams).filter(id => teams[id] === team);
+                    if (members.length < MIN_TEAM_SIZE) return `The ${TEAM_LABELS[team]} team needs at least ${MIN_TEAM_SIZE} players`;
+                    if (!spymasters[team] || teams[spymasters[team]] !== team) return `The ${TEAM_LABELS[team]} team needs a spymaster`;
+                }
+                return null;
+            }
+
+            // ---------- Referee state ----------
+
+            // This holds the whole game including the secret key, and only the referee keeps it.
+            const game = {
+                phase: "lobby",
+                settings: { timer: "0" },
+                round: 0,
+                teams: new Map(),
+                spymasters: { red: null, blue: null },
+                nextStart: null,
+                startTeam: "red",
+                turnTeam: "red",
+                cards: [],
+                clue: null,
+                guessesLeft: 0,
+                picks: new Map(),
+                clues: [],
+                winner: null,
+                winReason: "",
+                wins: { red: 0, blue: 0 },
+                deadline: 0,
+                totalMs: 0,
+                timer: null
+            };
+
+            const FRESH_GAME = { ...game, settings: { ...game.settings } };
+
+            function resetGame() {
+                clearTimeout(game.timer);
+                Object.assign(game, FRESH_GAME, {
+                    settings: { ...FRESH_GAME.settings },
+                    teams: new Map(),
+                    spymasters: { red: null, blue: null },
+                    cards: [],
+                    picks: new Map(),
+                    clues: [],
+                    wins: { red: 0, blue: 0 }
+                });
+            }
+
+            function inGame() {
+                return game.phase === "clue" || game.phase === "guess";
+            }
+
+            function teamMembers(team) {
+                return [...game.teams.keys()].filter(id => game.teams.get(id) === team);
+            }
+
+            function operatives(team) {
+                return teamMembers(team).filter(id => id !== game.spymasters[team]);
+            }
+
+            function remainingAgents(team) {
+                return game.cards.filter(card => card.kind === team && !card.revealed).length;
+            }
+
+            // This returns how many operatives of the guessing team must point at the same choice.
+            function picksNeeded() {
+                return Math.floor(operatives(game.turnTeam).length / 2) + 1;
+            }
+
+            // This puts every player in the room on a team and drops anyone who has gone.
+            function syncTeams() {
+                const ids = party.players.map(p => p.id);
+
+                for (const id of [...game.teams.keys()]) {
+                    if (!ids.includes(id)) game.teams.delete(id);
+                }
+
+                for (const id of ids) {
+                    if (game.teams.has(id)) continue;
+                    game.teams.set(id, teamMembers("blue").length < teamMembers("red").length ? "blue" : "red");
+                }
+
+                for (const team of TEAMS) {
+                    if (game.spymasters[team] && game.teams.get(game.spymasters[team]) !== team) game.spymasters[team] = null;
+                }
+            }
+
+            function setPhaseTimer(ms, onEnd) {
+                clearTimeout(game.timer);
+                game.totalMs = ms;
+                game.deadline = Date.now() + ms;
+                game.timer = setTimeout(onEnd, ms);
+            }
+
+            function clearPhaseTimer() {
+                clearTimeout(game.timer);
+                game.deadline = 0;
+                game.totalMs = 0;
+            }
+
+            // This starts the turn timer, and it waits while the team that must give a clue has no spymaster.
+            function startTurnTimer() {
+                const ms = Number(game.settings.timer) * 1000;
+
+                if (!ms || !inGame() || (game.phase === "clue" && !game.spymasters[game.turnTeam])) {
+                    clearPhaseTimer();
+                    return;
+                }
+
+                setPhaseTimer(ms, game.phase === "clue" ? clueTimedOut : guessTimedOut);
+            }
+
+            function startGame() {
+                syncTeams();
+
+                const problem = teamProblem(Object.fromEntries(game.teams), game.spymasters);
+                if (problem) {
+                    showInfoToast(problem);
+                    return;
+                }
+
+                const starter = game.nextStart || (partyRandomInt(2) ? "red" : "blue");
+                const kinds = partyShuffle([
+                    ...Array(START_AGENTS).fill(starter),
+                    ...Array(OTHER_AGENTS).fill(otherTeam(starter)),
+                    ...Array(BYSTANDERS).fill("neutral"),
+                    "assassin"
+                ]);
+                const words = partyShuffle(WORDS).slice(0, BOARD_SIZE);
+
+                game.round += 1;
+                game.startTeam = starter;
+                game.nextStart = otherTeam(starter);
+                game.turnTeam = starter;
+                game.cards = words.map((word, index) => ({ word, kind: kinds[index], revealed: false }));
+                game.clue = null;
+                game.guessesLeft = 0;
+                game.picks = new Map();
+                game.clues = [];
+                game.winner = null;
+                game.winReason = "";
+                game.phase = "clue";
+
+                startTurnTimer();
+                publish();
+            }
+
+            function endTurn() {
+                game.phase = "clue";
+                game.turnTeam = otherTeam(game.turnTeam);
+                game.clue = null;
+                game.guessesLeft = 0;
+                game.picks = new Map();
+
+                startTurnTimer();
+                publish();
+            }
+
+            function clueTimedOut() {
+                if (game.phase !== "clue") return;
+                game.clues.push({ team: game.turnTeam, word: "", number: "", guesses: [] });
+                party.emit({ type: "notice", text: `The ${TEAM_LABELS[game.turnTeam]} spymaster ran out of time` });
+                endTurn();
+            }
+
+            function guessTimedOut() {
+                if (game.phase !== "guess") return;
+                party.emit({ type: "notice", text: `The ${TEAM_LABELS[game.turnTeam]} team ran out of time` });
+                endTurn();
+            }
+
+            function finishGame(winner, reason) {
+                clearPhaseTimer();
+                game.phase = "result";
+                game.winner = winner;
+                game.winReason = reason;
+                game.wins[winner] += 1;
+                game.clue = null;
+                game.picks = new Map();
+                publish();
+            }
+
+            // This ends the game early and sends everyone back to the lobby.
+            function abortGame(reason) {
+                clearPhaseTimer();
+                game.phase = "lobby";
+                game.cards = [];
+                game.clue = null;
+                game.clues = [];
+                game.picks = new Map();
+                party.emit({ type: "notice", text: reason });
+                publish();
+            }
+
+            function revealCard(index) {
+                const card = game.cards[index];
+                const team = game.turnTeam;
+
+                card.revealed = true;
+                game.picks = new Map();
+                game.clues[game.clues.length - 1].guesses.push(index);
+
+                if (card.kind === "assassin") {
+                    finishGame(otherTeam(team), "assassin");
+                    return;
+                }
+
+                // This lets a team win even when the other team opens their last agent for them.
+                if (TEAMS.includes(card.kind) && remainingAgents(card.kind) === 0) {
+                    finishGame(card.kind, "agents");
+                    return;
+                }
+
+                if (card.kind !== team) {
+                    endTurn();
+                    return;
+                }
+
+                game.guessesLeft -= 1;
+                if (game.guessesLeft <= 0) {
+                    endTurn();
+                    return;
+                }
+
+                publish();
+            }
+
+            // This opens a card or ends the turn once most of the guessing team points at the same choice, and returns true when it did.
+            function checkPicks() {
+                if (game.phase !== "guess") return false;
+
+                const team = operatives(game.turnTeam);
+                const need = picksNeeded();
+                const counts = new Map();
+
+                for (const id of team) {
+                    if (!game.picks.has(id)) continue;
+                    const target = game.picks.get(id);
+                    counts.set(target, (counts.get(target) || 0) + 1);
+                }
+
+                for (const [target, count] of counts) {
+                    if (count < need) continue;
+                    if (target === END_TURN) endTurn();
+                    else revealCard(target);
+                    return true;
+                }
+
+                return false;
+            }
+
+            // This returns an error text for a bad clue, or null for a good clue.
+            function clueError(word) {
+                if (!word) return "Type a clue first";
+                if (!/^[\p{L}\p{N}'-]+$/u.test(word)) return "The clue must be one word with no spaces";
+
+                const key = partyNormalizeGuess(word).replace(/ /g, "");
+                if (!key) return "The clue must be a real word";
+
+                for (const card of game.cards) {
+                    const cardKey = partyNormalizeGuess(card.word).replace(/ /g, "");
+                    if (key === cardKey || key === `${cardKey}s` || key === `${cardKey}es` || cardKey === `${key}s`) return "The clue cannot be a word on the board";
+                }
+
+                return null;
+            }
+
+            function buildView(id) {
+                const myTeam = game.teams.get(id) || null;
+                const isSpymaster = myTeam !== null && game.spymasters[myTeam] === id;
+
+                // This is the only place the key leaves the referee, and it goes only to spymasters or to everyone after the game.
+                const showKey = game.phase === "result" || (isSpymaster && inGame());
+
+                return {
+                    phase: game.phase,
+                    settings: { ...game.settings },
+                    round: game.round,
+                    teams: Object.fromEntries(game.teams),
+                    spymasters: { ...game.spymasters },
+                    myTeam,
+                    isSpymaster,
+                    startTeam: game.startTeam,
+                    turnTeam: game.turnTeam,
+                    cards: game.cards.map(card => ({ word: card.word, revealed: card.revealed, kind: card.revealed || showKey ? card.kind : null })),
+                    clue: game.clue ? { ...game.clue } : null,
+                    guessesLeft: Number.isFinite(game.guessesLeft) ? game.guessesLeft : null,
+                    picks: Object.fromEntries(game.picks),
+                    need: picksNeeded(),
+                    clues: game.clues.map(entry => ({
+                        team: entry.team,
+                        word: entry.word,
+                        number: entry.number,
+                        guesses: entry.guesses.map(index => ({ word: game.cards[index].word, kind: game.cards[index].kind }))
+                    })),
+                    remaining: { red: remainingAgents("red"), blue: remainingAgents("blue") },
+                    winner: game.winner,
+                    winReason: game.winReason,
+                    wins: { ...game.wins },
+                    remainingMs: game.deadline ? Math.max(0, game.deadline - Date.now()) : 0,
+                    totalMs: game.totalMs
+                };
+            }
+
+            function publish() {
+                syncTeams();
+                party.publish(buildView);
+            }
+
+            // This applies one move from a player after checking that the move is allowed right now.
+            function handleAction(player, action) {
+                if (!action || typeof action.type !== "string") return;
+
+                const betweenGames = game.phase === "lobby" || game.phase === "result";
+
+                switch (action.type) {
+                    case "setting": {
+                        if (!player.host || game.phase !== "lobby") return;
+                        const allowed = { timer: TIMER_OPTIONS.map(([value]) => value) };
+                        if (!allowed[action.key] || !allowed[action.key].includes(String(action.value))) return;
+                        game.settings[action.key] = String(action.value);
+                        publish();
+                        return;
+                    }
+
+                    case "team": {
+                        const team = String(action.team);
+                        if (!betweenGames || !TEAMS.includes(team) || game.teams.get(player.id) === team) return;
+                        const oldTeam = game.teams.get(player.id);
+                        if (oldTeam && game.spymasters[oldTeam] === player.id) game.spymasters[oldTeam] = null;
+                        game.teams.set(player.id, team);
+                        publish();
+                        return;
+                    }
+
+                    case "spymaster": {
+                        const team = game.teams.get(player.id);
+                        if (!team) return;
+                        const on = action.on === true;
+
+                        if (betweenGames) {
+                            if (on) {
+                                const holder = game.spymasters[team];
+                                if (holder && holder !== player.id) {
+                                    party.emit({ type: "notice", text: `${nameOf(holder)} is already the ${TEAM_LABELS[team]} spymaster` }, [player.id]);
+                                    return;
+                                }
+                                game.spymasters[team] = player.id;
+                            } else if (game.spymasters[team] === player.id) {
+                                game.spymasters[team] = null;
+                            } else {
+                                return;
+                            }
+                            publish();
+                            return;
+                        }
+
+                        // This lets a team pick a new spymaster during a game, but only after the old one left.
+                        if (!inGame() || !on || game.spymasters[team]) return;
+                        game.spymasters[team] = player.id;
+                        game.picks.delete(player.id);
+                        party.emit({ type: "notice", text: `${player.name} is the new ${TEAM_LABELS[team]} spymaster` });
+
+                        if (game.phase === "clue" && game.turnTeam === team) startTurnTimer();
+                        if (game.phase === "guess" && game.turnTeam === team && checkPicks()) return;
+                        publish();
+                        return;
+                    }
+
+                    case "shuffle": {
+                        if (!player.host || !betweenGames) return;
+                        partyShuffle(party.players.map(p => p.id)).forEach((id, index) => game.teams.set(id, index % 2 ? "blue" : "red"));
+                        game.spymasters = { red: null, blue: null };
+                        publish();
+                        return;
+                    }
+
+                    case "randomSpymasters": {
+                        if (!player.host || !betweenGames) return;
+                        for (const team of TEAMS) {
+                            const members = teamMembers(team);
+                            game.spymasters[team] = members.length ? members[partyRandomInt(members.length)] : null;
+                        }
+                        publish();
+                        return;
+                    }
+
+                    case "start":
+                        if (!player.host || !betweenGames) return;
+                        startGame();
+                        return;
+
+                    case "lobby":
+                        if (!player.host || game.phase !== "result") return;
+                        game.phase = "lobby";
+                        game.cards = [];
+                        game.clues = [];
+                        publish();
+                        return;
+
+                    case "clue": {
+                        if (game.phase !== "clue" || game.spymasters[game.turnTeam] !== player.id) return;
+                        const word = partyCleanText(action.word, MAX_CLUE_LENGTH);
+                        const number = String(action.number);
+                        if (!CLUE_NUMBERS.includes(number)) return;
+
+                        const error = clueError(word);
+                        if (error) {
+                            party.emit({ type: "notice", text: error }, [player.id]);
+                            return;
+                        }
+
+                        game.clue = { word, number };
+                        game.guessesLeft = number === UNLIMITED ? Infinity : Number(number) + 1;
+                        game.clues.push({ team: game.turnTeam, word, number, guesses: [] });
+                        game.picks = new Map();
+                        game.phase = "guess";
+
+                        startTurnTimer();
+                        publish();
+                        return;
+                    }
+
+                    case "pick": {
+                        if (game.phase !== "guess" || game.teams.get(player.id) !== game.turnTeam || game.spymasters[game.turnTeam] === player.id) return;
+
+                        let target;
+                        if (action.index === END_TURN) {
+                            if (!game.clues[game.clues.length - 1].guesses.length) {
+                                party.emit({ type: "notice", text: "Open at least one card before you end the turn" }, [player.id]);
+                                return;
+                            }
+                            target = END_TURN;
+                        } else {
+                            target = Number(action.index);
+                            if (!Number.isInteger(target) || target < 0 || target >= game.cards.length || game.cards[target].revealed) return;
+                        }
+
+                        // This takes a pick back when the player taps the same choice again.
+                        if (game.picks.get(player.id) === target) game.picks.delete(player.id);
+                        else game.picks.set(player.id, target);
+
+                        if (!checkPicks()) publish();
+                        return;
+                    }
+                }
+            }
+
+            function handleLeave(player) {
+                const team = game.teams.get(player.id);
+                const wasSpymaster = Boolean(team) && game.spymasters[team] === player.id;
+
+                game.teams.delete(player.id);
+                game.picks.delete(player.id);
+                if (wasSpymaster) game.spymasters[team] = null;
+
+                if (!inGame() || !team) {
+                    publish();
+                    return;
+                }
+
+                for (const t of TEAMS) {
+                    if (teamMembers(t).length < MIN_TEAM_SIZE) {
+                        abortGame(`${player.name} left, and the ${TEAM_LABELS[t]} team needs at least ${MIN_TEAM_SIZE} players`);
+                        return;
+                    }
+                }
+
+                if (wasSpymaster) {
+                    party.emit({ type: "notice", text: `${player.name} was the ${TEAM_LABELS[team]} spymaster and left, so the team must pick a new one` });
+
+                    // This pauses the clue timer until the team has a new spymaster.
+                    if (game.phase === "clue" && game.turnTeam === team) clearPhaseTimer();
+                }
+
+                // This checks the picks again because the team now needs fewer votes.
+                if (game.phase === "guess" && game.turnTeam === team && checkPicks()) return;
+
+                publish();
+            }
+
+            // ---------- Room ----------
+
+            const party = createPartyRoom({
+                gameId: "wordspy",
+                title: "Word Spy",
+                icon: "bi-grid-3x3-gap-fill",
+                colour: "var(--blue)",
+                intro: "Two teams race to find their secret agents on a grid of 25 words. Only the spymasters know which word is which, and they may give one-word clues.",
+                minPlayers: MIN_PLAYERS,
+                maxPlayers: MAX_PLAYERS,
+                onEnter() {
+                    clueNumber = "1";
+                    if (party.isHost) {
+                        resetGame();
+                        publish();
+                    }
+                    startTimerLoop();
+                },
+                onExit() {
+                    resetGame();
+                    view = null;
+                    clearInterval(timerInterval);
+                    gameBody.innerHTML = "";
+                },
+                onView(next) {
+                    if (!next || typeof next.phase !== "string") return;
+
+                    view = next;
+                    viewDeadline = partyDeadlineFrom(next.remainingMs);
+                    viewTotalMs = next.totalMs;
+                    render();
+                },
+                onEvent(event) {
+                    if (event && event.type === "notice") showInfoToast(String(event.text));
+                },
+                host: {
+                    onJoin: () => publish(),
+                    onLeave: handleLeave,
+                    onAction: handleAction
+                }
+            });
+
+            // ---------- Rendering ----------
+
+            function nameOf(id) {
+                const player = party.getPlayer(id);
+                return player ? player.name : "Someone who left";
+            }
+
+            function colourOf(id) {
+                const player = party.getPlayer(id);
+                return partyColourClass(player ? player.order : 0);
+            }
+
+            function membersOf(team) {
+                return party.players.filter(p => view.teams[p.id] === team).map(p => p.id);
+            }
+
+            function operativesOf(team) {
+                return membersOf(team).filter(id => id !== view.spymasters[team]);
+            }
+
+            // This groups the players of the guessing team by the card or button they point at.
+            function pickersByTarget() {
+                const groups = {};
+                for (const id of operativesOf(view.turnTeam)) {
+                    const target = view.picks[id];
+                    if (target === undefined) continue;
+                    (groups[target] = groups[target] || []).push(id);
+                }
+                return groups;
+            }
+
+            function renderTeamColumn(team) {
+                const members = membersOf(team);
+                const spy = view.spymasters[team];
+                const mine = view.myTeam === team;
+                const amSpy = spy === party.myId;
+
+                return `
+                    <div class="ws-team ws-team-${team}">
+                        <div class="ws-team-head">
+                            <span>${TEAM_LABELS[team]} team</span>
+                            <span>${members.length}</span>
+                        </div>
+                        <div class="ws-team-list">${members.length ? members.map(id => `
+                            <div class="ws-team-member ${colourOf(id)}${id === party.myId ? " is-self" : ""}">
+                                <span class="ws-team-name" title="${partyEscapeHtml(nameOf(id))}">${partyEscapeHtml(nameOf(id))}${id === party.myId ? " (you)" : ""}</span>
+                                ${id === spy ? `<span class="ws-spy-tag"><i class="bi bi-eye-fill"></i> Spymaster</span>` : ""}
+                            </div>`).join("") : `<div class="party-hint">Nobody yet</div>`}</div>
+                        ${mine
+                            ? `<button type="button" class="btn action-btn-ghost" data-act="spymaster" data-on="${amSpy ? "0" : "1"}"${spy && !amSpy ? " disabled" : ""}><i class="bi ${amSpy ? "bi-eye-slash" : "bi-eye"}"></i> ${amSpy ? "Step down" : spy ? "Seat taken" : "Be spymaster"}</button>`
+                            : `<button type="button" class="btn action-btn-ghost" data-act="team" data-team="${team}"><i class="bi bi-box-arrow-in-right"></i> Join ${TEAM_LABELS[team]}</button>`}
+                    </div>`;
+            }
+
+            function renderLobby() {
+                const canEdit = party.isHost;
+                const problem = teamProblem(view.teams, view.spymasters);
+
+                return `
+                    <div class="party-stage" style="--stage-c: var(--blue)">
+                        <span class="party-stage-kicker">How to play</span>
+                        <p class="party-stage-text">Split into Red and Blue. Each team has one spymaster who sees which words are their agents. The spymaster gives a one-word clue and a number, and the team points at the words they think match. Avoid the other team's agents, bystanders and above all the assassin.</p>
+                    </div>
+
+                    <div class="ws-teams">
+                        ${renderTeamColumn("red")}
+                        ${renderTeamColumn("blue")}
+                    </div>
+
+                    ${canEdit ? `
+                        <div class="party-row">
+                            <button type="button" class="btn action-btn-ghost" data-act="shuffle"><i class="bi bi-shuffle"></i> Shuffle teams</button>
+                            <button type="button" class="btn action-btn-ghost" data-act="randomSpymasters"><i class="bi bi-dice-5"></i> Random spymasters</button>
+                        </div>` : ""}
+
+                    <div class="party-settings">
+                        <div>
+                            <span class="party-label">Turn timer</span>
+                            ${partySegmentHtml("timer", TIMER_OPTIONS, view.settings.timer, !canEdit)}
+                        </div>
+                    </div>
+
+                    ${canEdit
+                        ? `<button type="button" class="btn action-btn-primary" data-act="start"${problem ? " disabled" : ""}><i class="bi bi-play-fill"></i> Start game</button>
+                           <div class="party-hint text-center">${problem ? partyEscapeHtml(problem) : "Both teams are ready."}</div>`
+                        : `<div class="party-empty-hint">${problem ? partyEscapeHtml(problem) : "Waiting for the room creator to start the game"}</div>`}`;
+            }
+
+            function renderCounts() {
+                const middle = view.phase === "result" ? "Game over" : `${TEAM_LABELS[view.turnTeam]} team's turn`;
+
+                return `
+                    <div class="ws-status">${TEAMS.map(team => `
+                        ${team === "blue" ? `<div class="ws-turn">${middle}</div>` : ""}
+                        <div class="ws-count ws-team-${team}${view.phase !== "result" && view.turnTeam === team ? " is-turn" : ""}">
+                            <span>${TEAM_LABELS[team]}</span>
+                            <b>${view.remaining[team]}</b>
+                            <span>left</span>
+                        </div>`).join("")}
+                    </div>`;
+            }
+
+            function renderBoard() {
+                const canPick = view.phase === "guess" && view.myTeam === view.turnTeam && !view.isSpymaster;
+                const groups = view.phase === "guess" ? pickersByTarget() : {};
+
+                return `<div class="ws-board" role="group" aria-label="Word cards">${view.cards.map((card, index) => {
+                    const pickers = groups[index] || [];
+                    const mine = view.picks[party.myId] === index;
+                    const classes = ["ws-card"];
+                    if (card.kind) classes.push(`ws-kind-${card.kind}`, "has-key");
+                    if (card.revealed) classes.push("is-revealed");
+                    if (mine) classes.push("is-picked");
+
+                    const state = card.revealed ? `, opened, ${KIND_LABELS[card.kind]}` : card.kind ? `, hidden, key shows ${KIND_LABELS[card.kind]}` : ", hidden";
+                    const pointing = pickers.length ? `, chosen by ${pickers.map(nameOf).join(", ")}` : "";
+
+                    return `
+                        <button type="button" class="${classes.join(" ")}" data-act="pick" data-index="${index}" aria-label="${partyEscapeHtml(card.word + state + pointing)}"${canPick ? ` aria-pressed="${mine}"` : ""}${!canPick || card.revealed ? " disabled" : ""}>
+                            ${card.kind === "assassin" && !card.revealed ? `<i class="bi bi-x-octagon-fill ws-card-key-icon" aria-hidden="true"></i>` : ""}
+                            <span class="ws-card-word">${partyEscapeHtml(card.word)}</span>
+                            ${pickers.length ? `<span class="ws-pointers" aria-hidden="true">${pickers.map(id => `<span class="ws-pointer ${colourOf(id)}" title="${partyEscapeHtml(nameOf(id))}">${partyEscapeHtml(nameOf(id).charAt(0).toUpperCase())}</span>`).join("")}</span>` : ""}
+                        </button>`;
+                }).join("")}</div>`;
+            }
+
+            function renderLog() {
+                if (!view.clues.length) return `<div class="party-empty-hint">No clues yet</div>`;
+
+                return `<div class="ws-log">${[...view.clues].reverse().map(entry => `
+                    <div class="ws-log-entry ws-team-${entry.team}">
+                        <b>${TEAM_LABELS[entry.team]}</b>
+                        ${entry.word
+                            ? `<span class="ws-log-clue">${partyEscapeHtml(entry.word)} · ${numberLabel(entry.number)}</span>`
+                            : `<span class="ws-log-muted">No clue, the time ran out</span>`}
+                        ${entry.guesses.map(guess => `<span class="ws-log-guess ws-kind-${guess.kind}" title="${KIND_LABELS[guess.kind]}">${partyEscapeHtml(guess.word)}</span>`).join("")}
+                    </div>`).join("")}</div>`;
+            }
+
+            function renderClueForm() {
+                return `
+                    <div class="party-settings">
+                        <div>
+                            <span class="party-label">How many cards does it point to?</span>
+                            ${partySegmentHtml("clueNumber", CLUE_NUMBERS.map(n => [n, numberLabel(n)]), clueNumber, false)}
+                        </div>
+                        <form class="party-chat-form" id="clueForm">
+                            <input type="text" class="input-cyan" id="clueInput" maxlength="${MAX_CLUE_LENGTH}" placeholder="One word, not on the board" autocomplete="off">
+                            <button type="submit" class="btn action-btn-primary"><i class="bi bi-send"></i> Give clue</button>
+                        </form>
+                    </div>`;
+            }
+
+            function renderGuessControls() {
+                const ops = operativesOf(view.turnTeam);
+                const groups = pickersByTarget();
+                const endPickers = groups[END_TURN] || [];
+                const mine = view.picks[party.myId] === END_TURN;
+                const lastClue = view.clues[view.clues.length - 1];
+                const canEnd = Boolean(lastClue && lastClue.guesses.length);
+
+                return `
+                    <div class="party-hint text-center">Tap a card to point at it, and tap it again to take it back. A card opens when ${view.need} of the ${ops.length} guessers on your team point at it.</div>
+                    <button type="button" class="btn action-btn-ghost ws-end-btn${mine ? " is-picked" : ""}" data-act="pick" data-index="${END_TURN}" aria-pressed="${mine}"${canEnd ? "" : " disabled"}>
+                        <i class="bi bi-hand-thumbs-up"></i> ${mine ? "Take back end turn" : "Vote to end turn"} (${endPickers.length}/${view.need})
+                    </button>
+                    ${canEnd ? "" : `<div class="party-hint text-center">Open at least one card before you can end the turn.</div>`}`;
+            }
+
+            function renderGame() {
+                const turnLabel = TEAM_LABELS[view.turnTeam];
+                const spyId = view.spymasters[view.turnTeam];
+                const amClueGiver = view.phase === "clue" && view.isSpymaster && view.myTeam === view.turnTeam;
+                const amGuesser = view.phase === "guess" && view.myTeam === view.turnTeam && !view.isSpymaster;
+                const needSpy = view.myTeam && !view.spymasters[view.myTeam];
+
+                let kicker;
+                let title;
+                let text;
+
+                if (view.phase === "clue") {
+                    kicker = `${turnLabel} team · clue`;
+                    if (!spyId) {
+                        title = "No spymaster";
+                        text = `The ${turnLabel} team must pick a new spymaster before the game can go on.`;
+                    } else if (amClueGiver) {
+                        title = "Your turn to give a clue";
+                        text = "Give one word and a number: the number tells your team how many cards the clue points to.";
+                    } else {
+                        title = `${partyEscapeHtml(nameOf(spyId))} is thinking`;
+                        text = view.myTeam === view.turnTeam ? "Your spymaster is picking a clue for you." : `The ${turnLabel} spymaster is picking a clue.`;
+                    }
+                } else {
+                    const left = view.guessesLeft === null ? "unlimited guesses" : `${view.guessesLeft} guess${view.guessesLeft === 1 ? "" : "es"} left`;
+                    kicker = `${turnLabel} team · ${left}`;
+                    title = `${partyEscapeHtml(view.clue.word)} · ${numberLabel(view.clue.number)}`;
+                    text = amGuesser
+                        ? "Point at the cards you think the clue means. A wrong card ends your turn."
+                        : `The ${turnLabel} team is guessing.`;
+                }
+
+                return `
+                    ${renderCounts()}
+                    <div class="party-stage" style="--stage-c: var(--${view.turnTeam})">
+                        <span class="party-stage-kicker">${kicker}</span>
+                        <h2 class="party-stage-title">${title}</h2>
+                        <p class="party-stage-text">${text}</p>
+                    </div>
+                    ${viewTotalMs ? partyTimerHtml("phaseTimer") : ""}
+                    ${needSpy ? `
+                        <button type="button" class="btn action-btn-primary" data-act="spymaster" data-on="1"><i class="bi bi-eye"></i> Become the ${TEAM_LABELS[view.myTeam]} spymaster</button>
+                        <div class="party-hint text-center">Your team has no spymaster. The first player to click this sees the key and gives the clues.</div>` : ""}
+                    ${amClueGiver ? renderClueForm() : ""}
+                    ${renderBoard()}
+                    ${amGuesser ? renderGuessControls() : ""}
+                    ${view.isSpymaster ? `<div class="party-hint text-center"><i class="bi bi-eye-fill"></i> You are the ${TEAM_LABELS[view.myTeam]} spymaster: the coloured bands show the key, so keep a straight face.</div>` : ""}
+                    <div>
+                        <span class="party-label">Clue log</span>
+                        ${renderLog()}
+                    </div>`;
+            }
+
+            function renderResult() {
+                const winner = TEAM_LABELS[view.winner];
+                const reason = view.winReason === "assassin"
+                    ? `The ${TEAM_LABELS[otherTeam(view.winner)]} team opened the assassin.`
+                    : `The ${winner} team found all their agents.`;
+                const rows = TEAMS.map(team => ({ name: `${TEAM_LABELS[team]} team`, order: team === "red" ? 7 : 6, points: view.wins[team], self: view.myTeam === team }));
+                const problem = teamProblem(view.teams, view.spymasters);
+
+                return `
+                    <div class="party-stage" style="--stage-c: var(--${view.winner})">
+                        <span class="party-stage-kicker">Game ${view.round} result</span>
+                        <h2 class="party-stage-title">The ${winner} team wins!</h2>
+                        <p class="party-stage-text">${reason} The whole key is shown below.</p>
+                    </div>
+
+                    ${renderCounts()}
+                    ${renderBoard()}
+
+                    <div>
+                        <span class="party-label">Games won</span>
+                        ${partyScoreboardHtml(rows)}
+                    </div>
+
+                    <div>
+                        <span class="party-label">Clue log</span>
+                        ${renderLog()}
+                    </div>
+
+                    <div class="party-row">
+                        <button type="button" class="btn action-btn-ghost" data-act="share"><i class="bi bi-share"></i> Share result</button>
+                        ${party.isHost ? `
+                            <button type="button" class="btn action-btn-ghost" data-act="lobby"><i class="bi bi-people"></i> Change teams</button>
+                            <button type="button" class="btn action-btn-primary" data-act="start"${problem ? " disabled" : ""}><i class="bi bi-arrow-repeat"></i> Play again</button>` : ""}
+                    </div>
+                    <div class="party-hint text-center">${problem ? partyEscapeHtml(problem) : party.isHost ? `Play again keeps the teams, and the ${TEAM_LABELS[otherTeam(view.startTeam)]} team starts.` : "Waiting for the room creator to start the next game."}</div>`;
+            }
+
+            function render() {
+                if (!view) return;
+
+                const focused = document.activeElement && document.activeElement.id;
+                const draft = focused ? document.activeElement.value : null;
+                const clueInput = document.getElementById("clueInput");
+                const clueDraft = clueInput ? clueInput.value : "";
+
+                switch (view.phase) {
+                    case "lobby": gameBody.innerHTML = renderLobby(); break;
+                    case "clue":
+                    case "guess": gameBody.innerHTML = renderGame(); break;
+                    case "result": gameBody.innerHTML = renderResult(); break;
+                }
+
+                // This keeps a half-typed clue when a new view arrives or the number changes.
+                const newClueInput = document.getElementById("clueInput");
+                if (newClueInput) newClueInput.value = clueDraft;
+
+                const input = focused && document.getElementById(focused);
+                if (input && input.tagName === "INPUT") {
+                    input.value = draft;
+                    input.focus();
+                } else if (newClueInput && !clueDraft) {
+                    newClueInput.focus();
+                }
+
+                updateTimer();
+                renderBadges();
+                renderFooter();
+            }
+
+            function renderBadges() {
+                const badges = {};
+
+                for (const player of party.players) {
+                    const team = view.teams[player.id];
+                    const badge = { note: team ? TEAM_LABELS[team] : "" };
+
+                    if (team && view.spymasters[team] === player.id) {
+                        badge.icon = "bi-eye-fill";
+                        badge.iconTitle = "Spymaster";
+                    } else if (view.phase === "guess" && view.picks[player.id] !== undefined) {
+                        badge.icon = "bi-hand-index-thumb-fill";
+                        badge.iconTitle = "Pointing at a choice";
+                    }
+
+                    badges[player.id] = badge;
+                }
+
+                party.setBadges(badges);
+            }
+
+            function renderFooter() {
+                document.getElementById("footerRound").textContent = view.round;
+                document.getElementById("footerPhase").textContent = PHASE_LABELS[view.phase] || "-";
+                document.getElementById("footerTurn").textContent = view.phase === "clue" || view.phase === "guess" ? TEAM_LABELS[view.turnTeam] : "-";
+            }
+
+            function updateTimer() {
+                updatePartyTimer(document.getElementById("phaseTimer"), viewDeadline, viewTotalMs);
+            }
+
+            function startTimerLoop() {
+                clearInterval(timerInterval);
+                timerInterval = setInterval(updateTimer, TIMER_TICK_MS);
+            }
+
+            function serializeResult() {
+                if (!view || view.phase !== "result") return "";
+                const winner = TEAM_LABELS[view.winner];
+                const how = view.winReason === "assassin" ? "because the other team found the assassin" : "by finding all their agents";
+                return `🕵️ Word Spy game ${view.round}: the ${winner} team won ${how}. Games won: Red ${view.wins.red} · Blue ${view.wins.blue}`;
+            }
+
+            // ---------- UI events ----------
+
+            bindPartySegments(gameBody, (key, value) => {
+                // This keeps the clue number on this device until the spymaster sends the clue.
+                if (key === "clueNumber") {
+                    if (CLUE_NUMBERS.includes(value)) clueNumber = value;
+                    render();
+                    return;
+                }
+                party.act({ type: "setting", key, value });
+            });
+
+            gameBody.addEventListener("click", event => {
+                const button = event.target.closest("[data-act]");
+                if (!button || button.disabled) return;
+
+                switch (button.dataset.act) {
+                    case "start": party.act({ type: "start" }); break;
+                    case "lobby": party.act({ type: "lobby" }); break;
+                    case "shuffle": party.act({ type: "shuffle" }); break;
+                    case "randomSpymasters": party.act({ type: "randomSpymasters" }); break;
+                    case "team": party.act({ type: "team", team: button.dataset.team }); break;
+                    case "spymaster": party.act({ type: "spymaster", on: button.dataset.on === "1" }); break;
+                    case "pick": party.act({ type: "pick", index: button.dataset.index === END_TURN ? END_TURN : Number(button.dataset.index) }); break;
+                    case "share": partyShareText(serializeResult(), button); break;
+                }
+            });
+
+            gameBody.addEventListener("submit", event => {
+                event.preventDefault();
+                if (event.target.id !== "clueForm") return;
+
+                const word = partyCleanText(document.getElementById("clueInput").value, MAX_CLUE_LENGTH);
+                if (!word) {
+                    showInfoToast("Type a clue first");
+                    return;
+                }
+                if (/\s/.test(word)) {
+                    showInfoToast("The clue must be one word with no spaces");
+                    return;
+                }
+
+                party.act({ type: "clue", word, number: clueNumber });
+            });
+
+            document.getElementById("copyResultBtn").addEventListener("click", event => partyCopyText(serializeResult(), event.currentTarget));
+        </script>
+    </body>
+</html>

@@ -40,6 +40,11 @@ const USER_DATA_STORAGE_GROUPS = [
     { label: "Saved colour palettes", keys: ["toolstack_saved_palettes"], countKey: "toolstack_saved_palettes" },
     { label: "Custom currency rates", keys: ["toolstack_currency_custom_rates", "toolstack_currency_rates"] },
     { label: "Scrum Poker name and role", keys: ["toolstack_poker_name", "toolstack_poker_role"] },
+    { label: "Party Games player name", keys: ["toolstack_party_name"] },
+    { label: "Reaction Race best time", keys: ["toolstack_reaction_best_ms"] },
+    { label: "Typing Race best speed", keys: ["toolstack_typing_best_wpm"] },
+    { label: "Quiz Battle custom questions", keys: ["toolstack_quiz_custom"] },
+    { label: "Would You Rather custom questions", keys: ["toolstack_wyr_custom"] },
     { label: "Trivia Quiz best score", keys: ["toolstack_trivia_best"] },
     { label: "Wildlife search location", keys: ["toolstack_wildlife_location"] },
     {

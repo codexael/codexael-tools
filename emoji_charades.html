@@ -1,0 +1,1284 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Codexael Toolstack - Emoji Charades</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <!-- Metadata -->
+        <meta name="description" content="Describe movies and phrases using only emoji, and see who guesses first. 2-12 players.">
+        <meta name="author" content="Codexael">
+        <meta name="theme-color" content="#fff4e0" media="(prefers-color-scheme: light)">
+        <meta name="theme-color" content="#17140f" media="(prefers-color-scheme: dark)">
+
+        <!-- Open Graph -->
+        <meta property="og:title" content="Codexael Toolstack — Emoji Charades 🎬">
+        <meta property="og:description" content="Describe movies and phrases using only emoji, and see who guesses first. 2-12 players.">
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="https://tools.codexael.com/emoji_charades.html">
+        <meta property="og:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+        <meta property="og:image:width" content="1200">
+        <meta property="og:image:height" content="630">
+        <meta property="og:image:type" content="image/png">
+        <meta property="og:image:alt" content="Codexael Toolstack — Emoji Charades 🎬">
+        <meta property="og:site_name" content="Codexael Toolstack">
+
+        <!-- Twitter Card -->
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="Codexael Toolstack — Emoji Charades 🎬">
+        <meta name="twitter:description" content="Describe movies and phrases using only emoji, and see who guesses first. 2-12 players.">
+        <meta name="twitter:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+
+        <!-- Favicon / App Icon -->
+        <link rel="icon" type="image/svg+xml" href="assets/images/codexael_icon.svg">
+        <link rel="apple-touch-icon" href="assets/images/codexael_icon.svg">
+
+        <!-- Bootstrap 5.2.0-beta1 -->
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+
+        <!-- Bootstrap with Popper 5.2.0-beta1 -->
+        <script src="js/bootstrap.bundle.min.js"></script>
+
+        <!-- Bootstrap Icons 1.11.3 -->
+        <link rel="stylesheet" href="css/bootstrap-icons.min.css">
+
+        <!-- PeerJS 1.5.4 -->
+        <script src="js/peerjs.min.js"></script>
+
+        <!-- Google fonts -->
+        <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+        <!-- Custom CSS -->
+        <link rel="stylesheet" href="css/keycaps.css">
+        <link rel="stylesheet" href="css/party-games.css">
+
+        <style>
+            /* The top card shows the category and the word pattern, or the phrase for the clue giver. */
+            .ec-top {
+                --stage-c: var(--orange);
+                gap: 8px;
+                padding: 14px 16px;
+            }
+
+            .ec-pattern {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 6px 16px;
+            }
+
+            .ec-pattern-word {
+                display: flex;
+                gap: 4px;
+            }
+
+            /* Each hidden letter is a short line, and punctuation is shown as it is. */
+            .ec-pattern-char {
+                min-width: 0.9em;
+                padding-bottom: 2px;
+                border-bottom: 3px solid #111111;
+                font-family: var(--display-font);
+                font-size: clamp(0.95rem, 2.6vw, 1.2rem);
+                line-height: 1.2;
+                text-align: center;
+            }
+
+            .ec-pattern-char.is-hidden {
+                color: transparent;
+            }
+
+            .ec-pattern-char.is-mark {
+                border-bottom-color: transparent;
+            }
+
+            .ec-play {
+                display: grid;
+                grid-template-columns: minmax(0, 1fr);
+                gap: 14px;
+            }
+
+            .ec-main,
+            .ec-side {
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+                min-width: 0;
+            }
+
+            .ec-clue,
+            .ec-key {
+                font-family: "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif;
+            }
+
+            /* The clue box is where everyone watches the emoji appear. */
+            .ec-clue {
+                min-height: 96px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 14px;
+                background: var(--paper);
+                color: var(--ink);
+                border: 4px solid var(--ink);
+                box-shadow: 3px 3px 0 var(--ink);
+                font-size: clamp(1.8rem, 6vw, 2.6rem);
+                line-height: 1.35;
+                text-align: center;
+                white-space: pre-wrap;
+                overflow-wrap: anywhere;
+            }
+
+            .ec-clue.is-empty {
+                font-family: inherit;
+                font-size: 0.8rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                opacity: 0.6;
+            }
+
+            .ec-giver {
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                padding: 12px;
+                background: var(--bg);
+                border: 3px solid var(--ink);
+                box-shadow: 2.5px 2.5px 0 var(--ink);
+            }
+
+            .ec-giver:empty {
+                display: none;
+            }
+
+            .ec-tabs,
+            .ec-edit-row {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 6px;
+            }
+
+            .ec-tab,
+            .ec-tool {
+                padding: 4px 10px;
+                background: var(--paper);
+                color: var(--ink);
+                border: 2.5px solid var(--ink);
+                border-radius: 8px;
+                box-shadow: 0 2px 0 var(--ink);
+                font-size: 0.75rem;
+                font-weight: 700;
+            }
+
+            .ec-tab:hover,
+            .ec-tool:hover:not(:disabled) {
+                background: var(--cyan);
+                color: #111111;
+            }
+
+            .ec-tab.is-active,
+            .ec-tab.is-active:hover {
+                background: var(--yellow);
+                color: #111111;
+                transform: translateY(2px);
+                box-shadow: inset 0 2px 0 rgba(0, 0, 0, 0.2);
+            }
+
+            .ec-tool:disabled {
+                cursor: not-allowed;
+                opacity: 0.5;
+            }
+
+            .ec-keys {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(42px, 1fr));
+                gap: 5px;
+                max-height: 196px;
+                overflow-y: auto;
+            }
+
+            .ec-key {
+                height: 42px;
+                padding: 0;
+                background: var(--paper);
+                border: 2px solid var(--ink);
+                border-radius: 8px;
+                box-shadow: 0 2px 0 var(--ink);
+                font-size: 1.35rem;
+                line-height: 1;
+                transition: transform 0.08s, box-shadow 0.08s, background-color 0.12s;
+            }
+
+            .ec-key:hover {
+                background: var(--yellow);
+            }
+
+            .ec-key:active {
+                transform: translateY(2px);
+                box-shadow: 0 0 0 var(--ink);
+            }
+
+            .ec-edit-row .input-cyan {
+                flex: 1 1 160px;
+                min-width: 0;
+                margin-bottom: 0;
+            }
+
+            .ec-reveal {
+                --stage-c: var(--lime);
+            }
+
+            .ec-reveal-list {
+                display: flex;
+                flex-direction: column;
+                gap: 4px;
+                width: 100%;
+                max-width: 320px;
+                font-size: 0.8rem;
+                font-weight: 700;
+            }
+
+            .ec-reveal-row {
+                display: flex;
+                justify-content: space-between;
+                gap: 12px;
+            }
+
+            .ec-reveal-row span:first-child {
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+            /* Lines from players who already guessed are shown only to the clue giver and the other winners. */
+            .ec-chat-inner {
+                font-style: italic;
+                opacity: 0.8;
+            }
+
+            /* Wide screens put the chat beside the clue. */
+            @media (min-width: 992px) {
+                .ec-play {
+                    grid-template-columns: minmax(0, 1fr) 230px;
+                }
+
+                .ec-side .party-chat {
+                    flex: 1 1 0;
+                    min-height: 240px;
+                    max-height: none;
+                }
+            }
+
+            @media (prefers-reduced-motion: reduce) {
+                .ec-key {
+                    transition: none;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <!-- Common layout -->
+        <div id="navbar-container"></div>
+
+        <div class="container-fluid tool-wrapper">
+
+            <!-- Setup view -->
+            <div class="row" id="partySetup"></div>
+
+            <!-- Room view -->
+            <div class="row g-3 g-md-0 gx-md-3 gx-0 d-none party-room" id="partyRoom">
+
+                <div class="col-md-8 editor-panel party-game-panel" id="gamePanel" style="--panel-c: var(--orange)">
+                    <div class="editor-header">
+                        <span class="editor-title">Emoji Charades</span>
+                        <div class="editor-actions">
+                            <button title="Copy result" data-shortcut="copy" id="copyResultBtn"><i class="bi bi-copy icon-btn"></i></button>
+                            <button title="Fullscreen" onclick="toggleEditorFullScreen('gamePanel')"><i class="bi bi-arrows-fullscreen icon-btn"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="party-body invisible-scrollbars" id="gameBody"></div>
+
+                    <div class="editor-footer">
+                        <div class="status">
+                            <span>Game <b id="footerRound">0</b></span>
+                            <span>Turn <b id="footerTurn">-</b></span>
+                            <span>Pack <b id="footerPack">-</b></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4 editor-panel party-side-panel" id="partyPanel"></div>
+
+            </div>
+        </div>
+
+        <div id="footer-container"></div>
+
+        <!-- Common JS -->
+        <script src="js/tool-help.js"></script>
+        <script src="js/storage.js"></script>
+        <script src="js/common.js"></script>
+        <script src="js/script.js"></script>
+        <script src="js/party-room.js"></script>
+
+        <!-- Custom JS -->
+        <script>
+            const pageTitle = "Emoji Charades";
+
+            const MIN_PLAYERS = 2;
+            const MAX_PLAYERS = 12;
+            const MAX_GUESS_LENGTH = 60;
+            const MAX_CLUE_GRAPHEMES = 40;
+            const MAX_CLUE_LENGTH = 300;
+            const MAX_RAW_CLUE_LENGTH = 1000;
+            const REVEAL_MS = 4000;
+            const TIMER_TICK_MS = 250;
+            const CLUE_SEND_MS = 250;
+            const MAX_GUESS_POINTS = 100;
+            const MIN_GUESS_POINTS = 40;
+            const ORDER_PENALTY = 10;
+            const GIVER_POINTS_PER_GUESS = 20;
+            const GUESS_GAP_MS = 400;
+            const MAX_CHAT_LINES = 100;
+            const SWAPS_PER_TURN = 1;
+
+            const PACKS = {
+                movies: { label: "Movies", category: "Movie", items: ["Titanic", "The Lion King", "Jurassic Park", "Star Wars", "Harry Potter", "Finding Nemo", "Frozen", "Toy Story", "The Matrix", "Jaws", "Spider-Man", "Batman", "Avatar", "Shrek", "Home Alone", "Back to the Future", "Pirates of the Caribbean", "The Godfather", "Ghostbusters", "Black Panther", "Up", "Cars", "Kung Fu Panda", "King Kong", "Mission Impossible", "Sholay", "Lagaan", "3 Idiots", "Dangal", "Dilwale Dulhania Le Jayenge", "RRR", "Taare Zameen Par"] },
+                songs: { label: "Songs & bands", category: "Song or band", items: ["Bohemian Rhapsody", "Let It Go", "Yellow Submarine", "Purple Rain", "Thriller", "Hotel California", "Shape of You", "Baby Shark", "Firework", "Umbrella", "Bad Romance", "Rolling in the Deep", "Single Ladies", "Dancing Queen", "Imagine", "Despacito", "Happy", "Gangnam Style", "Jai Ho", "Rocket Man", "Eye of the Tiger", "Love Story", "Hips Don't Lie", "Coldplay", "The Beatles", "Pink Floyd", "Red Hot Chili Peppers", "Arctic Monkeys", "Green Day", "Black Eyed Peas"] },
+                phrases: { label: "Phrases & idioms", category: "Phrase", items: ["Break the ice", "Piece of cake", "Raining cats and dogs", "Time flies", "Spill the beans", "Under the weather", "Hit the road", "Cold feet", "Once in a blue moon", "Let the cat out of the bag", "Cry over spilt milk", "Bite the bullet", "Kill two birds with one stone", "The elephant in the room", "Busy as a bee", "Cool as a cucumber", "Money does not grow on trees", "Night owl", "Couch potato", "When pigs fly", "Butterflies in my stomach", "Head in the clouds", "Over the moon", "Hot potato", "Apple of my eye", "The early bird catches the worm", "Love is blind", "Practice makes perfect", "Burn the midnight oil", "Time is money"] },
+                food: { label: "Food", category: "Food", items: ["Pizza", "Hot dog", "Fish and chips", "Spaghetti", "Sushi", "Ice cream sundae", "Apple pie", "Chocolate cake", "Pancakes", "French fries", "Butter chicken", "Popcorn", "Cheeseburger", "Fried egg", "Banana split", "Hot chocolate", "Fruit salad", "Chicken curry", "Biryani", "Taco", "Corn on the cob", "Peanut butter", "Strawberry milkshake", "Grilled cheese", "Birthday cake", "Lemonade", "Noodle soup", "Mango lassi", "Egg sandwich", "Cheese pizza"] },
+                places: { label: "Places", category: "Place", items: ["Paris", "New York", "London", "Egypt", "India", "Japan", "Hollywood", "Las Vegas", "Rome", "Australia", "Great Wall of China", "Statue of Liberty", "Eiffel Tower", "Taj Mahal", "Mount Everest", "Niagara Falls", "The Moon", "North Pole", "Amazon rainforest", "Sahara desert", "Disneyland", "Venice", "Hawaii", "Brazil", "Switzerland", "Antarctica", "Mumbai", "Big Ben", "Pyramids of Giza", "Leaning Tower of Pisa"] },
+                mixed: { label: "Mixed", category: "", items: [] }
+            };
+
+            const MIXED_SOURCES = ["movies", "songs", "phrases", "food", "places"];
+
+            const EMOJI_GROUPS = [
+                { label: "Faces", icon: "😀", emoji: ["😀", "😂", "😍", "😎", "🤔", "😱", "😭", "😡", "😴", "🤢", "🥳", "😇", "😈", "😘", "🤫", "🤯", "🥶", "🥵", "👻", "💀", "🤖", "👽", "🤡", "💩", "🙈"] },
+                { label: "People", icon: "👩", emoji: ["👶", "👦", "👧", "👨", "👩", "👴", "👵", "👮", "👸", "🤴", "🧙", "🧛", "🧜", "🦸", "🕺", "💃", "👫", "👀", "👂", "👄", "👍", "👎", "👏", "🙏", "💪"] },
+                { label: "Animals", icon: "🐶", emoji: ["🐶", "🐱", "🐭", "🐰", "🦊", "🐻", "🐼", "🦁", "🐯", "🐮", "🐷", "🐸", "🐵", "🐔", "🐧", "🦉", "🐝", "🦋", "🐍", "🐢", "🐟", "🦈", "🐘", "🦒", "🦖"] },
+                { label: "Nature", icon: "🌳", emoji: ["🌳", "🌴", "🌵", "🌸", "🌹", "🍀", "🍁", "🔥", "⭐", "🌙", "☀️", "🌈", "❄️", "🌊", "⚡", "☁️", "🌧️", "🌍", "🏔️", "🌋", "💧", "🌪️", "🪐", "☄️", "🌑"] },
+                { label: "Food", icon: "🍕", emoji: ["🍎", "🍌", "🍇", "🍓", "🍉", "🍋", "🥭", "🍍", "🥕", "🌽", "🌶️", "🍕", "🍔", "🍟", "🌭", "🌮", "🍣", "🍜", "🍝", "🍛", "🥚", "🧀", "🍞", "🍰", "🎂", "🍩", "🍪", "🍫", "🍿", "🍦", "☕", "🥛"] },
+                { label: "Things", icon: "🎸", emoji: ["⚽", "🏏", "🏀", "🎾", "🎮", "🎲", "🎵", "🎸", "🎤", "🎬", "📺", "📱", "💻", "📷", "💡", "📚", "✏️", "🔑", "💰", "💎", "👑", "🎁", "🎈", "⏰", "🏴‍☠️"] },
+                { label: "Travel", icon: "🚗", emoji: ["🚗", "🚌", "🚂", "✈️", "🚀", "🚢", "⛵", "🚲", "🚁", "🏠", "🏰", "🏥", "🏫", "🗽", "🗼", "🗻", "🏖️", "🏝️", "🎡", "🌆", "🇮🇳", "🇺🇸", "🇬🇧", "🇫🇷", "🇯🇵", "🇮🇹", "🇧🇷", "🇨🇳"] },
+                { label: "Symbols", icon: "❤️", emoji: ["❤️", "💔", "💯", "❓", "❗", "➕", "➖", "✖️", "✅", "❌", "⬆️", "⬇️", "⬅️", "➡️", "🔄", "💤", "💬", "🆕", "🔴", "🟢", "🔵", "1️⃣", "2️⃣", "3️⃣", "🔟"] }
+            ];
+
+            // This matches one piece of an emoji, so everything else can be dropped from a clue.
+            const EMOJI_PIECE = /[0-9#*]️?⃣|\p{Extended_Pictographic}|\p{Emoji_Modifier}|\p{Regional_Indicator}|[‍️\u{e0020}-\u{e007f}]| /gu;
+
+            const PHASE_LABELS = { lobby: "Lobby", clue: "Guessing", reveal: "Reveal", result: "Game over" };
+
+            const graphemeSegmenter = typeof Intl !== "undefined" && Intl.Segmenter ? new Intl.Segmenter(undefined, { granularity: "grapheme" }) : null;
+
+            const gameBody = document.getElementById("gameBody");
+
+            // This holds the newest view from the referee, and every client draws only from it.
+            let view = null;
+            let viewDeadline = null;
+            let viewTotalMs = 0;
+            let timerInterval = null;
+
+            // This holds the chat lines this player has seen, newest last.
+            let chatLines = [];
+
+            // This is true while the play layout is on the page, so new views update it instead of rebuilding it.
+            let playMounted = false;
+
+            // This is the newest clue from the referee, which live clue events update between views.
+            let liveClue = "";
+            let liveTurn = "";
+
+            // These hold the clue giver's keyboard state.
+            let giverPanelTurn = "";
+            let emojiGroup = 0;
+            let lastSentClue = "";
+            let clueSendTimer = null;
+
+            // ---------- Emoji helpers ----------
+
+            function splitGraphemes(text) {
+                return graphemeSegmenter ? Array.from(graphemeSegmenter.segment(text), part => part.segment) : Array.from(text);
+            }
+
+            // This keeps only emoji and single spaces, and cuts the clue to a safe size.
+            function cleanEmoji(text) {
+                const kept = (String(text ?? "").slice(0, MAX_RAW_CLUE_LENGTH).match(EMOJI_PIECE) || [])
+                    .join("")
+                    .replace(/ {2,}/g, " ")
+                    .replace(/^ /, "");
+                return splitGraphemes(kept).slice(0, MAX_CLUE_GRAPHEMES).join("").slice(0, MAX_CLUE_LENGTH);
+            }
+
+            // ---------- Referee state ----------
+
+            // This holds the whole game, and only the referee keeps it.
+            const game = {
+                phase: "lobby",
+                settings: { pack: "movies", time: "90", rounds: "1" },
+                round: 0,
+                queue: [],
+                queueLaps: [],
+                turnIndex: -1,
+                giverId: null,
+                guesserIds: [],
+                phrase: "",
+                category: "",
+                clue: "",
+                swapsLeft: 0,
+                correct: new Map(),
+                lastGuessAt: new Map(),
+                usedPhrases: new Set(),
+                scores: new Map(),
+                gains: new Map(),
+                turnGains: new Map(),
+                deadline: 0,
+                totalMs: 0,
+                timer: null
+            };
+
+            const FRESH_GAME = { ...game, settings: { ...game.settings } };
+
+            function resetGame() {
+                clearTimeout(game.timer);
+                Object.assign(game, FRESH_GAME, {
+                    settings: { ...FRESH_GAME.settings },
+                    queue: [],
+                    queueLaps: [],
+                    guesserIds: [],
+                    correct: new Map(),
+                    lastGuessAt: new Map(),
+                    usedPhrases: new Set(),
+                    scores: new Map(),
+                    gains: new Map(),
+                    turnGains: new Map()
+                });
+            }
+
+            function isPlaying() {
+                return game.phase === "clue" || game.phase === "reveal";
+            }
+
+            function presentIds() {
+                return party.players.map(p => p.id);
+            }
+
+            // This names the current turn, so clients can drop clue events from an old turn.
+            function turnKey() {
+                return `${game.round}-${game.turnIndex}`;
+            }
+
+            function setPhaseTimer(ms, onEnd) {
+                clearTimeout(game.timer);
+                game.totalMs = ms;
+                game.deadline = Date.now() + ms;
+                game.timer = setTimeout(onEnd, ms);
+            }
+
+            function clearPhaseTimer() {
+                clearTimeout(game.timer);
+                game.deadline = 0;
+                game.totalMs = 0;
+            }
+
+            function addPoints(id, points) {
+                if (!points) return;
+                game.scores.set(id, (game.scores.get(id) || 0) + points);
+                game.gains.set(id, (game.gains.get(id) || 0) + points);
+                game.turnGains.set(id, (game.turnGains.get(id) || 0) + points);
+            }
+
+            function chatTo(line, ids = null) {
+                party.emit({ type: "chat", line }, ids);
+            }
+
+            function startGame() {
+                const players = party.players;
+                if (players.length < MIN_PLAYERS) {
+                    showInfoToast(`Emoji Charades needs at least ${MIN_PLAYERS} players`);
+                    return;
+                }
+
+                const order = partyShuffle(players.map(p => p.id));
+                const laps = Number(game.settings.rounds) || 1;
+
+                game.round += 1;
+                game.queue = Array.from({ length: laps }, () => order).flat();
+                game.queueLaps = game.queue.map((_, index) => Math.floor(index / order.length) + 1);
+                game.turnIndex = -1;
+                game.gains = new Map();
+
+                chatTo({ kind: "system", text: `Game ${game.round} started` });
+                nextTurn();
+            }
+
+            // This picks a phrase from the chosen pack that was not used yet in this room.
+            function pickPhrase() {
+                const sources = game.settings.pack === "mixed" ? MIXED_SOURCES : [game.settings.pack];
+                const all = sources.flatMap(key => PACKS[key].items.map(text => ({ text, category: PACKS[key].category })));
+
+                let pool = all.filter(item => !game.usedPhrases.has(item.text) && item.text !== game.phrase);
+                if (!pool.length) {
+                    game.usedPhrases = new Set();
+                    pool = all.filter(item => item.text !== game.phrase);
+                }
+
+                const item = pool[partyRandomInt(pool.length)];
+                game.phrase = item.text;
+                game.category = item.category;
+                game.usedPhrases.add(item.text);
+            }
+
+            // This moves to the next clue giver who is still in the room, or ends the game when everyone has had a turn.
+            function nextTurn() {
+                clearPhaseTimer();
+
+                const present = presentIds();
+                if (present.length < MIN_PLAYERS) {
+                    abortGame("There are not enough players left to go on");
+                    return;
+                }
+
+                do {
+                    game.turnIndex += 1;
+                } while (game.turnIndex < game.queue.length && !present.includes(game.queue[game.turnIndex]));
+
+                if (game.turnIndex >= game.queue.length) {
+                    finishGame();
+                    return;
+                }
+
+                game.giverId = game.queue[game.turnIndex];
+                game.guesserIds = present.filter(id => id !== game.giverId);
+                game.clue = "";
+                game.swapsLeft = SWAPS_PER_TURN;
+                game.correct = new Map();
+                game.lastGuessAt = new Map();
+                game.turnGains = new Map();
+                game.phase = "clue";
+                pickPhrase();
+
+                setPhaseTimer((Number(game.settings.time) || 90) * 1000, endTurn);
+
+                const giver = party.getPlayer(game.giverId);
+                chatTo({ kind: "system", text: `${giver ? giver.name : "Someone"} is giving the clue now` });
+                publish();
+            }
+
+            function endTurn() {
+                clearPhaseTimer();
+                game.phase = "reveal";
+                setPhaseTimer(REVEAL_MS, nextTurn);
+                chatTo({ kind: "system", text: `It was "${game.phrase}"` });
+                publish();
+            }
+
+            function finishGame() {
+                clearPhaseTimer();
+                game.phase = "result";
+                game.giverId = null;
+                game.guesserIds = [];
+                game.clue = "";
+                publish();
+            }
+
+            // This gives a player who joins during a game one turn at the end of each lap that has not finished yet.
+            function addLateTurns(id) {
+                if (!isPlaying() || game.queue.includes(id) || game.turnIndex >= game.queue.length - 1) return;
+
+                const currentLap = game.queueLaps[Math.max(0, game.turnIndex)];
+                const lastLap = game.queueLaps[game.queueLaps.length - 1];
+
+                for (let lap = lastLap; lap >= currentLap; lap--) {
+                    const end = game.queueLaps.lastIndexOf(lap) + 1;
+                    game.queue.splice(end, 0, id);
+                    game.queueLaps.splice(end, 0, lap);
+                }
+            }
+
+            function handleJoin(player) {
+                addLateTurns(player.id);
+                publish();
+            }
+
+            // This ends the game early when it can no longer go on.
+            function abortGame(reason) {
+                clearPhaseTimer();
+                game.phase = "lobby";
+                game.queue = [];
+                game.queueLaps = [];
+                game.giverId = null;
+                game.guesserIds = [];
+                game.clue = "";
+                party.emit({ type: "notice", text: reason });
+                publish();
+            }
+
+            function allGuessed() {
+                return game.guesserIds.every(id => game.correct.has(id));
+            }
+
+            // This gives more points for an early guess and fewer for each player who guessed first.
+            function guessPoints() {
+                const share = game.totalMs ? Math.max(0, game.deadline - Date.now()) / game.totalMs : 0;
+                const raw = MIN_GUESS_POINTS + (MAX_GUESS_POINTS - MIN_GUESS_POINTS) * share - ORDER_PENALTY * game.correct.size;
+                return Math.max(MIN_GUESS_POINTS, Math.round(raw / 5) * 5);
+            }
+
+            // This hides every letter and digit of the phrase but keeps spaces and punctuation.
+            function phrasePattern() {
+                return Array.from(game.phrase).map(ch => (/[a-z0-9]/i.test(ch) ? "_" : ch)).join("");
+            }
+
+            function buildView(id) {
+                const playing = isPlaying();
+                const isGiver = playing && id === game.giverId;
+                const knowsPhrase = game.phase === "reveal" || (game.phase === "clue" && (isGiver || game.correct.has(id)));
+
+                return {
+                    phase: game.phase,
+                    settings: { ...game.settings },
+                    round: game.round,
+                    packLabel: PACKS[game.settings.pack].label,
+                    turnKey: playing ? turnKey() : "",
+                    turnNumber: game.turnIndex + 1,
+                    turnCount: game.queue.length,
+                    lap: game.queueLaps[Math.max(0, game.turnIndex)] || 0,
+                    laps: Number(game.settings.rounds),
+                    giverId: playing ? game.giverId : null,
+                    guesserIds: playing ? [...game.guesserIds] : [],
+                    guessedIds: playing ? [...game.correct.keys()] : [],
+                    phrase: knowsPhrase ? game.phrase : null,
+                    category: playing ? game.category : "",
+                    pattern: playing ? phrasePattern() : "",
+                    clue: playing ? game.clue : "",
+                    swapsLeft: isGiver && game.phase === "clue" ? game.swapsLeft : 0,
+                    turnGains: game.phase === "reveal" ? Object.fromEntries(game.turnGains) : {},
+                    scores: Object.fromEntries(game.scores),
+                    gains: game.phase === "result" ? Object.fromEntries(game.gains) : {},
+                    remainingMs: game.deadline ? Math.max(0, game.deadline - Date.now()) : 0,
+                    totalMs: game.totalMs
+                };
+            }
+
+            function publish() {
+                party.publish(buildView);
+            }
+
+            // This applies one move from a player after checking that the move is allowed right now.
+            function handleAction(player, action) {
+                if (!action || typeof action.type !== "string") return;
+
+                switch (action.type) {
+                    case "setting": {
+                        if (!player.host || game.phase !== "lobby") return;
+                        const allowed = { pack: Object.keys(PACKS), time: ["60", "90", "120"], rounds: ["1", "2", "3"] };
+                        if (!allowed[action.key] || !allowed[action.key].includes(String(action.value))) return;
+                        game.settings[action.key] = String(action.value);
+                        publish();
+                        return;
+                    }
+
+                    case "start":
+                        if (!player.host || (game.phase !== "lobby" && game.phase !== "result")) return;
+                        startGame();
+                        return;
+
+                    case "lobby":
+                        if (!player.host || game.phase !== "result") return;
+                        game.phase = "lobby";
+                        publish();
+                        return;
+
+                    case "clue": {
+                        if (game.phase !== "clue" || player.id !== game.giverId) return;
+                        const text = cleanEmoji(action.text);
+                        if (text === game.clue) return;
+                        game.clue = text;
+                        party.emit({ type: "clue", turn: turnKey(), text }, presentIds().filter(id => id !== game.giverId));
+                        return;
+                    }
+
+                    case "swap":
+                        // This allows one new phrase per turn, and only before any clue or right guess.
+                        if (game.phase !== "clue" || player.id !== game.giverId) return;
+                        if (game.swapsLeft < 1 || game.clue.trim() || game.correct.size) return;
+                        game.swapsLeft -= 1;
+                        pickPhrase();
+                        publish();
+                        return;
+
+                    case "guess":
+                        handleGuess(player, partyCleanText(action.text, MAX_GUESS_LENGTH));
+                        return;
+                }
+            }
+
+            // This checks a chat line, scores a right guess and decides who may read the line.
+            function handleGuess(player, text) {
+                if (!text || !isPlaying()) return;
+
+                // This stops one player from flooding the chat.
+                const now = Date.now();
+                if (now - (game.lastGuessAt.get(player.id) || 0) < GUESS_GAP_MS) return;
+                game.lastGuessAt.set(player.id, now);
+
+                const line = { kind: "guess", name: player.name, order: player.order, text };
+
+                if (game.phase !== "clue") {
+                    chatTo(line);
+                    return;
+                }
+
+                if (player.id === game.giverId) return;
+
+                if (game.correct.has(player.id)) {
+                    chatTo({ ...line, kind: "inner" }, [game.giverId, ...game.correct.keys()]);
+                    return;
+                }
+
+                if (!game.guesserIds.includes(player.id)) {
+                    party.emit({ type: "notice", text: "You joined during this turn, so you can guess from the next turn" }, [player.id]);
+                    return;
+                }
+
+                if (partyGuessMatches(text, game.phrase)) {
+                    const points = guessPoints();
+                    game.correct.set(player.id, points);
+                    addPoints(player.id, points);
+                    addPoints(game.giverId, GIVER_POINTS_PER_GUESS);
+
+                    chatTo({ kind: "correct", text: game.phrase }, [player.id]);
+                    chatTo({ kind: "system", text: `${player.name} guessed it!` }, presentIds().filter(id => id !== player.id));
+
+                    if (allGuessed()) endTurn();
+                    else publish();
+                    return;
+                }
+
+                chatTo(line);
+            }
+
+            function handleLeave(player) {
+                game.scores.delete(player.id);
+                game.gains.delete(player.id);
+                game.turnGains.delete(player.id);
+
+                if (!isPlaying()) {
+                    publish();
+                    return;
+                }
+
+                if (presentIds().length < MIN_PLAYERS) {
+                    abortGame(`${player.name} left, and there are not enough players to go on`);
+                    return;
+                }
+
+                game.guesserIds = game.guesserIds.filter(id => id !== player.id);
+
+                // This ends the turn when the clue giver leaves in the middle of it.
+                if (player.id === game.giverId && game.phase === "clue") {
+                    party.emit({ type: "notice", text: `${player.name} left while giving the clue, so the turn is over` });
+                    endTurn();
+                    return;
+                }
+
+                if (game.phase === "clue" && allGuessed()) {
+                    endTurn();
+                    return;
+                }
+
+                publish();
+            }
+
+            // ---------- Room ----------
+
+            const party = createPartyRoom({
+                gameId: "emoji",
+                title: "Emoji Charades",
+                icon: "bi-emoji-laughing",
+                colour: "var(--orange)",
+                intro: "Take turns describing a secret movie, song, phrase or place using only emoji while everyone else races to guess it.",
+                minPlayers: MIN_PLAYERS,
+                maxPlayers: MAX_PLAYERS,
+                onEnter() {
+                    if (party.isHost) {
+                        resetGame();
+                        publish();
+                    }
+                    startTimerLoop();
+                },
+                onExit() {
+                    resetGame();
+                    clearTimeout(clueSendTimer);
+                    clueSendTimer = null;
+                    clearInterval(timerInterval);
+                    view = null;
+                    chatLines = [];
+                    liveClue = "";
+                    liveTurn = "";
+                    lastSentClue = "";
+                    giverPanelTurn = "";
+                    playMounted = false;
+                    gameBody.innerHTML = "";
+                },
+                onView(next) {
+                    if (!next || typeof next.phase !== "string") return;
+
+                    // This starts a fresh clue for every new turn.
+                    if (next.turnKey !== liveTurn) {
+                        liveTurn = next.turnKey;
+                        lastSentClue = "";
+                        clearTimeout(clueSendTimer);
+                        clueSendTimer = null;
+                    }
+                    liveClue = typeof next.clue === "string" ? next.clue : "";
+
+                    const turnStarted = next.phase === "clue" && (!view || view.turnKey !== next.turnKey);
+
+                    view = next;
+                    viewDeadline = partyDeadlineFrom(next.remainingMs);
+                    viewTotalMs = next.totalMs;
+                    render();
+
+                    if (turnStarted && next.giverId !== party.myId) focusGuess();
+                },
+                onEvent(event) {
+                    if (!event || typeof event.type !== "string") return;
+
+                    if (event.type === "notice") showInfoToast(String(event.text));
+                    if (event.type === "chat") addChatLine(event.line);
+
+                    if (event.type === "clue" && event.turn === liveTurn) {
+                        liveClue = cleanEmoji(event.text);
+                        updateClueBox();
+                    }
+                },
+                host: {
+                    onJoin: handleJoin,
+                    onLeave: handleLeave,
+                    onAction: handleAction
+                }
+            });
+
+            // ---------- Chat ----------
+
+            function chatLineHtml(line) {
+                const text = partyEscapeHtml(line.text);
+                const name = partyEscapeHtml(line.name);
+                const colour = partyColourClass(Number(line.order) || 0);
+
+                switch (line.kind) {
+                    case "system": return `<div class="party-chat-line is-system">${text}</div>`;
+                    case "correct": return `<div class="party-chat-line is-correct"><i class="bi bi-check-circle-fill"></i> You guessed it: ${text}</div>`;
+                    case "inner": return `<div class="party-chat-line ec-chat-inner ${colour}"><b>${name}</b> ${text}</div>`;
+                    default: return `<div class="party-chat-line ${colour}"><b>${name}</b> ${text}</div>`;
+                }
+            }
+
+            function addChatLine(line) {
+                if (!line || typeof line.kind !== "string") return;
+
+                chatLines.push(line);
+                if (chatLines.length > MAX_CHAT_LINES) chatLines.shift();
+
+                const log = document.getElementById("ecChatLog");
+                if (!log) return;
+
+                log.insertAdjacentHTML("beforeend", chatLineHtml(line));
+                while (log.children.length > MAX_CHAT_LINES) log.firstElementChild.remove();
+                log.scrollTop = log.scrollHeight;
+            }
+
+            function focusGuess() {
+                const input = document.getElementById("guessInput");
+
+                // This skips phones, where focusing would pop up the keyboard over the clue.
+                if (input && !input.disabled && window.matchMedia("(pointer: fine)").matches) input.focus({ preventScroll: true });
+            }
+
+            // ---------- Clue giver ----------
+
+            function clueInput() {
+                return document.getElementById("ecClueInput");
+            }
+
+            // This puts a cleaned clue in the giver's field, refreshes the clue box and queues a send.
+            function setGiverClue(text) {
+                const input = clueInput();
+                if (!input) return;
+
+                const clean = cleanEmoji(text);
+                if (input.value !== clean) input.value = clean;
+
+                updateClueBox();
+                updateSwapButton();
+                queueClueSend();
+            }
+
+            // This sends the clue at most once every short moment, so typing fast does not flood the room.
+            function queueClueSend() {
+                if (clueSendTimer) return;
+                clueSendTimer = setTimeout(() => {
+                    clueSendTimer = null;
+                    const input = clueInput();
+                    if (!input || input.value === lastSentClue) return;
+                    lastSentClue = input.value;
+                    party.act({ type: "clue", text: input.value });
+                }, CLUE_SEND_MS);
+            }
+
+            function renderKeys() {
+                const group = EMOJI_GROUPS[emojiGroup] || EMOJI_GROUPS[0];
+                return group.emoji.map(emoji => `<button type="button" class="ec-key" data-act="emoji" data-emoji="${partyEscapeHtml(emoji)}" aria-label="Add ${partyEscapeHtml(emoji)}">${partyEscapeHtml(emoji)}</button>`).join("");
+            }
+
+            function renderTabs() {
+                return EMOJI_GROUPS.map((group, index) => `<button type="button" class="ec-tab${index === emojiGroup ? " is-active" : ""}" data-act="group" data-index="${index}">${partyEscapeHtml(group.icon)} ${partyEscapeHtml(group.label)}</button>`).join("");
+            }
+
+            function renderGiver() {
+                return `
+                    <span class="party-label">Build your clue with emoji only</span>
+                    <div class="ec-tabs" id="ecTabs">${renderTabs()}</div>
+                    <div class="ec-keys" id="ecKeys">${renderKeys()}</div>
+                    <div class="ec-edit-row">
+                        <input type="text" class="input-cyan" id="ecClueInput" placeholder="Or type emoji with your keyboard" autocomplete="off" aria-label="Your emoji clue">
+                        <button type="button" class="ec-tool" data-act="space" title="Add a space between ideas">Space</button>
+                        <button type="button" class="ec-tool" data-act="backspace" title="Remove the last emoji"><i class="bi bi-backspace"></i></button>
+                        <button type="button" class="ec-tool" data-act="clearClue" title="Clear the clue"><i class="bi bi-x-lg"></i></button>
+                    </div>
+                    <div class="party-row" id="ecSwapRow"></div>`;
+            }
+
+            function updateSwapButton() {
+                const row = document.getElementById("ecSwapRow");
+                if (!row) return;
+
+                const input = clueInput();
+                const canSwap = view && view.swapsLeft > 0 && input && !input.value.trim() && !view.guessedIds.length;
+                row.innerHTML = canSwap
+                    ? `<button type="button" class="btn action-btn-ghost" data-act="swap"><i class="bi bi-shuffle"></i> Do not know it? New phrase (once)</button>`
+                    : "";
+            }
+
+            // ---------- Rendering ----------
+
+            function nameOf(id) {
+                const player = party.getPlayer(id);
+                return player ? player.name : "Someone who left";
+            }
+
+            function renderLobby() {
+                const canEdit = party.isHost;
+                const enoughPlayers = party.players.length >= MIN_PLAYERS;
+
+                return `
+                    <div class="party-stage" style="--stage-c: var(--orange)">
+                        <span class="party-stage-kicker">How to play</span>
+                        <p class="party-stage-text">Everyone takes turns as the clue giver. The giver gets a secret phrase and describes it using only emoji, while everyone else types guesses in the chat. Guess early for more points, and the giver scores for every player who gets it.</p>
+                    </div>
+
+                    <div class="party-settings">
+                        <div>
+                            <span class="party-label">Pack</span>
+                            ${partySegmentHtml("pack", Object.entries(PACKS).map(([id, pack]) => [id, pack.label]), view.settings.pack, !canEdit)}
+                        </div>
+                        <div>
+                            <span class="party-label">Time per turn</span>
+                            ${partySegmentHtml("time", [["60", "60 s"], ["90", "90 s"], ["120", "120 s"]], view.settings.time, !canEdit)}
+                        </div>
+                        <div>
+                            <span class="party-label">Rounds</span>
+                            ${partySegmentHtml("rounds", [["1", "Once each"], ["2", "Twice each"], ["3", "Three times each"]], view.settings.rounds, !canEdit)}
+                        </div>
+                    </div>
+
+                    ${canEdit
+                        ? `<button type="button" class="btn action-btn-primary" data-act="start"${enoughPlayers ? "" : " disabled"}><i class="bi bi-play-fill"></i> Start game</button>
+                           <div class="party-hint text-center">${enoughPlayers ? "Everyone in the room gives clues in this game." : `Waiting for at least ${MIN_PLAYERS} players.`}</div>`
+                        : `<div class="party-empty-hint">Waiting for the room creator to start the game</div>`}`;
+            }
+
+            function patternHtml(pattern) {
+                return `<div class="ec-pattern" aria-label="Phrase pattern">${pattern.split(" ").filter(Boolean).map(word => `
+                    <span class="ec-pattern-word">${Array.from(word).map(ch => ch === "_"
+                        ? `<span class="ec-pattern-char is-hidden">?</span>`
+                        : `<span class="ec-pattern-char is-mark">${partyEscapeHtml(ch)}</span>`).join("")}</span>`).join("")}</div>`;
+            }
+
+            function wordCountText(pattern) {
+                const count = pattern.split(" ").filter(Boolean).length;
+                return `${count} ${count === 1 ? "word" : "words"}`;
+            }
+
+            function renderTop(isGiver) {
+                const giver = partyEscapeHtml(nameOf(view.giverId));
+                const kicker = `${partyEscapeHtml(view.category)} · ${wordCountText(view.pattern)}`;
+
+                if (view.phase === "reveal") {
+                    return `
+                        <span class="party-stage-kicker">${kicker} · it was</span>
+                        <h2 class="party-stage-title">${partyEscapeHtml(view.phrase)}</h2>`;
+                }
+
+                if (isGiver) {
+                    return `
+                        <span class="party-stage-kicker">Your secret ${kicker}</span>
+                        <h2 class="party-stage-title">${partyEscapeHtml(view.phrase)}</h2>
+                        <p class="party-stage-text">Describe it with emoji only. ${view.guessedIds.length} of ${view.guesserIds.length} guessed so far.</p>`;
+                }
+
+                if (view.phrase) {
+                    return `
+                        <span class="party-stage-kicker">You got it · ${kicker}</span>
+                        <h2 class="party-stage-title">${partyEscapeHtml(view.phrase)}</h2>
+                        <p class="party-stage-text">Wait for the others to guess. Only the clue giver and other winners can read your chat now.</p>`;
+                }
+
+                return `
+                    <span class="party-stage-kicker">${kicker} · clue by ${giver}</span>
+                    ${patternHtml(view.pattern)}`;
+            }
+
+            function renderReveal() {
+                const rows = view.guessedIds.map(id => `
+                    <div class="ec-reveal-row"><span>${partyEscapeHtml(nameOf(id))}</span><span>+${view.turnGains[id] || 0}</span></div>`).join("");
+                const giverGain = view.turnGains[view.giverId] || 0;
+
+                return `
+                    <div class="party-stage ec-reveal">
+                        <span class="party-stage-kicker">Turn ${view.turnNumber} of ${view.turnCount}</span>
+                        <div class="ec-reveal-list">
+                            ${rows || `<span>Nobody guessed it.</span>`}
+                            ${giverGain ? `<div class="ec-reveal-row"><span><i class="bi bi-emoji-laughing"></i> ${partyEscapeHtml(nameOf(view.giverId))}</span><span>+${giverGain}</span></div>` : ""}
+                        </div>
+                    </div>`;
+            }
+
+            // This builds the play layout once, so the chat, the keyboard and a half-typed guess survive every new view.
+            function mountPlay() {
+                gameBody.innerHTML = `
+                    <div class="party-stage ec-top" id="ecTop"></div>
+                    ${partyTimerHtml("phaseTimer")}
+                    <div class="ec-play">
+                        <div class="ec-main">
+                            <div class="ec-clue" id="ecClue" aria-live="polite"></div>
+                            <div class="ec-giver" id="ecGiver"></div>
+                            <div id="ecReveal"></div>
+                        </div>
+                        <div class="ec-side">
+                            <div class="party-chat" id="ecChatLog" aria-live="polite">${chatLines.map(chatLineHtml).join("")}</div>
+                            <form class="party-chat-form" id="guessForm">
+                                <input type="text" class="input-cyan" id="guessInput" maxlength="${MAX_GUESS_LENGTH}" placeholder="Type your guess" autocomplete="off">
+                                <button type="submit" class="btn action-btn-primary" id="guessSendBtn" title="Send"><i class="bi bi-send"></i></button>
+                            </form>
+                        </div>
+                    </div>`;
+
+                const log = document.getElementById("ecChatLog");
+                log.scrollTop = log.scrollHeight;
+
+                giverPanelTurn = "";
+                playMounted = true;
+            }
+
+            function updateClueBox() {
+                const box = document.getElementById("ecClue");
+                if (!box) return;
+
+                const isGiver = view && view.giverId === party.myId && view.phase === "clue";
+                const input = clueInput();
+                const text = (isGiver && input ? input.value : liveClue).trim();
+
+                box.classList.toggle("is-empty", !text);
+                box.textContent = text || (isGiver ? "Tap emoji below to build your clue" : "Waiting for emoji...");
+            }
+
+            function updatePlay() {
+                const isGiver = view.giverId === party.myId;
+                const watching = !isGiver && !view.guesserIds.includes(party.myId);
+
+                const top = document.getElementById("ecTop");
+                top.style.setProperty("--stage-c", view.phase === "reveal" || (view.phrase && !isGiver) ? "var(--lime)" : "var(--orange)");
+                top.innerHTML = renderTop(isGiver);
+
+                // This builds the keyboard once per turn, so a half-made clue is never wiped by a new view.
+                const giverEl = document.getElementById("ecGiver");
+                if (isGiver && view.phase === "clue") {
+                    if (giverPanelTurn !== view.turnKey) {
+                        giverPanelTurn = view.turnKey;
+                        giverEl.innerHTML = renderGiver();
+                        clueInput().value = view.clue;
+                    }
+                    updateSwapButton();
+                } else if (giverPanelTurn) {
+                    giverPanelTurn = "";
+                    giverEl.innerHTML = "";
+                }
+
+                document.getElementById("ecReveal").innerHTML = view.phase === "reveal" ? renderReveal() : "";
+                updateClueBox();
+
+                // This blocks the chat for the clue giver and late joiners while a phrase is being guessed.
+                const blocked = view.phase === "clue" && (isGiver || watching);
+                const input = document.getElementById("guessInput");
+                input.disabled = blocked;
+                document.getElementById("guessSendBtn").disabled = blocked;
+                input.placeholder = view.phase !== "clue" ? "Chat with the room"
+                    : isGiver ? "You are giving the clue, so you cannot chat"
+                    : watching ? "You guess from the next turn"
+                    : view.phrase ? "Chat with the other winners"
+                    : "Type your guess";
+            }
+
+            function renderResult() {
+                const players = party.players;
+                const rows = players.map(p => ({ name: p.name, order: p.order, self: p.id === party.myId, points: view.scores[p.id] || 0, gain: view.gains[p.id] || 0 }));
+                const top = Math.max(0, ...rows.map(r => r.points));
+                const winners = rows.filter(r => r.points === top && top > 0).map(r => r.name);
+
+                return `
+                    <div class="party-stage" style="--stage-c: var(--lime)">
+                        <span class="party-stage-kicker">Game ${view.round} over · ${partyEscapeHtml(view.packLabel)}</span>
+                        <h2 class="party-stage-title">${winners.length ? `${partyEscapeHtml(winners.join(" and "))} ${winners.length > 1 ? "win" : "wins"}!` : "Nobody scored this time"}</h2>
+                        <p class="party-stage-text">${top > 0 ? `Top score: <b>${top}</b> points.` : "Try more emoji next time."}</p>
+                    </div>
+
+                    <div>
+                        <span class="party-label">Scores</span>
+                        ${partyScoreboardHtml(rows)}
+                    </div>
+
+                    <div class="party-row">
+                        <button type="button" class="btn action-btn-ghost" data-act="share"><i class="bi bi-share"></i> Share result</button>
+                        ${party.isHost ? `
+                            <button type="button" class="btn action-btn-ghost" data-act="lobby"><i class="bi bi-sliders"></i> Change settings</button>
+                            <button type="button" class="btn action-btn-primary" data-act="start"${party.players.length >= MIN_PLAYERS ? "" : " disabled"}><i class="bi bi-arrow-repeat"></i> Next game</button>` : ""}
+                    </div>
+                    ${party.isHost ? "" : `<div class="party-hint text-center">Waiting for the room creator to start the next game.</div>`}`;
+            }
+
+            function render() {
+                if (!view) return;
+
+                if (view.phase === "lobby" || view.phase === "result") {
+                    playMounted = false;
+                    giverPanelTurn = "";
+                    gameBody.innerHTML = view.phase === "lobby" ? renderLobby() : renderResult();
+                } else {
+                    if (!playMounted) mountPlay();
+                    updatePlay();
+                }
+
+                updateTimer();
+                renderBadges();
+                renderFooter();
+            }
+
+            function renderBadges() {
+                const badges = {};
+                const playing = view.phase === "clue" || view.phase === "reveal";
+
+                for (const player of party.players) {
+                    const badge = { chip: view.scores[player.id] || 0 };
+
+                    if (playing && view.giverId === player.id) {
+                        badge.icon = "bi-emoji-laughing";
+                        badge.iconTitle = "Giving the clue";
+                    } else if (playing && view.guessedIds.includes(player.id)) {
+                        badge.icon = "bi-check-circle-fill";
+                        badge.iconTitle = "Guessed it";
+                    } else if (view.phase === "clue" && view.guesserIds.includes(player.id)) {
+                        badge.icon = "bi-hourglass-split";
+                        badge.iconTitle = "Guessing";
+                    } else if (playing && !view.guesserIds.includes(player.id)) {
+                        badge.note = "watching";
+                    }
+
+                    badges[player.id] = badge;
+                }
+
+                party.setBadges(badges);
+            }
+
+            function renderFooter() {
+                const playing = view.phase === "clue" || view.phase === "reveal";
+                document.getElementById("footerRound").textContent = view.round;
+                document.getElementById("footerTurn").textContent = playing ? `${view.turnNumber} / ${view.turnCount}` : "-";
+                document.getElementById("footerPack").textContent = view.packLabel;
+            }
+
+            function updateTimer() {
+                updatePartyTimer(document.getElementById("phaseTimer"), viewDeadline, viewTotalMs);
+            }
+
+            function startTimerLoop() {
+                clearInterval(timerInterval);
+                timerInterval = setInterval(updateTimer, TIMER_TICK_MS);
+            }
+
+            function serializeResult() {
+                if (!view || view.phase !== "result") return "";
+                const scores = party.players
+                    .map(p => ({ name: p.name, points: view.scores[p.id] || 0 }))
+                    .sort((a, b) => b.points - a.points);
+                const winner = scores.length && scores[0].points > 0 ? `${scores[0].name} wins with ${scores[0].points} points` : "Nobody scored";
+                return `😂 Emoji Charades game ${view.round} (${view.packLabel}): ${winner}. Scores: ${scores.map(p => `${p.name} ${p.points}`).join(", ")}`;
+            }
+
+            // ---------- UI events ----------
+
+            bindPartySegments(gameBody, (key, value) => party.act({ type: "setting", key, value }));
+
+            gameBody.addEventListener("click", event => {
+                const button = event.target.closest("[data-act]");
+                if (!button || button.disabled) return;
+
+                const input = clueInput();
+
+                switch (button.dataset.act) {
+                    case "start": party.act({ type: "start" }); break;
+                    case "lobby": party.act({ type: "lobby" }); break;
+                    case "share": partyShareText(serializeResult(), button); break;
+                    case "swap": party.act({ type: "swap" }); break;
+                    case "group":
+                        emojiGroup = Number(button.dataset.index) || 0;
+                        document.getElementById("ecTabs").innerHTML = renderTabs();
+                        document.getElementById("ecKeys").innerHTML = renderKeys();
+                        break;
+                    case "emoji":
+                        if (input) setGiverClue(input.value + button.dataset.emoji);
+                        break;
+                    case "space":
+                        if (input && input.value && !input.value.endsWith(" ")) setGiverClue(input.value + " ");
+                        break;
+                    case "backspace":
+                        if (input) setGiverClue(splitGraphemes(input.value).slice(0, -1).join(""));
+                        break;
+                    case "clearClue":
+                        if (input) setGiverClue("");
+                        break;
+                }
+            });
+
+            gameBody.addEventListener("input", event => {
+                if (event.target.id === "ecClueInput") setGiverClue(event.target.value);
+            });
+
+            gameBody.addEventListener("submit", event => {
+                event.preventDefault();
+                if (event.target.id !== "guessForm") return;
+
+                const input = document.getElementById("guessInput");
+                const text = partyCleanText(input.value, MAX_GUESS_LENGTH);
+                if (!text) return;
+
+                input.value = "";
+                party.act({ type: "guess", text });
+            });
+
+            document.getElementById("copyResultBtn").addEventListener("click", event => partyCopyText(serializeResult(), event.currentTarget));
+        </script>
+    </body>
+</html>

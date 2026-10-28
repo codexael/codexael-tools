@@ -440,7 +440,7 @@ function printData({ title, isInput = true, format = "data", value = null } = {}
         printWindow.document.write(`
             <html>
                 <head>
-                    <title>Toolstack - ${title}</title>
+                    <title>Codexael Toolstack - ${title}</title>
                     <style>
                         body { font-family: monospace; padding: 20px; }
                         pre { white-space: pre-wrap; word-break: break-word; }

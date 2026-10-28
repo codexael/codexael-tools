@@ -1,0 +1,1274 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Codexael Toolstack - Typing Race</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <!-- Metadata -->
+        <meta name="description" content="Type the same passage as your friends and race live to the finish. 2-12 players.">
+        <meta name="author" content="Codexael">
+        <meta name="theme-color" content="#fff4e0" media="(prefers-color-scheme: light)">
+        <meta name="theme-color" content="#17140f" media="(prefers-color-scheme: dark)">
+
+        <!-- Open Graph -->
+        <meta property="og:title" content="Codexael Toolstack — Typing Race: Multiplayer Typing Test">
+        <meta property="og:description" content="Type the same passage as your friends and race live to the finish. 2-12 players.">
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="https://tools.codexael.com/typing_race.html">
+        <meta property="og:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+        <meta property="og:image:width" content="1200">
+        <meta property="og:image:height" content="630">
+        <meta property="og:image:type" content="image/png">
+        <meta property="og:image:alt" content="Codexael Toolstack — Typing Race: Multiplayer Typing Test">
+        <meta property="og:site_name" content="Codexael Toolstack">
+
+        <!-- Twitter Card -->
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="Codexael Toolstack — Typing Race: Multiplayer Typing Test">
+        <meta name="twitter:description" content="Type the same passage as your friends and race live to the finish. 2-12 players.">
+        <meta name="twitter:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+
+        <!-- Favicon / App Icon -->
+        <link rel="icon" type="image/svg+xml" href="assets/images/codexael_icon.svg">
+        <link rel="apple-touch-icon" href="assets/images/codexael_icon.svg">
+
+        <!-- Bootstrap 5.2.0-beta1 -->
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+
+        <!-- Bootstrap with Popper 5.2.0-beta1 -->
+        <script src="js/bootstrap.bundle.min.js"></script>
+
+        <!-- Bootstrap Icons 1.11.3 -->
+        <link rel="stylesheet" href="css/bootstrap-icons.min.css">
+
+        <!-- PeerJS 1.5.4 -->
+        <script src="js/peerjs.min.js"></script>
+
+        <!-- Google fonts -->
+        <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+        <!-- Custom CSS -->
+        <link rel="stylesheet" href="css/keycaps.css">
+        <link rel="stylesheet" href="css/party-games.css">
+
+        <style>
+            /* The race header shows the countdown, then GO, then the finish. */
+            .tr-stage {
+                --stage-c: var(--cyan);
+                padding: 14px 18px;
+            }
+
+            .tr-stage.is-go {
+                --stage-c: var(--lime);
+            }
+
+            .tr-stage.is-done {
+                --stage-c: var(--yellow);
+            }
+
+            .tr-stage .party-stage-title {
+                font-size: clamp(1.4rem, 5vw, 2.4rem);
+            }
+
+            /* The passage cannot be selected, so it cannot be copied into the box. */
+            .tr-text {
+                padding: 14px 16px;
+                background: var(--paper);
+                color: var(--ink);
+                border: 3px solid var(--ink);
+                box-shadow: 2.5px 2.5px 0 var(--ink);
+                font-family: "Space Mono", monospace;
+                font-size: 1rem;
+                line-height: 1.8;
+                overflow-wrap: anywhere;
+                user-select: none;
+                -webkit-user-select: none;
+            }
+
+            .tr-done {
+                box-shadow: inset 0 -4px 0 var(--lime);
+            }
+
+            .tr-current {
+                padding: 1px 0;
+                background: var(--yellow);
+                color: #111111;
+                outline: 2px solid var(--ink);
+            }
+
+            .tr-ok {
+                background: var(--lime);
+                color: #111111;
+            }
+
+            .tr-error {
+                background: var(--red);
+                color: #111111;
+                text-decoration: underline wavy;
+            }
+
+            .tr-cursor {
+                box-shadow: inset 0 -3px 0 #111111;
+            }
+
+            .tr-input {
+                margin-bottom: 0;
+                font-family: "Space Mono", monospace;
+                font-size: 1.05rem;
+            }
+
+            .tr-input.is-wrong {
+                background: var(--red);
+                color: #111111;
+            }
+
+            .tr-stats {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 6px 16px;
+                font-size: 0.8rem;
+                font-weight: 700;
+                text-transform: uppercase;
+            }
+
+            .tr-lanes {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .tr-lane {
+                display: grid;
+                grid-template-columns: minmax(0, 120px) minmax(0, 1fr) 7.5em;
+                align-items: center;
+                gap: 10px;
+                padding: 6px 10px;
+                background: var(--paper);
+                border: 3px solid var(--ink);
+                border-left: 8px solid var(--member-c, var(--ink));
+                box-shadow: 1.5px 1.5px 0 var(--ink);
+                font-size: 0.82rem;
+                font-weight: 700;
+            }
+
+            .tr-lane.is-self {
+                background: var(--bg);
+            }
+
+            .tr-lane-name {
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+            .tr-lane-track {
+                height: 24px;
+                background: var(--bg);
+                border: 3px solid var(--ink);
+                overflow: hidden;
+            }
+
+            .tr-lane-fill {
+                height: 100%;
+                min-width: 22px;
+                display: flex;
+                align-items: center;
+                justify-content: flex-end;
+                background: var(--member-c, var(--lime));
+                color: #111111;
+                transition: width 0.3s linear;
+            }
+
+            .tr-lane-fill i {
+                padding-right: 2px;
+                font-size: 0.9rem;
+            }
+
+            .tr-lane-stat {
+                font-size: 0.75rem;
+                text-align: right;
+                white-space: nowrap;
+            }
+
+            .tr-results {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .tr-result-row {
+                display: grid;
+                grid-template-columns: 34px minmax(0, 1fr) auto auto;
+                align-items: center;
+                gap: 10px;
+                padding: 6px 10px;
+                background: var(--paper);
+                border: 3px solid var(--ink);
+                border-left: 8px solid var(--member-c, var(--ink));
+                box-shadow: 1.5px 1.5px 0 var(--ink);
+                font-size: 0.82rem;
+                font-weight: 700;
+            }
+
+            .tr-result-row.is-first {
+                background: var(--yellow);
+                color: #111111;
+            }
+
+            .tr-result-rank {
+                font-family: var(--display-font);
+            }
+
+            .tr-result-name {
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+            .tr-result-detail {
+                font-size: 0.75rem;
+                text-align: right;
+            }
+
+            .tr-result-gain {
+                min-width: 2.4em;
+                padding: 0 4px;
+                background: var(--lime);
+                color: #111111;
+                border: 2px solid var(--ink);
+                font-size: 0.72rem;
+                text-align: center;
+            }
+
+            @media (max-width: 575px) {
+                .tr-text {
+                    padding: 12px;
+                    font-size: 0.92rem;
+                }
+
+                .tr-lane {
+                    grid-template-columns: minmax(0, 1fr) auto;
+                    gap: 4px 8px;
+                }
+
+                .tr-lane-track {
+                    grid-column: 1 / -1;
+                    grid-row: 2;
+                }
+
+                .tr-result-row {
+                    grid-template-columns: 28px minmax(0, 1fr) auto;
+                    gap: 4px 8px;
+                }
+
+                .tr-result-detail {
+                    grid-column: 2 / -1;
+                    grid-row: 2;
+                    text-align: left;
+                }
+            }
+
+            @media (prefers-reduced-motion: reduce) {
+                .tr-lane-fill {
+                    transition: none;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <!-- Common layout -->
+        <div id="navbar-container"></div>
+
+        <div class="container-fluid tool-wrapper">
+
+            <!-- Setup view -->
+            <div class="row" id="partySetup"></div>
+
+            <!-- Room view -->
+            <div class="row g-3 g-md-0 gx-md-3 gx-0 d-none party-room" id="partyRoom">
+
+                <div class="col-md-8 editor-panel party-game-panel" id="gamePanel" style="--panel-c: var(--cyan)">
+                    <div class="editor-header">
+                        <span class="editor-title">Typing Race</span>
+                        <div class="editor-actions">
+                            <button title="Copy result" data-shortcut="copy" id="copyResultBtn"><i class="bi bi-copy icon-btn"></i></button>
+                            <button title="Fullscreen" onclick="toggleEditorFullScreen('gamePanel')"><i class="bi bi-arrows-fullscreen icon-btn"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="party-body invisible-scrollbars" id="gameBody"></div>
+
+                    <div class="editor-footer">
+                        <div class="status">
+                            <span>Race <b id="footerRace">0</b></span>
+                            <span>Phase <b id="footerPhase">Lobby</b></span>
+                            <span>Your best <b id="footerBest">-</b></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4 editor-panel party-side-panel" id="partyPanel"></div>
+
+            </div>
+        </div>
+
+        <div id="footer-container"></div>
+
+        <!-- Common JS -->
+        <script src="js/tool-help.js"></script>
+        <script src="js/storage.js"></script>
+        <script src="js/common.js"></script>
+        <script src="js/script.js"></script>
+        <script src="js/party-room.js"></script>
+
+        <!-- Custom JS -->
+        <script>
+            const pageTitle = "Typing Race";
+
+            const MIN_PLAYERS = 2;
+            const MAX_PLAYERS = 12;
+            const COUNTDOWN_MS = 3000;
+            const RACE_CAP_MS = 300000;
+            const AFTER_FIRST_MS = 90000;
+            const PROGRESS_MS = 300;
+            const BROADCAST_MS = 300;
+            const TICK_MS = 100;
+            const MAX_WPM = 250;
+            const LATENCY_SLACK_MS = 3000;
+            const BEST_STORAGE_KEY = "toolstack_typing_best_wpm";
+
+            const LENGTHS = {
+                short: { label: "Short", words: 25 },
+                medium: { label: "Medium", words: 45 },
+                long: { label: "Long", words: 70 }
+            };
+
+            const KINDS = {
+                quotes: {
+                    label: "Quotes & proverbs",
+                    passages: [
+                        "Actions speak louder than words, so show people what you mean instead of only telling them.",
+                        "The early bird catches the worm, but the second mouse gets the cheese.",
+                        "A journey of a thousand miles begins with a single step taken today.",
+                        "Do not count your chickens before they hatch, and do not sell the eggs before you have them.",
+                        "When the going gets tough, the tough get going and the rest go and make coffee.",
+                        "Every cloud has a silver lining if you are patient enough to wait for the sun.",
+                        "Rome was not built in a day, but they were laying bricks every single hour.",
+                        "Practice makes progress, and progress is far more useful than being perfect.",
+                        "You cannot pour from an empty cup, so take care of yourself first.",
+                        "Measure twice and cut once, because wood is cheap but wasted time is not.",
+                        "Better late than never, but never late is better still.",
+                        "Where there is a will there is a way, and usually a long queue as well.",
+                        "Fortune favours the bold, but it also likes people who read the instructions.",
+                        "The pen is mightier than the sword, and the keyboard is faster than both.",
+                        "Many hands make light work, as long as everyone knows which way to lift.",
+                        "Still waters run deep, and quiet people often have the loudest ideas.",
+                        "Do not put all your eggs in one basket unless it is a very good basket.",
+                        "Laughter is the best medicine, although a visit to the doctor is still a good idea.",
+                        "A watched pot never boils, so go and do something useful while you wait.",
+                        "Two heads are better than one, unless they are both thinking about lunch.",
+                        "Knowledge is power, but sharing it is what makes a whole team strong.",
+                        "Slow and steady wins the race, but fast and steady wins it sooner.",
+                        "Small daily habits build big results over many months and years.",
+                        "Kind words cost nothing, yet they can change the whole day of someone you meet."
+                    ]
+                },
+                tech: {
+                    label: "Tech & code-ish",
+                    passages: [
+                        "Run npm install before you start the dev server, or the build will fail with missing modules.",
+                        "Always write the test first, watch it fail, then write just enough code to make it pass.",
+                        "The function returns null when the user is not found, so check the result before you use it.",
+                        "Use git commit -m with a short message that says why the change was made.",
+                        "A good API returns clear error codes like 404 for a missing item and 401 for a bad token.",
+                        "Cache the response for five minutes so the page loads fast even when the server is busy.",
+                        "Never store passwords in plain text; hash them with a slow algorithm and a unique salt.",
+                        "Set the timeout to 3000 ms and retry twice before you show the error to the user.",
+                        "The loop runs from i = 0 to i < length, so the last index is always length - 1.",
+                        "Push your branch, open a pull request, and ask a teammate to review it before you merge.",
+                        "If the query is slow, add an index on the column you filter by and check the plan again.",
+                        "Keep each function small and give it one job, and the code will be easy to read later.",
+                        "The config file uses JSON, so every key needs double quotes and there are no trailing commas.",
+                        "Deploy to staging first, run the smoke tests, and only then promote the build to production.",
+                        "Log the request id with every error so you can trace the problem across all services.",
+                        "Use const for values that never change and use let for values that do.",
+                        "The CSS grid has three columns on a desktop and one column on a small phone screen.",
+                        "Restart the container after you change the environment variables, or the old values stay.",
+                        "A race condition happens when two threads update the same value at the same time.",
+                        "Write the README so that a new developer can run the project in under ten minutes.",
+                        "Check the status code: 200 means OK, 201 means created, and 500 means the server broke.",
+                        "Wrap the call in try and catch, then show a friendly message if the network is down."
+                    ]
+                },
+                words: { label: "Common words", passages: [] }
+            };
+
+            const COMMON_WORDS = [
+                "the", "be", "to", "of", "and", "in", "that", "have", "it", "for", "not", "on", "with", "he", "as", "you", "do", "at",
+                "this", "but", "his", "by", "from", "they", "we", "say", "her", "she", "or", "an", "will", "my", "one", "all", "would",
+                "there", "their", "what", "so", "up", "out", "if", "about", "who", "get", "which", "go", "me", "when", "make", "can",
+                "like", "time", "no", "just", "him", "know", "take", "people", "into", "year", "your", "good", "some", "could", "them",
+                "see", "other", "than", "then", "now", "look", "only", "come", "its", "over", "think", "also", "back", "after", "use",
+                "two", "how", "our", "work", "first", "well", "way", "even", "new", "want", "because", "any", "these", "give", "day",
+                "most", "us", "great", "between", "need", "large", "often", "hand", "high", "place", "hold", "turn", "were", "here",
+                "point", "world", "home", "small", "end", "house", "light", "under", "story", "never", "water", "city", "tree", "cross",
+                "farm", "hard", "start", "might", "close", "night", "real", "life", "few", "north", "open", "seem", "together", "next",
+                "white", "children", "begin", "walk", "example", "paper", "group", "always", "music", "those", "both", "mark", "book",
+                "letter", "until", "mile", "river", "car", "feet", "care", "second", "enough", "plain", "girl", "usual", "young",
+                "ready", "above", "ever", "red", "list", "though", "feel", "talk", "bird", "soon", "body", "dog", "family", "direct",
+                "leave", "song", "measure", "door", "black", "short", "class", "wind", "question", "happen", "complete", "ship", "area",
+                "half", "rock", "order", "fire", "south", "problem", "piece", "told", "knew", "pass", "since", "top", "whole", "king",
+                "space", "heard", "best", "hour", "better", "true", "during", "hundred", "five", "remember", "step", "early", "west",
+                "ground", "interest", "reach", "fast", "sing", "listen", "six", "table", "travel", "less", "morning", "ten", "simple"
+            ];
+
+            const PHASE_LABELS = { lobby: "Lobby", countdown: "Get ready", race: "Racing", result: "Result" };
+
+            const gameBody = document.getElementById("gameBody");
+
+            // This holds the newest view from the referee, and every client draws only from it.
+            let view = null;
+            let viewDeadline = null;
+            let viewTotalMs = 0;
+            let tickInterval = null;
+            let progressInterval = null;
+            let renderedKey = "";
+            let personalBest = loadBest();
+
+            // This holds the local typing state for the current race, and it is measured on this device only.
+            let typing = null;
+
+            // ---------- Personal best ----------
+
+            function loadBest() {
+                try {
+                    const value = Number(getStorageString(BEST_STORAGE_KEY, ""));
+                    return Number.isFinite(value) && value > 0 ? value : null;
+                } catch (error) {
+                    return null;
+                }
+            }
+
+            function saveBest(wpm) {
+                if (personalBest !== null && wpm <= personalBest) return;
+                personalBest = wpm;
+                showSuccessToast(`New personal best: ${wpm} WPM`);
+
+                try {
+                    setStorageString(BEST_STORAGE_KEY, String(wpm));
+                } catch (error) {
+                    // This ignores blocked storage because the best speed is only a convenience.
+                }
+            }
+
+            // ---------- Referee state ----------
+
+            // This holds the whole game, and only the referee keeps it.
+            const game = {
+                phase: "lobby",
+                settings: { length: "medium", kind: "quotes" },
+                race: 0,
+                text: "",
+                order: [],
+                progress: new Map(),
+                finishCount: 0,
+                results: [],
+                scores: new Map(),
+                gains: new Map(),
+                startedAt: 0,
+                firstFinishAt: 0,
+                deadline: 0,
+                totalMs: 0,
+                timer: null,
+                broadcastTimer: null,
+                dirty: false
+            };
+
+            const FRESH_GAME = { ...game, settings: { ...game.settings } };
+
+            function resetGame() {
+                clearTimeout(game.timer);
+                clearInterval(game.broadcastTimer);
+                Object.assign(game, FRESH_GAME, { settings: { ...FRESH_GAME.settings }, progress: new Map(), results: [], scores: new Map(), gains: new Map() });
+            }
+
+            function inRace(id) {
+                return game.order.includes(id);
+            }
+
+            function setPhaseTimer(ms, onEnd) {
+                clearTimeout(game.timer);
+                game.totalMs = ms;
+                game.deadline = performance.now() + ms;
+                game.timer = setTimeout(onEnd, ms);
+            }
+
+            function clearPhaseTimer() {
+                clearTimeout(game.timer);
+                game.deadline = 0;
+                game.totalMs = 0;
+            }
+
+            function stopBroadcast() {
+                clearInterval(game.broadcastTimer);
+                game.broadcastTimer = null;
+                game.dirty = false;
+            }
+
+            // This builds a passage of about the chosen length from whole sentences or random common words.
+            function buildText() {
+                const target = (LENGTHS[game.settings.length] || LENGTHS.medium).words;
+
+                if (game.settings.kind === "words") {
+                    const words = [];
+                    while (words.length < target) {
+                        const word = COMMON_WORDS[partyRandomInt(COMMON_WORDS.length)];
+                        if (word !== words[words.length - 1]) words.push(word);
+                    }
+                    return words.join(" ");
+                }
+
+                const passages = partyShuffle((KINDS[game.settings.kind] || KINDS.quotes).passages);
+                const picked = [];
+                let count = 0;
+
+                // This stops adding sentences once the next one would go well past the target.
+                for (const passage of passages) {
+                    const size = passage.split(" ").length;
+                    if (count > 0 && count + size > target + 8) break;
+                    picked.push(passage);
+                    count += size;
+                    if (count >= target - 4) break;
+                }
+
+                return picked.join(" ");
+            }
+
+            function startRace() {
+                const players = party.players;
+                if (players.length < MIN_PLAYERS) {
+                    showInfoToast(`Typing Race needs at least ${MIN_PLAYERS} players`);
+                    return;
+                }
+
+                stopBroadcast();
+                game.race += 1;
+                game.text = buildText();
+                game.order = players.map(p => p.id);
+                game.progress = new Map(game.order.map(id => [id, { chars: 0, finished: false, ms: 0, wpm: 0, accuracy: 0, finishOrder: 0 }]));
+                game.finishCount = 0;
+                game.results = [];
+                game.gains = new Map();
+                game.startedAt = 0;
+                game.firstFinishAt = 0;
+                game.phase = "countdown";
+
+                setPhaseTimer(COUNTDOWN_MS, beginRace);
+                publish();
+            }
+
+            function beginRace() {
+                game.phase = "race";
+                game.startedAt = performance.now();
+                setPhaseTimer(RACE_CAP_MS, endRace);
+
+                // This sends live progress a few times a second instead of once for every packet.
+                stopBroadcast();
+                game.broadcastTimer = setInterval(() => {
+                    if (!game.dirty) return;
+                    game.dirty = false;
+                    publish();
+                }, BROADCAST_MS);
+
+                publish();
+            }
+
+            function addPoints(id, points) {
+                if (!points) return;
+                game.scores.set(id, (game.scores.get(id) || 0) + points);
+                game.gains.set(id, (game.gains.get(id) || 0) + points);
+            }
+
+            function endRace() {
+                clearPhaseTimer();
+                stopBroadcast();
+
+                const finished = game.order
+                    .filter(id => game.progress.get(id).finished)
+                    .sort((a, b) => game.progress.get(a).ms - game.progress.get(b).ms || game.progress.get(a).finishOrder - game.progress.get(b).finishOrder);
+                const unfinished = game.order
+                    .filter(id => !game.progress.get(id).finished)
+                    .sort((a, b) => game.progress.get(b).chars - game.progress.get(a).chars);
+
+                // This gives the winner one point per racer, the next one point less, and nothing to anyone who did not finish.
+                finished.forEach((id, index) => addPoints(id, game.order.length - index));
+
+                game.results = [...finished, ...unfinished].map((id, index) => {
+                    const p = game.progress.get(id);
+                    return { id, place: p.finished ? index + 1 : null, finished: p.finished, chars: p.chars, ms: p.ms, wpm: p.wpm, accuracy: p.accuracy, gain: game.gains.get(id) || 0 };
+                });
+
+                game.phase = "result";
+                publish();
+            }
+
+            // This ends the race early when nobody is left to race.
+            function abortRace(reason) {
+                clearPhaseTimer();
+                stopBroadcast();
+                game.phase = "lobby";
+                game.order = [];
+                game.progress = new Map();
+                party.emit({ type: "notice", text: reason });
+                publish();
+            }
+
+            function allFinished() {
+                return game.order.every(id => game.progress.get(id).finished);
+            }
+
+            function laneList() {
+                const elapsed = game.startedAt ? performance.now() - game.startedAt : 0;
+
+                return game.order.map(id => {
+                    const p = game.progress.get(id);
+                    const wpm = p.finished ? p.wpm : (elapsed > 1000 ? Math.round(p.chars / 5 / (elapsed / 60000)) : 0);
+                    return { id, chars: p.chars, finished: p.finished, wpm };
+                });
+            }
+
+            function buildView(id) {
+                const playing = game.phase === "countdown" || game.phase === "race" || game.phase === "result";
+
+                return {
+                    phase: game.phase,
+                    settings: { ...game.settings },
+                    race: game.race,
+                    inRace: inRace(id),
+                    order: [...game.order],
+                    text: playing ? game.text : "",
+                    lanes: playing ? laneList() : [],
+                    results: game.phase === "result" ? game.results.map(r => ({ ...r })) : [],
+                    scores: Object.fromEntries(game.scores),
+                    gains: game.phase === "result" ? Object.fromEntries(game.gains) : {},
+                    remainingMs: game.deadline ? Math.max(0, game.deadline - performance.now()) : 0,
+                    totalMs: game.totalMs
+                };
+            }
+
+            function publish() {
+                party.publish(buildView);
+            }
+
+            // This returns the most characters anyone could have typed so far at the top allowed speed.
+            function maxPlausibleChars() {
+                const elapsed = performance.now() - game.startedAt;
+                return Math.ceil(MAX_WPM * 5 * (elapsed + 1000) / 60000);
+            }
+
+            // This applies one move from a player after checking that the move is allowed right now.
+            function handleAction(player, action) {
+                if (!action || typeof action.type !== "string") return;
+
+                switch (action.type) {
+                    case "setting": {
+                        if (!player.host || game.phase !== "lobby") return;
+                        const allowed = { length: Object.keys(LENGTHS), kind: Object.keys(KINDS) };
+                        if (!allowed[action.key] || !allowed[action.key].includes(String(action.value))) return;
+                        game.settings[action.key] = String(action.value);
+                        publish();
+                        return;
+                    }
+
+                    case "start":
+                        if (!player.host || (game.phase !== "lobby" && game.phase !== "result")) return;
+                        startRace();
+                        return;
+
+                    case "lobby":
+                        if (!player.host || game.phase !== "result") return;
+                        game.phase = "lobby";
+                        game.order = [];
+                        publish();
+                        return;
+
+                    case "progress": {
+                        if (game.phase !== "race" || !inRace(player.id) || Number(action.race) !== game.race) return;
+                        const p = game.progress.get(player.id);
+                        const chars = Number(action.chars);
+
+                        // This ignores progress that goes backwards, runs past the text or is faster than anyone can type.
+                        if (p.finished || !Number.isInteger(chars) || chars <= p.chars || chars > game.text.length || chars > maxPlausibleChars()) return;
+                        p.chars = chars;
+                        game.dirty = true;
+                        return;
+                    }
+
+                    case "finish": {
+                        if (game.phase !== "race" || !inRace(player.id) || Number(action.race) !== game.race) return;
+                        const p = game.progress.get(player.id);
+                        if (p.finished || Number(action.chars) !== game.text.length) return;
+
+                        let ms = Number(action.ms);
+                        if (!Number.isFinite(ms) || ms <= 0) return;
+
+                        // This keeps the time inside what the referee saw, with room for the network delay both ways.
+                        const elapsed = performance.now() - game.startedAt;
+                        ms = Math.round(Math.max(Math.min(ms, elapsed), elapsed - LATENCY_SLACK_MS, 1));
+
+                        const wpm = Math.round(game.text.length / 5 / (ms / 60000));
+                        if (wpm > MAX_WPM) {
+                            party.emit({ type: "notice", text: "That finish was too fast to count" }, [player.id]);
+                            return;
+                        }
+
+                        const accuracy = Number(action.accuracy);
+                        game.finishCount += 1;
+                        Object.assign(p, {
+                            chars: game.text.length,
+                            finished: true,
+                            ms,
+                            wpm,
+                            accuracy: Number.isFinite(accuracy) ? Math.min(100, Math.max(0, Math.round(accuracy))) : 0,
+                            finishOrder: game.finishCount
+                        });
+
+                        if (allFinished()) {
+                            endRace();
+                            return;
+                        }
+
+                        // This shortens the race once the first player is home, so nobody waits too long.
+                        if (!game.firstFinishAt) {
+                            game.firstFinishAt = performance.now();
+                            if (game.deadline - performance.now() > AFTER_FIRST_MS) setPhaseTimer(AFTER_FIRST_MS, endRace);
+                        }
+
+                        game.dirty = false;
+                        publish();
+                        return;
+                    }
+                }
+            }
+
+            function handleLeave(player) {
+                game.scores.delete(player.id);
+
+                if (!inRace(player.id) || game.phase === "lobby" || game.phase === "result") {
+                    publish();
+                    return;
+                }
+
+                game.order = game.order.filter(id => id !== player.id);
+                game.progress.delete(player.id);
+
+                if (!game.order.length) {
+                    abortRace(`${player.name} left, and nobody is left in the race`);
+                    return;
+                }
+
+                // This ends the race when everyone still in it has already finished.
+                if (game.phase === "race" && allFinished()) {
+                    endRace();
+                    return;
+                }
+
+                publish();
+            }
+
+            // ---------- Room ----------
+
+            const party = createPartyRoom({
+                gameId: "typing",
+                title: "Typing Race",
+                icon: "bi-keyboard-fill",
+                colour: "var(--cyan)",
+                intro: "Everyone types the same text at the same time. Fix every mistake to move on, and watch the cars race to the finish.",
+                minPlayers: MIN_PLAYERS,
+                maxPlayers: MAX_PLAYERS,
+                onEnter() {
+                    if (party.isHost) {
+                        resetGame();
+                        publish();
+                    }
+                    clearInterval(tickInterval);
+                    tickInterval = setInterval(tick, TICK_MS);
+                },
+                onExit() {
+                    resetGame();
+                    view = null;
+                    typing = null;
+                    renderedKey = "";
+                    clearInterval(tickInterval);
+                    clearInterval(progressInterval);
+                    gameBody.innerHTML = "";
+                },
+                onView(next) {
+                    if (!next || typeof next.phase !== "string") return;
+
+                    view = next;
+                    viewDeadline = partyDeadlineFrom(next.remainingMs);
+                    viewTotalMs = next.totalMs;
+
+                    const playing = next.phase === "countdown" || next.phase === "race";
+
+                    // This sets up a fresh typing state when a new race begins, with GO at the end of the local countdown.
+                    if (playing && next.inRace && next.text && (!typing || typing.race !== next.race)) {
+                        clearInterval(progressInterval);
+                        typing = newTyping(next.race, String(next.text), next.phase === "countdown" ? (viewDeadline || performance.now()) : performance.now());
+                    }
+
+                    if (!playing || !next.inRace) {
+                        clearInterval(progressInterval);
+                        typing = null;
+                    }
+
+                    render();
+
+                    if (next.phase === "race" && typing && !typing.startAt) startTyping();
+                },
+                onEvent(event) {
+                    if (event && event.type === "notice") showInfoToast(String(event.text));
+                },
+                host: {
+                    onJoin: () => publish(),
+                    onLeave: handleLeave,
+                    onAction: handleAction
+                }
+            });
+
+            // ---------- Typing ----------
+
+            function newTyping(race, text, goAt) {
+                return { race, text, words: text.split(" "), wordIndex: 0, committed: 0, value: "", typed: 0, errors: 0, maxChars: 0, sentChars: 0, goAt, startAt: 0, finished: false, ms: 0, wpm: 0, accuracy: 100 };
+            }
+
+            // This returns what the player must type for the current word, with the space after it except on the last word.
+            function currentTarget() {
+                const word = typing.words[typing.wordIndex] || "";
+                return typing.wordIndex < typing.words.length - 1 ? `${word} ` : word;
+            }
+
+            function matchLength(value, target) {
+                let i = 0;
+                while (i < value.length && i < target.length && value[i] === target[i]) i++;
+                return i;
+            }
+
+            function correctChars() {
+                if (!typing) return 0;
+                if (typing.finished) return typing.text.length;
+                return typing.committed + matchLength(typing.value, currentTarget());
+            }
+
+            function elapsedMs() {
+                if (!typing || !typing.startAt) return 0;
+                return typing.finished ? typing.ms : performance.now() - typing.startAt;
+            }
+
+            function liveWpm() {
+                if (!typing) return 0;
+                if (typing.finished) return typing.wpm;
+                const ms = elapsedMs();
+                return ms > 1000 ? Math.round(correctChars() / 5 / (ms / 60000)) : 0;
+            }
+
+            function liveAccuracy() {
+                if (!typing || !typing.typed) return 100;
+                return Math.max(0, Math.round((typing.typed - typing.errors) / typing.typed * 100));
+            }
+
+            function startTyping() {
+                if (!typing || typing.startAt) return;
+                typing.startAt = performance.now();
+
+                clearInterval(progressInterval);
+                progressInterval = setInterval(sendProgress, PROGRESS_MS);
+
+                updatePlay();
+                const input = document.getElementById("trInput");
+                if (input) input.focus();
+            }
+
+            function sendProgress() {
+                if (!typing || !typing.startAt || typing.finished || typing.maxChars <= typing.sentChars) return;
+                typing.sentChars = typing.maxChars;
+                party.act({ type: "progress", race: typing.race, chars: typing.maxChars });
+            }
+
+            function finishTyping() {
+                typing.finished = true;
+                typing.ms = Math.max(1, Math.round(performance.now() - typing.startAt));
+                typing.wpm = Math.round(typing.text.length / 5 / (typing.ms / 60000));
+                typing.accuracy = liveAccuracy();
+                clearInterval(progressInterval);
+
+                party.act({ type: "finish", race: typing.race, chars: typing.text.length, ms: typing.ms, wpm: typing.wpm, accuracy: typing.accuracy });
+                saveBest(typing.wpm);
+            }
+
+            // This checks what is in the box against the current word, and moves on only when the word and its space are exactly right.
+            function handleTypingInput(input) {
+                if (!typing || !typing.startAt || typing.finished) {
+                    input.value = "";
+                    return;
+                }
+
+                const value = input.value;
+                const target = currentTarget();
+
+                // This counts every added character, and counts it as an error when the box no longer matches the word.
+                if (value.length > typing.value.length) {
+                    const added = value.length - typing.value.length;
+                    typing.typed += added;
+                    if (!target.startsWith(value)) typing.errors += added;
+                }
+
+                typing.value = value;
+
+                if (value === target) {
+                    typing.committed += target.length;
+                    typing.wordIndex += 1;
+                    typing.value = "";
+                    input.value = "";
+                    if (typing.wordIndex >= typing.words.length) finishTyping();
+                }
+
+                typing.maxChars = Math.max(typing.maxChars, correctChars());
+                input.maxLength = currentTarget().length + 10;
+                updatePlay();
+            }
+
+            // ---------- Rendering ----------
+
+            function nameOf(id) {
+                const player = party.getPlayer(id);
+                return player ? player.name : "Someone who left";
+            }
+
+            function colourOf(id) {
+                const player = party.getPlayer(id);
+                return partyColourClass(player ? player.order : 0);
+            }
+
+            function secondsText(ms) {
+                return `${(ms / 1000).toFixed(1)}s`;
+            }
+
+            function passageHtml() {
+                if (!typing) return partyEscapeHtml(view.text);
+
+                return typing.words.map((word, i) => {
+                    if (i < typing.wordIndex || typing.finished) return `<span class="tr-done">${partyEscapeHtml(word)}</span>`;
+                    if (i > typing.wordIndex) return partyEscapeHtml(word);
+
+                    const value = typing.value;
+                    const correct = Math.min(matchLength(value, currentTarget()), word.length);
+                    const wrong = value.length - matchLength(value, currentTarget());
+                    const errorEnd = Math.min(correct + wrong, word.length);
+                    const rest = word.slice(errorEnd);
+                    const extra = correct + wrong > word.length ? value.slice(Math.max(correct, word.length)) : "";
+
+                    return `<span class="tr-current">`
+                        + `<span class="tr-ok">${partyEscapeHtml(word.slice(0, correct))}</span>`
+                        + (errorEnd > correct ? `<span class="tr-error">${partyEscapeHtml(word.slice(correct, errorEnd))}</span>` : "")
+                        + (extra ? `<span class="tr-error">${partyEscapeHtml(extra.replace(/ /g, "_"))}</span>` : "")
+                        + (rest ? (wrong > 0 ? partyEscapeHtml(rest) : `<span class="tr-cursor">${partyEscapeHtml(rest.charAt(0))}</span>${partyEscapeHtml(rest.slice(1))}`) : "")
+                        + `</span>`;
+                }).join(" ");
+            }
+
+            function lanesHtml() {
+                const length = view.text.length || 1;
+
+                return view.lanes.map(lane => {
+                    const self = lane.id === party.myId && typing;
+                    const chars = self ? correctChars() : lane.chars;
+                    const wpm = self ? liveWpm() : lane.wpm;
+                    const finished = self ? typing.finished : lane.finished;
+                    const percent = Math.min(100, Math.round(chars / length * 100));
+
+                    return `
+                        <div class="tr-lane ${colourOf(lane.id)}${lane.id === party.myId ? " is-self" : ""}">
+                            <span class="tr-lane-name" title="${partyEscapeHtml(nameOf(lane.id))}">${partyEscapeHtml(nameOf(lane.id))}${lane.id === party.myId ? " (you)" : ""}</span>
+                            <div class="tr-lane-track"><div class="tr-lane-fill" style="width: ${percent}%"><i class="bi ${finished ? "bi-flag-fill" : "bi-car-front-fill"}"></i></div></div>
+                            <span class="tr-lane-stat">${percent}% · ${wpm} WPM</span>
+                        </div>`;
+                }).join("");
+            }
+
+            // This returns the class and words for the header, from the countdown to the finish.
+            function stageState() {
+                if (!view.inRace || !typing) {
+                    return view.phase === "countdown"
+                        ? { cls: "", kicker: "Get ready", title: "The race is about to start" }
+                        : { cls: "is-go", kicker: "Watching", title: "The race is on" };
+                }
+
+                if (typing.finished) return { cls: "is-done", kicker: "Finished", title: `${typing.wpm} WPM · ${typing.accuracy}%` };
+
+                if (!typing.startAt) {
+                    const left = Math.max(1, Math.ceil((typing.goAt - performance.now()) / 1000));
+                    return { cls: "", kicker: "Get ready", title: String(left) };
+                }
+
+                return { cls: "is-go", kicker: `Race ${view.race}`, title: "GO!" };
+            }
+
+            function statsText() {
+                if (!typing) return "";
+                return `<span>Speed ${liveWpm()} WPM</span><span>Accuracy ${liveAccuracy()}%</span><span>Time ${secondsText(elapsedMs())}</span><span>Best ${personalBest === null ? "-" : `${personalBest} WPM`}</span>`;
+            }
+
+            function renderPlay() {
+                const stage = stageState();
+
+                return `
+                    <div class="party-stage tr-stage ${stage.cls}" id="trStage">
+                        <span class="party-stage-kicker" id="trKicker">${partyEscapeHtml(stage.kicker)}</span>
+                        <h2 class="party-stage-title" id="trTitle">${partyEscapeHtml(stage.title)}</h2>
+                    </div>
+                    ${partyTimerHtml("phaseTimer")}
+                    <div class="tr-text" id="trText">${passageHtml()}</div>
+                    ${view.inRace
+                        ? `<input type="text" id="trInput" class="input-cyan tr-input" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Type the text here" disabled>`
+                        : `<div class="party-empty-hint"><i class="bi bi-eye"></i> You joined during this race, so you watch until the next one.</div>`}
+                    <div class="tr-stats" id="trStats">${statsText()}</div>
+                    <div>
+                        <span class="party-label">Race track</span>
+                        <div class="tr-lanes" id="trLanes">${lanesHtml()}</div>
+                    </div>`;
+            }
+
+            // This refreshes the race in place, so the typing box keeps its focus and its text.
+            function updatePlay() {
+                if (!view || (view.phase !== "countdown" && view.phase !== "race")) return;
+
+                updateStage();
+
+                const textEl = document.getElementById("trText");
+                if (textEl) textEl.innerHTML = passageHtml();
+
+                const statsEl = document.getElementById("trStats");
+                if (statsEl) statsEl.innerHTML = statsText();
+
+                const lanesEl = document.getElementById("trLanes");
+                if (lanesEl) lanesEl.innerHTML = lanesHtml();
+
+                const input = document.getElementById("trInput");
+                if (input && typing) {
+                    const enabled = !!typing.startAt && !typing.finished;
+                    if (input.disabled === enabled) input.disabled = !enabled;
+                    input.placeholder = typing.finished ? "Finished! Waiting for the others" : enabled ? "Type here" : "Wait for GO";
+                    input.classList.toggle("is-wrong", typing.value.length > matchLength(typing.value, currentTarget()));
+                }
+            }
+
+            function updateStage() {
+                const stageEl = document.getElementById("trStage");
+                if (!stageEl) return;
+
+                const stage = stageState();
+                stageEl.className = `party-stage tr-stage ${stage.cls}`;
+                const kicker = document.getElementById("trKicker");
+                const title = document.getElementById("trTitle");
+                if (kicker.textContent !== stage.kicker) kicker.textContent = stage.kicker;
+                if (title.textContent !== stage.title) title.textContent = stage.title;
+            }
+
+            function renderLobby() {
+                const canEdit = party.isHost;
+                const enoughPlayers = party.players.length >= MIN_PLAYERS;
+
+                return `
+                    <div class="party-stage" style="--stage-c: var(--cyan)">
+                        <span class="party-stage-kicker">How to play</span>
+                        <p class="party-stage-text">Everyone gets the same text after a 3-2-1 countdown. Type it word by word: a wrong letter turns red and you must fix it before you move on. The fastest typist gets the most points.</p>
+                    </div>
+
+                    <div class="party-settings">
+                        <div>
+                            <span class="party-label">Text length</span>
+                            ${partySegmentHtml("length", Object.entries(LENGTHS).map(([id, length]) => [id, `${length.label} (~${length.words} words)`]), view.settings.length, !canEdit)}
+                        </div>
+                        <div>
+                            <span class="party-label">Text type</span>
+                            ${partySegmentHtml("kind", Object.entries(KINDS).map(([id, kind]) => [id, kind.label]), view.settings.kind, !canEdit)}
+                        </div>
+                    </div>
+
+                    ${canEdit
+                        ? `<button type="button" class="btn action-btn-primary" data-act="start"${enoughPlayers ? "" : " disabled"}><i class="bi bi-play-fill"></i> Start race</button>
+                           <div class="party-hint text-center">${enoughPlayers ? "Everyone in the room races." : `Waiting for at least ${MIN_PLAYERS} players.`}</div>`
+                        : `<div class="party-empty-hint">Waiting for the room creator to start the race</div>`}
+                    <div class="party-hint text-center">Your best: ${personalBest === null ? "no race yet" : `${personalBest} WPM`}</div>`;
+            }
+
+            function resultDetail(row) {
+                if (!row.finished) return `Did not finish · ${Math.min(100, Math.round(row.chars / (view.text.length || 1) * 100))}%`;
+                return `${row.wpm} WPM · ${row.accuracy}% · ${secondsText(row.ms)}`;
+            }
+
+            function renderResult() {
+                const winner = view.results.find(r => r.finished);
+                const rows = party.players.map(p => ({ name: p.name, order: p.order, self: p.id === party.myId, points: view.scores[p.id] || 0, gain: view.gains[p.id] || 0 }));
+
+                return `
+                    <div class="party-stage" style="--stage-c: var(--yellow)">
+                        <span class="party-stage-kicker">Race ${view.race} result</span>
+                        <h2 class="party-stage-title">${winner ? `${partyEscapeHtml(nameOf(winner.id))} wins!` : "Nobody finished"}</h2>
+                        ${winner ? `<p class="party-stage-text">${winner.wpm} WPM with ${winner.accuracy}% accuracy</p>` : ""}
+                    </div>
+
+                    <div>
+                        <span class="party-label">Placings</span>
+                        <div class="tr-results">${view.results.map((row, index) => `
+                            <div class="tr-result-row ${colourOf(row.id)}${index === 0 && row.finished ? " is-first" : ""}">
+                                <span class="tr-result-rank">${row.place ? `#${row.place}` : "-"}</span>
+                                <span class="tr-result-name" title="${partyEscapeHtml(nameOf(row.id))}">${index === 0 && row.finished ? `<i class="bi bi-trophy-fill"></i> ` : ""}${partyEscapeHtml(nameOf(row.id))}${row.id === party.myId ? " (you)" : ""}</span>
+                                <span class="tr-result-detail">${resultDetail(row)}</span>
+                                <span class="tr-result-gain">+${row.gain}</span>
+                            </div>`).join("")}</div>
+                    </div>
+
+                    <div>
+                        <span class="party-label">Scores</span>
+                        ${partyScoreboardHtml(rows)}
+                    </div>
+
+                    <div class="party-row">
+                        <button type="button" class="btn action-btn-ghost" data-act="share"><i class="bi bi-share"></i> Share result</button>
+                        ${party.isHost ? `
+                            <button type="button" class="btn action-btn-ghost" data-act="lobby"><i class="bi bi-sliders"></i> Change settings</button>
+                            <button type="button" class="btn action-btn-primary" data-act="start"${party.players.length >= MIN_PLAYERS ? "" : " disabled"}><i class="bi bi-arrow-repeat"></i> Next race</button>` : ""}
+                    </div>
+                    ${party.isHost ? "" : `<div class="party-hint text-center">Waiting for the room creator to start the next race.</div>`}`;
+            }
+
+            function render() {
+                if (!view) return;
+
+                const playing = view.phase === "countdown" || view.phase === "race";
+                const key = playing ? `play:${view.race}:${view.inRace}` : view.phase;
+
+                // This keeps the typing box in place between the countdown and the race, and while progress comes in.
+                if (playing && key === renderedKey) {
+                    updatePlay();
+                } else {
+                    gameBody.innerHTML = playing ? renderPlay() : view.phase === "result" ? renderResult() : renderLobby();
+                    renderedKey = key;
+                    if (playing) updatePlay();
+                }
+
+                updateTimer();
+                renderBadges();
+                renderFooter();
+            }
+
+            function renderBadges() {
+                const badges = {};
+                const playing = view.phase === "countdown" || view.phase === "race";
+
+                for (const player of party.players) {
+                    const badge = { chip: view.scores[player.id] || 0 };
+                    const lane = view.lanes.find(l => l.id === player.id);
+
+                    if (playing && lane) {
+                        badge.icon = lane.finished ? "bi-flag-fill" : "bi-keyboard";
+                        badge.iconTitle = lane.finished ? "Finished" : "Typing";
+                    } else if (view.phase !== "lobby" && !view.order.includes(player.id)) {
+                        badge.note = "watching";
+                    }
+
+                    badges[player.id] = badge;
+                }
+
+                party.setBadges(badges);
+            }
+
+            function renderFooter() {
+                document.getElementById("footerRace").textContent = view.race;
+                document.getElementById("footerPhase").textContent = PHASE_LABELS[view.phase] || "-";
+                document.getElementById("footerBest").textContent = personalBest === null ? "-" : `${personalBest} WPM`;
+            }
+
+            function updateTimer() {
+                updatePartyTimer(document.getElementById("phaseTimer"), viewDeadline, viewTotalMs);
+            }
+
+            // This runs the countdown, starts the race locally at GO, and keeps the clock and speed fresh.
+            function tick() {
+                if (!view) return;
+                updateTimer();
+
+                if (view.phase !== "countdown" && view.phase !== "race") return;
+
+                if (typing && !typing.startAt && typing.goAt && performance.now() >= typing.goAt) {
+                    startTyping();
+                    return;
+                }
+
+                updateStage();
+                const statsEl = document.getElementById("trStats");
+                if (statsEl && typing && typing.startAt && !typing.finished) statsEl.innerHTML = statsText();
+            }
+
+            function myResult() {
+                if (!view || view.phase !== "result") return null;
+                return view.results.find(r => r.id === party.myId) || null;
+            }
+
+            function serializeResult() {
+                if (!view || view.phase !== "result") return "";
+                const placings = view.results
+                    .map(r => `${r.place ? `#${r.place}` : "DNF"} ${nameOf(r.id)}${r.finished ? ` ${r.wpm} WPM` : ""}`)
+                    .join(", ");
+                return `⌨️ Typing Race ${view.race}: ${placings}`;
+            }
+
+            function shareText() {
+                const mine = myResult();
+                if (!mine) return serializeResult();
+                if (!mine.finished) return `⌨️ I reached ${Math.round(mine.chars / (view.text.length || 1) * 100)}% of the text in Typing Race`;
+                return `⌨️ I typed ${mine.wpm} WPM and placed #${mine.place} in Typing Race`;
+            }
+
+            // ---------- UI events ----------
+
+            bindPartySegments(gameBody, (key, value) => party.act({ type: "setting", key, value }));
+
+            gameBody.addEventListener("click", event => {
+                const button = event.target.closest("[data-act]");
+                if (!button || button.disabled) return;
+
+                switch (button.dataset.act) {
+                    case "start": party.act({ type: "start" }); break;
+                    case "lobby": party.act({ type: "lobby" }); break;
+                    case "share": partyShareText(shareText(), button); break;
+                }
+            });
+
+            gameBody.addEventListener("input", event => {
+                if (event.target.id === "trInput") handleTypingInput(event.target);
+            });
+
+            // This blocks paste and drop, so every letter has to be typed.
+            function blockPaste(event) {
+                if (event.target.id !== "trInput") return;
+                event.preventDefault();
+                showInfoToast("Paste is off in a typing race");
+            }
+
+            gameBody.addEventListener("paste", blockPaste);
+            gameBody.addEventListener("drop", blockPaste);
+
+            gameBody.addEventListener("beforeinput", event => {
+                if (event.target.id === "trInput" && (event.inputType === "insertFromPaste" || event.inputType === "insertFromDrop")) event.preventDefault();
+            });
+
+            document.getElementById("copyResultBtn").addEventListener("click", event => partyCopyText(serializeResult(), event.currentTarget));
+        </script>
+    </body>
+</html>

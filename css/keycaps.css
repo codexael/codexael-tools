@@ -186,6 +186,7 @@ code { color: var(--ink); }
 #editorsMenu { --c: var(--pink); }
 #productivityMenu { --c: var(--lime); }
 #funMenu { --c: var(--orange); }
+#gamesMenu { --c: var(--blue); }
 
 .nav-links > li > a,
 .command-palette-trigger {
@@ -876,6 +877,7 @@ body.dark-theme .modal-backdrop.show { opacity: 0.75; }
 .key[data-cat="Editors"] { --c: var(--pink); }
 .key[data-cat="Productivity"] { --c: var(--lime); }
 .key[data-cat="Fun"] { --c: var(--orange); }
+.key[data-cat="Party Games"] { --c: var(--blue); }
 
 /* Star button that pins a tool into the favourites row. */
 .favourite-btn {

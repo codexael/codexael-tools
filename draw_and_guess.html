@@ -1,0 +1,1612 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Codexael Toolstack - Draw & Guess</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <!-- Metadata -->
+        <meta name="description" content="Draw the secret word while your friends race to guess it live. 3-12 players, free, no sign-up.">
+        <meta name="author" content="Codexael">
+        <meta name="theme-color" content="#fff4e0" media="(prefers-color-scheme: light)">
+        <meta name="theme-color" content="#17140f" media="(prefers-color-scheme: dark)">
+
+        <!-- Open Graph -->
+        <meta property="og:title" content="Codexael Toolstack — Draw & Guess: Online Drawing Game">
+        <meta property="og:description" content="Draw the secret word while your friends race to guess it live. 3-12 players, free, no sign-up.">
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="https://tools.codexael.com/draw_and_guess.html">
+        <meta property="og:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+        <meta property="og:image:width" content="1200">
+        <meta property="og:image:height" content="630">
+        <meta property="og:image:type" content="image/png">
+        <meta property="og:image:alt" content="Codexael Toolstack — Draw & Guess: Online Drawing Game">
+        <meta property="og:site_name" content="Codexael Toolstack">
+
+        <!-- Twitter Card -->
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="Codexael Toolstack — Draw & Guess: Online Drawing Game">
+        <meta name="twitter:description" content="Draw the secret word while your friends race to guess it live. 3-12 players, free, no sign-up.">
+        <meta name="twitter:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+
+        <!-- Favicon / App Icon -->
+        <link rel="icon" type="image/svg+xml" href="assets/images/codexael_icon.svg">
+        <link rel="apple-touch-icon" href="assets/images/codexael_icon.svg">
+
+        <!-- Bootstrap 5.2.0-beta1 -->
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+
+        <!-- Bootstrap with Popper 5.2.0-beta1 -->
+        <script src="js/bootstrap.bundle.min.js"></script>
+
+        <!-- Bootstrap Icons 1.11.3 -->
+        <link rel="stylesheet" href="css/bootstrap-icons.min.css">
+
+        <!-- PeerJS 1.5.4 -->
+        <script src="js/peerjs.min.js"></script>
+
+        <!-- Google fonts -->
+        <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+        <!-- Custom CSS -->
+        <link rel="stylesheet" href="css/keycaps.css">
+        <link rel="stylesheet" href="css/party-games.css">
+
+        <style>
+            /* The top card shows the word, the hint or who is drawing. */
+            .dg-top {
+                --stage-c: var(--pink);
+                gap: 8px;
+                padding: 14px 16px;
+            }
+
+            .dg-hint {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 6px 18px;
+            }
+
+            .dg-hint-word {
+                display: flex;
+                gap: 5px;
+            }
+
+            /* Each hidden letter is a short line, and a revealed letter sits on its line. */
+            .dg-hint-char {
+                min-width: 1.1em;
+                padding-bottom: 2px;
+                border-bottom: 3px solid #111111;
+                font-family: var(--display-font);
+                font-size: clamp(1.1rem, 3vw, 1.5rem);
+                line-height: 1.2;
+                text-align: center;
+                text-transform: uppercase;
+            }
+
+            .dg-hint-char.is-hidden {
+                color: transparent;
+            }
+
+            .dg-play {
+                display: grid;
+                grid-template-columns: minmax(0, 1fr);
+                gap: 14px;
+            }
+
+            .dg-board,
+            .dg-side {
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                min-width: 0;
+            }
+
+            /* The paper stays white in dark theme so every player sees the same drawing. */
+            .dg-canvas-wrap {
+                position: relative;
+                width: 100%;
+                aspect-ratio: 4 / 3;
+                background: #ffffff;
+                border: 4px solid var(--ink);
+                box-shadow: 3px 3px 0 var(--ink);
+                overflow: hidden;
+            }
+
+            .dg-canvas-wrap canvas {
+                position: absolute;
+                inset: 0;
+                width: 100%;
+                height: 100%;
+                display: block;
+            }
+
+            /* The drawer's canvas takes every touch so the page does not scroll while drawing. */
+            .dg-canvas-wrap canvas.is-drawing {
+                touch-action: none;
+                cursor: crosshair;
+            }
+
+            .dg-overlay {
+                position: absolute;
+                inset: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 12px;
+                background: rgba(17, 17, 17, 0.35);
+            }
+
+            .dg-overlay-card {
+                max-width: 100%;
+                max-height: 100%;
+                overflow-y: auto;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 10px;
+                padding: 14px 16px;
+                background: var(--paper);
+                color: var(--ink);
+                border: 3px solid var(--ink);
+                box-shadow: 3px 3px 0 #111111;
+                font-size: 0.85rem;
+                font-weight: 700;
+                text-align: center;
+            }
+
+            .dg-overlay-card .party-label {
+                margin-bottom: 0;
+            }
+
+            .dg-choices {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 8px;
+            }
+
+            .dg-overlay .party-choice {
+                min-height: 0;
+                padding: 8px 14px;
+                text-align: center;
+            }
+
+            .dg-reveal-word {
+                font-family: var(--display-font);
+                font-size: clamp(1.2rem, 4vw, 1.8rem);
+                line-height: 1.2;
+            }
+
+            .dg-reveal-list {
+                display: flex;
+                flex-direction: column;
+                gap: 4px;
+                width: 100%;
+                min-width: 180px;
+                font-size: 0.8rem;
+            }
+
+            .dg-reveal-row {
+                display: flex;
+                justify-content: space-between;
+                gap: 12px;
+            }
+
+            .dg-reveal-row span:first-child {
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+            .dg-tools {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .dg-tools:empty {
+                display: none;
+            }
+
+            .dg-swatches,
+            .dg-tool-row {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 6px;
+            }
+
+            .dg-swatch {
+                width: 28px;
+                height: 28px;
+                padding: 0;
+                background: var(--sw);
+                border: 2.5px solid var(--ink);
+                border-radius: 50%;
+                box-shadow: 0 2px 0 var(--ink);
+            }
+
+            .dg-swatch.is-active {
+                transform: translateY(2px);
+                box-shadow: 0 0 0 3px var(--paper), 0 0 0 5.5px var(--ink);
+            }
+
+            .dg-tool {
+                min-width: 38px;
+                height: 36px;
+                padding: 0 10px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                background: var(--paper);
+                color: var(--ink);
+                border: 2.5px solid var(--ink);
+                border-radius: 8px;
+                box-shadow: 0 2px 0 var(--ink);
+                font-size: 0.95rem;
+                transition: transform 0.08s, box-shadow 0.08s, background-color 0.12s;
+            }
+
+            .dg-tool:hover {
+                background: var(--cyan);
+                color: #111111;
+            }
+
+            .dg-tool.is-active,
+            .dg-tool.is-active:hover {
+                background: var(--yellow);
+                color: #111111;
+                transform: translateY(2px);
+                box-shadow: inset 0 2px 0 rgba(0, 0, 0, 0.2);
+            }
+
+            .dg-dot {
+                display: block;
+                background: currentColor;
+                border-radius: 50%;
+            }
+
+            .dg-chat-close {
+                padding: 2px 6px;
+                background: var(--yellow);
+                color: #111111;
+                border: 2px dashed #111111;
+                font-weight: 700;
+            }
+
+            /* Lines from players who already guessed are shown only to the drawer and the other winners. */
+            .dg-chat-inner {
+                font-style: italic;
+                opacity: 0.8;
+            }
+
+            /* Wide screens put the chat beside the canvas. */
+            @media (min-width: 992px) {
+                .dg-play {
+                    grid-template-columns: minmax(0, 1fr) 230px;
+                }
+
+                .dg-side .party-chat {
+                    flex: 1 1 0;
+                    max-height: none;
+                }
+            }
+
+            @media (prefers-reduced-motion: reduce) {
+                .dg-tool {
+                    transition: none;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <!-- Common layout -->
+        <div id="navbar-container"></div>
+
+        <div class="container-fluid tool-wrapper">
+
+            <!-- Setup view -->
+            <div class="row" id="partySetup"></div>
+
+            <!-- Room view -->
+            <div class="row g-3 g-md-0 gx-md-3 gx-0 d-none party-room" id="partyRoom">
+
+                <div class="col-md-8 editor-panel party-game-panel" id="gamePanel" style="--panel-c: var(--pink)">
+                    <div class="editor-header">
+                        <span class="editor-title">Draw & Guess</span>
+                        <div class="editor-actions">
+                            <button title="Copy result" data-shortcut="copy" id="copyResultBtn"><i class="bi bi-copy icon-btn"></i></button>
+                            <button title="Fullscreen" onclick="toggleEditorFullScreen('gamePanel')"><i class="bi bi-arrows-fullscreen icon-btn"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="party-body invisible-scrollbars" id="gameBody"></div>
+
+                    <div class="editor-footer">
+                        <div class="status">
+                            <span>Game <b id="footerRound">0</b></span>
+                            <span>Turn <b id="footerTurn">-</b></span>
+                            <span>Phase <b id="footerPhase">Lobby</b></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4 editor-panel party-side-panel" id="partyPanel"></div>
+
+            </div>
+        </div>
+
+        <div id="footer-container"></div>
+
+        <!-- Common JS -->
+        <script src="js/tool-help.js"></script>
+        <script src="js/storage.js"></script>
+        <script src="js/common.js"></script>
+        <script src="js/script.js"></script>
+        <script src="js/party-room.js"></script>
+
+        <!-- Custom JS -->
+        <script>
+            const pageTitle = "Draw & Guess";
+
+            const MIN_PLAYERS = 3;
+            const MAX_PLAYERS = 12;
+
+            // This is the fewest players that can keep a started game going.
+            const MIN_ACTIVE_PLAYERS = 2;
+            const MAX_GUESS_LENGTH = 40;
+            const CHOOSE_MS = 10000;
+            const REVEAL_MS = 4000;
+            const TIMER_TICK_MS = 250;
+            const CHOICE_COUNT = 3;
+            const MAX_GUESS_POINTS = 100;
+            const MIN_GUESS_POINTS = 40;
+            const ORDER_PENALTY = 10;
+            const DRAWER_POINTS_PER_GUESS = 20;
+            const GUESS_GAP_MS = 400;
+            const MAX_CHAT_LINES = 100;
+            const MAX_BATCH_POINTS = 60;
+            const MAX_TOTAL_POINTS = 8000;
+            const MAX_STROKES = 600;
+            const MAX_STROKE_ID = 1000000;
+            const STROKE_FLUSH_MS = 50;
+            const MIN_POINT_STEP = 0.002;
+            const CANVAS_RATIO = 3 / 4;
+            const ERASER_SCALE = 2.5;
+            const WHITE_INDEX = 1;
+
+            // These colours are fixed values because the paper stays white in both themes.
+            const PALETTE = [
+                { name: "Black", hex: "#111111" },
+                { name: "White", hex: "#ffffff" },
+                { name: "Yellow", hex: "#ffd23f" },
+                { name: "Pink", hex: "#ff6fb5" },
+                { name: "Cyan", hex: "#3bceac" },
+                { name: "Blue", hex: "#4d7cfe" },
+                { name: "Orange", hex: "#ff8a3d" },
+                { name: "Lilac", hex: "#b69cff" },
+                { name: "Lime", hex: "#c6f432" },
+                { name: "Red", hex: "#ff5a4e" }
+            ];
+
+            // Each brush width is a share of the canvas width, so lines look the same on every screen.
+            const BRUSH_SIZES = [
+                { name: "Thin", width: 0.006, dot: 6 },
+                { name: "Medium", width: 0.014, dot: 11 },
+                { name: "Thick", width: 0.03, dot: 17 }
+            ];
+
+            const WORD_PACKS = {
+                animals: ["Cat", "Dog", "Fish", "Bird", "Snake", "Elephant", "Giraffe", "Rabbit", "Turtle", "Spider", "Butterfly", "Octopus", "Penguin", "Lion", "Horse", "Frog", "Snail", "Whale", "Owl", "Bee"],
+                food: ["Apple", "Banana", "Pizza", "Ice cream", "Cake", "Carrot", "Burger", "Egg", "Cheese", "Cookie", "Grapes", "Watermelon", "Bread", "Donut", "Popcorn", "Cherry", "Lemon", "Pineapple", "Hot dog", "Sandwich"],
+                objects: ["Chair", "Table", "Lamp", "Key", "Clock", "Umbrella", "Glasses", "Book", "Pencil", "Scissors", "Cup", "Phone", "Camera", "Guitar", "Candle", "Balloon", "Ladder", "Hammer", "Toothbrush", "Bed", "Door", "Window", "Bottle", "Envelope", "Crown"],
+                nature: ["Sun", "Moon", "Star", "Cloud", "Rain", "Rainbow", "Tree", "Flower", "Mountain", "Volcano", "Island", "Snowman", "Leaf", "Fire", "Lightning", "Wave", "Cactus", "Mushroom"],
+                places: ["House", "Castle", "Bridge", "Tent", "Lighthouse", "Pyramid", "School", "Hospital", "Igloo", "Windmill", "Tower", "Beach", "Farm", "Zoo", "Playground"],
+                transport: ["Car", "Bus", "Train", "Bicycle", "Airplane", "Rocket", "Boat", "Helicopter", "Truck", "Tractor", "Submarine", "Skateboard", "Motorcycle", "Hot air balloon", "Ship"],
+                activities: ["Football", "Basketball", "Tennis", "Swimming", "Fishing", "Skiing", "Cricket", "Kite", "Dance", "Camping", "Bowling", "Boxing", "Surfing", "Juggling", "Sleeping"],
+                body: ["Eye", "Hand", "Foot", "Nose", "Ear", "Tooth", "Heart", "Hat", "Shoe", "Sock", "Shirt", "Dress", "Glove", "Scarf", "Tie"],
+                fantasy: ["Robot", "Ghost", "Dragon", "Alien", "Pirate", "Mermaid", "Unicorn", "King", "Wizard", "Monster", "Angel", "Ninja"]
+            };
+
+            const ALL_WORDS = Object.values(WORD_PACKS).flat();
+
+            const PHASE_LABELS = { lobby: "Lobby", choose: "Choosing", draw: "Drawing", reveal: "Reveal", result: "Game over" };
+
+            const gameBody = document.getElementById("gameBody");
+
+            // This holds the newest view from the referee, and every client draws only from it.
+            let view = null;
+            let viewDeadline = null;
+            let viewTotalMs = 0;
+            let timerInterval = null;
+
+            // This holds the chat lines this player has seen, newest last.
+            let chatLines = [];
+
+            // This is true while the canvas layout is on the page, so new views update it instead of rebuilding it.
+            let playMounted = false;
+            let canvas = null;
+            let ctx = null;
+            let resizeObserver = null;
+
+            // This is the local copy of the drawing, so a resize or a new view can redraw it without asking the referee.
+            let strokes = [];
+            let strokeTurn = "";
+            let strokeSeq = 0;
+            let localPoints = 0;
+
+            // These hold the line the drawer is drawing right now and the points not yet sent.
+            let activeStroke = null;
+            let activePointer = null;
+            let pendingBatch = [];
+            let flushTimer = null;
+
+            const tool = { colour: 0, size: 1, eraser: false };
+
+            // ---------- Referee state ----------
+
+            // This holds the whole game, and only the referee keeps it.
+            const game = {
+                phase: "lobby",
+                settings: { rounds: "1", drawTime: "80" },
+                round: 0,
+                queue: [],
+                queueLaps: [],
+                turnIndex: -1,
+                drawerId: null,
+                guesserIds: [],
+                choices: [],
+                word: "",
+                revealed: new Set(),
+                correct: new Map(),
+                lastGuessAt: new Map(),
+                strokes: [],
+                pointCount: 0,
+                usedWords: new Set(),
+                scores: new Map(),
+                gains: new Map(),
+                turnGains: new Map(),
+                deadline: 0,
+                totalMs: 0,
+                timer: null,
+                hintTimers: []
+            };
+
+            const FRESH_GAME = { ...game, settings: { ...game.settings } };
+
+            function resetGame() {
+                clearTimeout(game.timer);
+                clearHintTimers();
+                Object.assign(game, FRESH_GAME, {
+                    settings: { ...FRESH_GAME.settings },
+                    queue: [],
+                    queueLaps: [],
+                    guesserIds: [],
+                    choices: [],
+                    revealed: new Set(),
+                    correct: new Map(),
+                    lastGuessAt: new Map(),
+                    strokes: [],
+                    usedWords: new Set(),
+                    scores: new Map(),
+                    gains: new Map(),
+                    turnGains: new Map(),
+                    hintTimers: []
+                });
+            }
+
+            function isPlaying() {
+                return game.phase === "choose" || game.phase === "draw" || game.phase === "reveal";
+            }
+
+            function presentIds() {
+                return party.players.map(p => p.id);
+            }
+
+            // This names the current turn, so clients can drop drawing events from an old turn.
+            function turnKey() {
+                return `${game.round}-${game.turnIndex}`;
+            }
+
+            function setPhaseTimer(ms, onEnd) {
+                clearTimeout(game.timer);
+                game.totalMs = ms;
+                game.deadline = Date.now() + ms;
+                game.timer = setTimeout(onEnd, ms);
+            }
+
+            function clearHintTimers() {
+                for (const timer of game.hintTimers) clearTimeout(timer);
+                game.hintTimers = [];
+            }
+
+            function clearPhaseTimer() {
+                clearTimeout(game.timer);
+                clearHintTimers();
+                game.deadline = 0;
+                game.totalMs = 0;
+            }
+
+            function addPoints(id, points) {
+                if (!points) return;
+                game.scores.set(id, (game.scores.get(id) || 0) + points);
+                game.gains.set(id, (game.gains.get(id) || 0) + points);
+                game.turnGains.set(id, (game.turnGains.get(id) || 0) + points);
+            }
+
+            function chatTo(line, ids = null) {
+                party.emit({ type: "chat", line }, ids);
+            }
+
+            function startGame() {
+                const players = party.players;
+                if (players.length < MIN_PLAYERS) {
+                    showInfoToast(`Draw & Guess needs at least ${MIN_PLAYERS} players`);
+                    return;
+                }
+
+                const order = partyShuffle(players.map(p => p.id));
+                const laps = Number(game.settings.rounds) || 1;
+
+                game.round += 1;
+                game.queue = Array.from({ length: laps }, () => order).flat();
+                game.queueLaps = game.queue.map((_, index) => Math.floor(index / order.length) + 1);
+                game.turnIndex = -1;
+                game.gains = new Map();
+                game.usedWords = new Set();
+
+                chatTo({ kind: "system", text: `Game ${game.round} started` });
+                nextTurn();
+            }
+
+            // This returns word choices that were not used yet in this game.
+            function pickChoices() {
+                let pool = ALL_WORDS.filter(word => !game.usedWords.has(word));
+                if (pool.length < CHOICE_COUNT) {
+                    game.usedWords = new Set();
+                    pool = ALL_WORDS;
+                }
+                return partyShuffle(pool).slice(0, CHOICE_COUNT);
+            }
+
+            // This moves to the next drawer who is still in the room, or ends the game when everyone has drawn.
+            function nextTurn() {
+                clearPhaseTimer();
+
+                const present = presentIds();
+                if (present.length < MIN_ACTIVE_PLAYERS) {
+                    abortGame("There are not enough players left to go on");
+                    return;
+                }
+
+                do {
+                    game.turnIndex += 1;
+                } while (game.turnIndex < game.queue.length && !present.includes(game.queue[game.turnIndex]));
+
+                if (game.turnIndex >= game.queue.length) {
+                    finishGame();
+                    return;
+                }
+
+                game.drawerId = game.queue[game.turnIndex];
+                game.guesserIds = present.filter(id => id !== game.drawerId);
+                game.choices = pickChoices();
+                game.word = "";
+                game.revealed = new Set();
+                game.correct = new Map();
+                game.lastGuessAt = new Map();
+                game.strokes = [];
+                game.pointCount = 0;
+                game.turnGains = new Map();
+                game.phase = "choose";
+
+                setPhaseTimer(CHOOSE_MS, () => pickWord(partyRandomInt(game.choices.length)));
+                publish();
+            }
+
+            function pickWord(index) {
+                game.word = game.choices[index];
+                game.usedWords.add(game.word);
+                game.choices = [];
+                game.phase = "draw";
+
+                const drawMs = (Number(game.settings.drawTime) || 80) * 1000;
+                setPhaseTimer(drawMs, endTurn);
+                scheduleHints(drawMs);
+
+                const drawer = party.getPlayer(game.drawerId);
+                chatTo({ kind: "system", text: `${drawer ? drawer.name : "Someone"} is drawing now` });
+                publish();
+            }
+
+            function letterIndexes(word) {
+                return Array.from(word).map((ch, i) => (/[a-z0-9]/i.test(ch) ? i : -1)).filter(i => i >= 0);
+            }
+
+            // This plans one or two letter hints, at half time and at three quarter time.
+            function scheduleHints(drawMs) {
+                const letters = letterIndexes(game.word).length;
+                const count = letters >= 6 ? 2 : letters >= 4 ? 1 : 0;
+                const shares = [0.5, 0.75];
+
+                for (let i = 0; i < count; i++) game.hintTimers.push(setTimeout(revealLetter, drawMs * shares[i]));
+            }
+
+            // This shows one more random letter, but always keeps at least one letter hidden.
+            function revealLetter() {
+                if (game.phase !== "draw") return;
+                const hidden = letterIndexes(game.word).filter(i => !game.revealed.has(i));
+                if (hidden.length <= 1) return;
+                game.revealed.add(hidden[partyRandomInt(hidden.length)]);
+                publish();
+            }
+
+            function hintPattern() {
+                return Array.from(game.word).map((ch, i) => (/[a-z0-9]/i.test(ch) && !game.revealed.has(i) ? "_" : ch)).join("");
+            }
+
+            function endTurn() {
+                clearPhaseTimer();
+                game.phase = "reveal";
+                setPhaseTimer(REVEAL_MS, nextTurn);
+                chatTo({ kind: "system", text: `The word was "${game.word}"` });
+                publish();
+            }
+
+            function finishGame() {
+                clearPhaseTimer();
+                game.phase = "result";
+                game.drawerId = null;
+                game.guesserIds = [];
+                game.strokes = [];
+                game.pointCount = 0;
+                publish();
+            }
+
+            // This ends the game early when it can no longer go on.
+            function abortGame(reason) {
+                clearPhaseTimer();
+                game.phase = "lobby";
+                game.queue = [];
+                game.queueLaps = [];
+                game.drawerId = null;
+                game.guesserIds = [];
+                game.strokes = [];
+                game.pointCount = 0;
+                party.emit({ type: "notice", text: reason });
+                publish();
+            }
+
+            function allGuessed() {
+                return game.guesserIds.every(id => game.correct.has(id));
+            }
+
+            // This gives more points for an early guess and fewer for each player who guessed first.
+            function guessPoints() {
+                const share = game.totalMs ? Math.max(0, game.deadline - Date.now()) / game.totalMs : 0;
+                const raw = MIN_GUESS_POINTS + (MAX_GUESS_POINTS - MIN_GUESS_POINTS) * share - ORDER_PENALTY * game.correct.size;
+                return Math.max(MIN_GUESS_POINTS, Math.round(raw / 5) * 5);
+            }
+
+            function compactGuess(text) {
+                return partyNormalizeGuess(text).replace(/ /g, "");
+            }
+
+            function isExactGuess(text) {
+                const guess = compactGuess(text);
+                return guess !== "" && guess === compactGuess(game.word);
+            }
+
+            // This counts a guess as close when one letter is wrong, missing or extra.
+            function isCloseGuess(text) {
+                const guess = compactGuess(text);
+                const word = compactGuess(game.word);
+                return guess !== "" && word.length >= 3 && partyEditDistance(guess, word) <= 1;
+            }
+
+            function roundCoord(value) {
+                return Math.round(Math.min(1, Math.max(0, value)) * 1000) / 1000;
+            }
+
+            // This checks a batch of points from the drawer and returns a clean copy, or null when it is bad.
+            function cleanStroke(action) {
+                const id = Number(action.id);
+                const c = Number(action.c);
+                const s = Number(action.s);
+
+                if (!Number.isInteger(id) || id < 1 || id > MAX_STROKE_ID) return null;
+                if (!Number.isInteger(c) || c < 0 || c >= PALETTE.length) return null;
+                if (!Number.isInteger(s) || s < 0 || s >= BRUSH_SIZES.length) return null;
+                if (!Array.isArray(action.p) || action.p.length < 2 || action.p.length % 2 || action.p.length > MAX_BATCH_POINTS * 2) return null;
+
+                const p = [];
+                for (const value of action.p) {
+                    const n = Number(value);
+                    if (!Number.isFinite(n)) return null;
+                    p.push(roundCoord(n));
+                }
+
+                return { id, c, s, e: action.e === true, p };
+            }
+
+            function buildView(id) {
+                const playing = isPlaying();
+                const isDrawer = playing && id === game.drawerId;
+                const knowsWord = game.phase === "reveal" || (game.phase === "draw" && (isDrawer || game.correct.has(id)));
+
+                return {
+                    phase: game.phase,
+                    settings: { ...game.settings },
+                    round: game.round,
+                    turnKey: playing ? turnKey() : "",
+                    turnNumber: game.turnIndex + 1,
+                    turnCount: game.queue.length,
+                    lap: game.queueLaps[Math.max(0, game.turnIndex)] || 0,
+                    laps: Number(game.settings.rounds),
+                    drawerId: playing ? game.drawerId : null,
+                    guesserIds: playing ? [...game.guesserIds] : [],
+                    guessedIds: playing ? [...game.correct.keys()] : [],
+                    choices: game.phase === "choose" && isDrawer ? [...game.choices] : [],
+                    word: knowsWord ? game.word : null,
+                    hint: game.phase === "draw" ? hintPattern() : "",
+                    turnGains: game.phase === "reveal" ? Object.fromEntries(game.turnGains) : {},
+                    scores: Object.fromEntries(game.scores),
+                    gains: game.phase === "result" ? Object.fromEntries(game.gains) : {},
+                    remainingMs: game.deadline ? Math.max(0, game.deadline - Date.now()) : 0,
+                    totalMs: game.totalMs
+                };
+            }
+
+            function publish() {
+                party.publish(buildView);
+            }
+
+            // This applies one move from a player after checking that the move is allowed right now.
+            function handleAction(player, action) {
+                if (!action || typeof action.type !== "string") return;
+
+                switch (action.type) {
+                    case "setting": {
+                        if (!player.host || game.phase !== "lobby") return;
+                        const allowed = { rounds: ["1", "2", "3"], drawTime: ["60", "80", "100"] };
+                        if (!allowed[action.key] || !allowed[action.key].includes(String(action.value))) return;
+                        game.settings[action.key] = String(action.value);
+                        publish();
+                        return;
+                    }
+
+                    case "start":
+                        if (!player.host || (game.phase !== "lobby" && game.phase !== "result")) return;
+                        startGame();
+                        return;
+
+                    case "lobby":
+                        if (!player.host || game.phase !== "result") return;
+                        game.phase = "lobby";
+                        publish();
+                        return;
+
+                    case "pick": {
+                        if (game.phase !== "choose" || player.id !== game.drawerId) return;
+                        const index = Number(action.index);
+                        if (!Number.isInteger(index) || index < 0 || index >= game.choices.length) return;
+                        pickWord(index);
+                        return;
+                    }
+
+                    case "stroke": {
+                        if (game.phase !== "draw" || player.id !== game.drawerId) return;
+                        const batch = cleanStroke(action);
+                        if (!batch) return;
+
+                        const count = batch.p.length / 2;
+                        if (game.pointCount + count > MAX_TOTAL_POINTS) return;
+
+                        // This adds the points to the line in progress, or starts a new line.
+                        let target = game.strokes[game.strokes.length - 1];
+                        if (target && target.id === batch.id) {
+                            target.p.push(...batch.p);
+                        } else {
+                            if (game.strokes.length >= MAX_STROKES) return;
+                            target = { ...batch, p: [...batch.p] };
+                            game.strokes.push(target);
+                        }
+
+                        game.pointCount += count;
+                        party.emit({ type: "stroke", turn: turnKey(), id: target.id, c: target.c, s: target.s, e: target.e, p: batch.p }, presentIds().filter(id => id !== game.drawerId));
+                        return;
+                    }
+
+                    case "undo": {
+                        if (game.phase !== "draw" || player.id !== game.drawerId || !game.strokes.length) return;
+                        const removed = game.strokes.pop();
+                        game.pointCount -= removed.p.length / 2;
+                        party.emit({ type: "undo", turn: turnKey() });
+                        return;
+                    }
+
+                    case "clear":
+                        if (game.phase !== "draw" || player.id !== game.drawerId) return;
+                        game.strokes = [];
+                        game.pointCount = 0;
+                        party.emit({ type: "clear", turn: turnKey() });
+                        return;
+
+                    case "guess":
+                        handleGuess(player, partyCleanText(action.text, MAX_GUESS_LENGTH));
+                        return;
+                }
+            }
+
+            // This checks a chat line, scores a right guess and decides who may read the line.
+            function handleGuess(player, text) {
+                if (!text || !isPlaying()) return;
+
+                // This stops one player from flooding the chat.
+                const now = Date.now();
+                if (now - (game.lastGuessAt.get(player.id) || 0) < GUESS_GAP_MS) return;
+                game.lastGuessAt.set(player.id, now);
+
+                const line = { kind: "guess", name: player.name, order: player.order, text };
+
+                // This lets everyone talk freely while no word is being drawn.
+                if (game.phase !== "draw") {
+                    chatTo(line);
+                    return;
+                }
+
+                if (player.id === game.drawerId) return;
+
+                if (game.correct.has(player.id)) {
+                    chatTo({ ...line, kind: "inner" }, [game.drawerId, ...game.correct.keys()]);
+                    return;
+                }
+
+                if (!game.guesserIds.includes(player.id)) {
+                    party.emit({ type: "notice", text: "You joined during this turn, so you can guess from the next turn" }, [player.id]);
+                    return;
+                }
+
+                if (isExactGuess(text)) {
+                    const points = guessPoints();
+                    game.correct.set(player.id, points);
+                    addPoints(player.id, points);
+                    addPoints(game.drawerId, DRAWER_POINTS_PER_GUESS);
+
+                    chatTo({ kind: "correct", text: game.word }, [player.id]);
+                    chatTo({ kind: "system", text: `${player.name} guessed the word!` }, presentIds().filter(id => id !== player.id));
+
+                    if (allGuessed()) endTurn();
+                    else publish();
+                    return;
+                }
+
+                // This hides a close guess from the other guessers, because it would give the word away.
+                if (isCloseGuess(text)) {
+                    chatTo(line, [player.id, game.drawerId, ...game.correct.keys()]);
+                    chatTo({ kind: "close", text }, [player.id]);
+                    return;
+                }
+
+                chatTo(line);
+            }
+
+            // This gives a player who joins during a game one turn at the end of each lap that has not finished yet.
+            function addLateTurns(id) {
+                if (!isPlaying() || game.queue.includes(id) || game.turnIndex >= game.queue.length - 1) return;
+
+                const currentLap = game.queueLaps[Math.max(0, game.turnIndex)];
+                const lastLap = game.queueLaps[game.queueLaps.length - 1];
+
+                for (let lap = lastLap; lap >= currentLap; lap--) {
+                    const end = game.queueLaps.lastIndexOf(lap) + 1;
+                    game.queue.splice(end, 0, id);
+                    game.queueLaps.splice(end, 0, lap);
+                }
+            }
+
+            function handleJoin(player) {
+                addLateTurns(player.id);
+                publish();
+
+                // This sends the drawing so far to the new player only, so the others get no big message.
+                if (game.phase === "draw" || game.phase === "reveal") {
+                    party.emit({ type: "sync", turn: turnKey(), strokes: game.strokes.map(s => ({ ...s, p: [...s.p] })) }, [player.id]);
+                }
+            }
+
+            function handleLeave(player) {
+                game.scores.delete(player.id);
+                game.gains.delete(player.id);
+                game.turnGains.delete(player.id);
+
+                if (!isPlaying()) {
+                    publish();
+                    return;
+                }
+
+                if (presentIds().length < MIN_ACTIVE_PLAYERS) {
+                    abortGame(`${player.name} left, and there are not enough players to go on`);
+                    return;
+                }
+
+                game.guesserIds = game.guesserIds.filter(id => id !== player.id);
+
+                // This moves the game on when the drawer leaves in the middle of a turn.
+                if (player.id === game.drawerId && game.phase !== "reveal") {
+                    party.emit({ type: "notice", text: `${player.name} left while drawing, so the turn is over` });
+                    if (game.phase === "choose") nextTurn();
+                    else endTurn();
+                    return;
+                }
+
+                if (game.phase === "draw" && allGuessed()) {
+                    endTurn();
+                    return;
+                }
+
+                publish();
+            }
+
+            // ---------- Room ----------
+
+            const party = createPartyRoom({
+                gameId: "draw",
+                title: "Draw & Guess",
+                icon: "bi-brush",
+                colour: "var(--pink)",
+                intro: "Take turns drawing a secret word while everyone else races to guess it in the chat. Faster guesses score more points.",
+                minPlayers: MIN_PLAYERS,
+                maxPlayers: MAX_PLAYERS,
+                onEnter() {
+                    if (party.isHost) {
+                        resetGame();
+                        publish();
+                    }
+                    startTimerLoop();
+                },
+                onExit() {
+                    resetGame();
+                    stopDrawing();
+                    unmountPlay();
+                    view = null;
+                    chatLines = [];
+                    strokes = [];
+                    strokeTurn = "";
+                    clearInterval(timerInterval);
+                    gameBody.innerHTML = "";
+                },
+                onView(next) {
+                    if (!next || typeof next.phase !== "string") return;
+
+                    const turnChanged = next.turnKey !== strokeTurn;
+                    const drawStarted = next.phase === "draw" && (!view || view.phase !== "draw" || turnChanged);
+
+                    // This starts a fresh canvas for every new turn.
+                    if (turnChanged) {
+                        strokes = [];
+                        strokeTurn = next.turnKey;
+                        strokeSeq = 0;
+                    }
+                    if (turnChanged || next.phase !== "draw") stopDrawing();
+
+                    view = next;
+                    viewDeadline = partyDeadlineFrom(next.remainingMs);
+                    viewTotalMs = next.totalMs;
+                    render();
+
+                    if (turnChanged) redrawAll();
+                    if (drawStarted && next.drawerId !== party.myId) focusGuess();
+                },
+                onEvent: handleEvent,
+                host: {
+                    onJoin: handleJoin,
+                    onLeave: handleLeave,
+                    onAction: handleAction
+                }
+            });
+
+            // ---------- Drawing ----------
+
+            function strokeColour(stroke) {
+                return stroke.e ? "#ffffff" : (PALETTE[stroke.c] || PALETTE[0]).hex;
+            }
+
+            function strokeWidth(stroke) {
+                const size = BRUSH_SIZES[stroke.s] || BRUSH_SIZES[1];
+                return Math.max(1, size.width * canvas.width * (stroke.e ? ERASER_SCALE : 1));
+            }
+
+            // This draws a line from the point before start to the end, and a dot when the line starts.
+            function drawStrokePart(stroke, start) {
+                if (!ctx || !canvas.width) return;
+
+                const p = stroke.p;
+                const count = Math.floor(p.length / 2);
+                if (!count || start >= count) return;
+
+                const w = canvas.width;
+                const h = canvas.height;
+                const width = strokeWidth(stroke);
+
+                ctx.lineCap = "round";
+                ctx.lineJoin = "round";
+                ctx.lineWidth = width;
+                ctx.strokeStyle = strokeColour(stroke);
+                ctx.fillStyle = strokeColour(stroke);
+
+                if (start === 0) {
+                    ctx.beginPath();
+                    ctx.arc(p[0] * w, p[1] * h, width / 2, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                if (count < 2) return;
+
+                const from = Math.max(0, start - 1);
+                ctx.beginPath();
+                ctx.moveTo(p[from * 2] * w, p[from * 2 + 1] * h);
+                for (let i = from + 1; i < count; i++) ctx.lineTo(p[i * 2] * w, p[i * 2 + 1] * h);
+                ctx.stroke();
+            }
+
+            function redrawAll() {
+                if (!ctx) return;
+                ctx.fillStyle = "#ffffff";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                for (const stroke of strokes) drawStrokePart(stroke, 0);
+            }
+
+            // This sizes the canvas to its box and the screen density, then redraws the local copy.
+            function resizeCanvas() {
+                if (!canvas) return;
+
+                const rect = canvas.getBoundingClientRect();
+                if (!rect.width) return;
+
+                const ratio = Math.min(window.devicePixelRatio || 1, 2);
+                const width = Math.round(rect.width * ratio);
+                const height = Math.round(width * CANVAS_RATIO);
+                if (canvas.width === width && canvas.height === height) return;
+
+                canvas.width = width;
+                canvas.height = height;
+                redrawAll();
+            }
+
+            function countPoints() {
+                return strokes.reduce((sum, stroke) => sum + stroke.p.length / 2, 0);
+            }
+
+            function canDraw() {
+                return Boolean(view && view.phase === "draw" && view.drawerId === party.myId && ctx);
+            }
+
+            function pointFromEvent(event) {
+                const rect = canvas.getBoundingClientRect();
+                return [roundCoord((event.clientX - rect.left) / rect.width), roundCoord((event.clientY - rect.top) / rect.height)];
+            }
+
+            function onPointerDown(event) {
+                if (!canDraw() || activeStroke) return;
+                if (event.pointerType === "mouse" && event.button !== 0) return;
+
+                localPoints = countPoints();
+                if (localPoints >= MAX_TOTAL_POINTS || strokes.length >= MAX_STROKES) {
+                    showInfoToast("The canvas is full, so undo or clear some lines first");
+                    return;
+                }
+
+                event.preventDefault();
+                try {
+                    canvas.setPointerCapture(event.pointerId);
+                } catch (error) {
+                    // This ignores a pointer that is already gone, because the line still draws without capture.
+                }
+
+                const [x, y] = pointFromEvent(event);
+                strokeSeq += 1;
+                activeStroke = { id: strokeSeq, c: tool.eraser ? WHITE_INDEX : tool.colour, s: tool.size, e: tool.eraser, p: [x, y] };
+                activePointer = event.pointerId;
+                pendingBatch = [x, y];
+                localPoints += 1;
+                strokes.push(activeStroke);
+                drawStrokePart(activeStroke, 0);
+
+                clearInterval(flushTimer);
+                flushTimer = setInterval(flushBatch, STROKE_FLUSH_MS);
+            }
+
+            function addPoint([x, y]) {
+                const p = activeStroke.p;
+                if (Math.hypot(x - p[p.length - 2], y - p[p.length - 1]) < MIN_POINT_STEP) return;
+                if (localPoints >= MAX_TOTAL_POINTS) return;
+
+                p.push(x, y);
+                pendingBatch.push(x, y);
+                localPoints += 1;
+                drawStrokePart(activeStroke, p.length / 2 - 1);
+
+                if (pendingBatch.length >= MAX_BATCH_POINTS * 2) flushBatch();
+            }
+
+            function onPointerMove(event) {
+                if (!activeStroke || event.pointerId !== activePointer) return;
+                if (!canDraw()) {
+                    stopDrawing();
+                    return;
+                }
+
+                // This uses every point the browser saw since the last move, so fast lines stay smooth.
+                const list = event.getCoalescedEvents ? event.getCoalescedEvents() : [];
+                for (const item of list.length ? list : [event]) addPoint(pointFromEvent(item));
+            }
+
+            function onPointerEnd(event) {
+                if (event.pointerId !== activePointer) return;
+                flushBatch();
+                stopDrawing();
+            }
+
+            // This sends the points drawn since the last send as one small move.
+            function flushBatch() {
+                if (!activeStroke || !pendingBatch.length) return;
+                const { id, c, s, e } = activeStroke;
+                party.act({ type: "stroke", id, c, s, e, p: pendingBatch });
+                pendingBatch = [];
+            }
+
+            function stopDrawing() {
+                clearInterval(flushTimer);
+                flushTimer = null;
+                activeStroke = null;
+                activePointer = null;
+                pendingBatch = [];
+            }
+
+            function applyStroke(event) {
+                if (!Array.isArray(event.p)) return;
+
+                const points = event.p.map(Number).filter(Number.isFinite);
+                if (points.length < 2 || points.length % 2) return;
+
+                let stroke = strokes[strokes.length - 1];
+                let start = 0;
+
+                if (stroke && stroke.id === event.id) {
+                    start = stroke.p.length / 2;
+                    stroke.p.push(...points);
+                } else {
+                    stroke = { id: event.id, c: Number(event.c) || 0, s: Number(event.s) || 0, e: event.e === true, p: points };
+                    strokes.push(stroke);
+                }
+
+                drawStrokePart(stroke, start);
+            }
+
+            function handleEvent(event) {
+                if (!event || typeof event.type !== "string") return;
+
+                switch (event.type) {
+                    case "notice":
+                        showInfoToast(String(event.text));
+                        return;
+
+                    case "chat":
+                        addChatLine(event.line);
+                        return;
+                }
+
+                // This drops drawing events that belong to an older turn.
+                if (event.turn !== strokeTurn) return;
+
+                switch (event.type) {
+                    case "stroke":
+                        applyStroke(event);
+                        break;
+
+                    case "undo":
+                        strokes.pop();
+                        redrawAll();
+                        break;
+
+                    case "clear":
+                        strokes = [];
+                        redrawAll();
+                        break;
+
+                    case "sync":
+                        if (!Array.isArray(event.strokes)) return;
+                        strokes = event.strokes
+                            .filter(s => s && Array.isArray(s.p))
+                            .map(s => ({ id: s.id, c: Number(s.c) || 0, s: Number(s.s) || 0, e: s.e === true, p: s.p.map(Number).filter(Number.isFinite) }));
+                        redrawAll();
+                        break;
+                }
+            }
+
+            // ---------- Chat ----------
+
+            function chatLineHtml(line) {
+                const text = partyEscapeHtml(line.text);
+                const name = partyEscapeHtml(line.name);
+                const colour = partyColourClass(Number(line.order) || 0);
+
+                switch (line.kind) {
+                    case "system": return `<div class="party-chat-line is-system">${text}</div>`;
+                    case "correct": return `<div class="party-chat-line is-correct"><i class="bi bi-check-circle-fill"></i> You guessed it: ${text}</div>`;
+                    case "close": return `<div class="party-chat-line dg-chat-close">"${text}" is close!</div>`;
+                    case "inner": return `<div class="party-chat-line dg-chat-inner ${colour}"><b>${name}</b> ${text}</div>`;
+                    default: return `<div class="party-chat-line ${colour}"><b>${name}</b> ${text}</div>`;
+                }
+            }
+
+            function addChatLine(line) {
+                if (!line || typeof line.kind !== "string") return;
+
+                chatLines.push(line);
+                if (chatLines.length > MAX_CHAT_LINES) chatLines.shift();
+
+                const log = document.getElementById("dgChatLog");
+                if (!log) return;
+
+                log.insertAdjacentHTML("beforeend", chatLineHtml(line));
+                while (log.children.length > MAX_CHAT_LINES) log.firstElementChild.remove();
+                log.scrollTop = log.scrollHeight;
+            }
+
+            function focusGuess() {
+                const input = document.getElementById("guessInput");
+
+                // This skips phones, where focusing would pop up the keyboard over the drawing.
+                if (input && !input.disabled && window.matchMedia("(pointer: fine)").matches) input.focus({ preventScroll: true });
+            }
+
+            // ---------- Rendering ----------
+
+            function nameOf(id) {
+                const player = party.getPlayer(id);
+                return player ? player.name : "Someone who left";
+            }
+
+            function renderLobby() {
+                const canEdit = party.isHost;
+                const enoughPlayers = party.players.length >= MIN_PLAYERS;
+
+                return `
+                    <div class="party-stage" style="--stage-c: var(--pink)">
+                        <span class="party-stage-kicker">How to play</span>
+                        <p class="party-stage-text">Everyone takes turns as the drawer. The drawer picks one of three words and draws it, with no letters or numbers. Everyone else types guesses in the chat. Guess early for more points, and the drawer scores for every player who gets it.</p>
+                    </div>
+
+                    <div class="party-settings">
+                        <div>
+                            <span class="party-label">Rounds</span>
+                            ${partySegmentHtml("rounds", [["1", "Draw once each"], ["2", "Twice each"], ["3", "Three times each"]], view.settings.rounds, !canEdit)}
+                        </div>
+                        <div>
+                            <span class="party-label">Draw time</span>
+                            ${partySegmentHtml("drawTime", [["60", "60 s"], ["80", "80 s"], ["100", "100 s"]], view.settings.drawTime, !canEdit)}
+                        </div>
+                    </div>
+
+                    ${canEdit
+                        ? `<button type="button" class="btn action-btn-primary" data-act="start"${enoughPlayers ? "" : " disabled"}><i class="bi bi-play-fill"></i> Start game</button>
+                           <div class="party-hint text-center">${enoughPlayers ? "Everyone in the room draws in this game." : `Waiting for at least ${MIN_PLAYERS} players.`}</div>`
+                        : `<div class="party-empty-hint">Waiting for the room creator to start the game</div>`}`;
+            }
+
+            function hintHtml(pattern) {
+                return `<div class="dg-hint" aria-label="Word pattern">${pattern.split(" ").filter(Boolean).map(word => `
+                    <span class="dg-hint-word">${Array.from(word).map(ch => ch === "_"
+                        ? `<span class="dg-hint-char is-hidden">?</span>`
+                        : `<span class="dg-hint-char">${partyEscapeHtml(ch)}</span>`).join("")}</span>`).join("")}</div>`;
+            }
+
+            function lengthText(pattern) {
+                const words = pattern.split(" ").filter(Boolean);
+                const letters = words.map(word => word.length);
+                return words.length > 1 ? `${words.length} words · ${letters.join(" + ")} letters` : `${letters[0] || 0} letters`;
+            }
+
+            function renderTop(isDrawer) {
+                const drawer = partyEscapeHtml(nameOf(view.drawerId));
+                const turnText = `Turn ${view.turnNumber} of ${view.turnCount}${view.laps > 1 ? ` · round ${view.lap} of ${view.laps}` : ""}`;
+
+                if (view.phase === "choose") {
+                    return `
+                        <span class="party-stage-kicker">${turnText}</span>
+                        <h2 class="party-stage-title">${isDrawer ? "Pick a word to draw" : `${drawer} is picking a word`}</h2>`;
+                }
+
+                if (view.phase === "reveal") {
+                    return `
+                        <span class="party-stage-kicker">The word was</span>
+                        <h2 class="party-stage-title">${partyEscapeHtml(view.word)}</h2>`;
+                }
+
+                if (isDrawer) {
+                    return `
+                        <span class="party-stage-kicker">Your word · draw it</span>
+                        <h2 class="party-stage-title">${partyEscapeHtml(view.word)}</h2>
+                        <p class="party-stage-text">No letters or numbers. ${view.guessedIds.length} of ${view.guesserIds.length} guessed so far.</p>`;
+                }
+
+                if (view.word) {
+                    return `
+                        <span class="party-stage-kicker">You got it</span>
+                        <h2 class="party-stage-title">${partyEscapeHtml(view.word)}</h2>
+                        <p class="party-stage-text">Wait for the others to guess. Only the drawer and other winners can read your chat now.</p>`;
+                }
+
+                return `
+                    <span class="party-stage-kicker">${drawer} is drawing · ${lengthText(view.hint)}</span>
+                    ${hintHtml(view.hint)}`;
+            }
+
+            function renderOverlay(isDrawer) {
+                if (view.phase === "choose") {
+                    if (!isDrawer) {
+                        return `<div class="dg-overlay-card"><i class="bi bi-brush"></i> ${partyEscapeHtml(nameOf(view.drawerId))} is picking a word...</div>`;
+                    }
+
+                    return `
+                        <div class="dg-overlay-card">
+                            <span class="party-label">Choose a word to draw</span>
+                            <div class="dg-choices">${view.choices.map((word, index) => `
+                                <button type="button" class="party-choice" data-act="pick" data-index="${index}">${partyEscapeHtml(word)}</button>`).join("")}</div>
+                            <span class="party-hint">A word is picked for you when the time runs out.</span>
+                        </div>`;
+                }
+
+                if (view.phase === "reveal") {
+                    const rows = view.guessedIds.map(id => `
+                        <div class="dg-reveal-row"><span>${partyEscapeHtml(nameOf(id))}</span><span>+${view.turnGains[id] || 0}</span></div>`).join("");
+                    const drawerGain = view.turnGains[view.drawerId] || 0;
+
+                    return `
+                        <div class="dg-overlay-card">
+                            <span class="party-label">The word was</span>
+                            <span class="dg-reveal-word">${partyEscapeHtml(view.word)}</span>
+                            <div class="dg-reveal-list">
+                                ${rows || `<span>Nobody guessed it.</span>`}
+                                ${drawerGain ? `<div class="dg-reveal-row"><span><i class="bi bi-brush"></i> ${partyEscapeHtml(nameOf(view.drawerId))}</span><span>+${drawerGain}</span></div>` : ""}
+                            </div>
+                        </div>`;
+                }
+
+                return "";
+            }
+
+            function renderTools() {
+                return `
+                    <div class="dg-swatches">${PALETTE.map((colour, index) => `
+                        <button type="button" class="dg-swatch${!tool.eraser && tool.colour === index ? " is-active" : ""}" style="--sw: ${colour.hex}" data-act="colour" data-index="${index}" title="${colour.name}" aria-label="${colour.name}"></button>`).join("")}</div>
+                    <div class="dg-tool-row">
+                        ${BRUSH_SIZES.map((size, index) => `
+                            <button type="button" class="dg-tool${tool.size === index ? " is-active" : ""}" data-act="size" data-index="${index}" title="${size.name} brush" aria-label="${size.name} brush"><span class="dg-dot" style="width: ${size.dot}px; height: ${size.dot}px"></span></button>`).join("")}
+                        <button type="button" class="dg-tool${tool.eraser ? " is-active" : ""}" data-act="eraser" title="Eraser"><i class="bi bi-eraser"></i></button>
+                        <button type="button" class="dg-tool" data-act="undo" title="Undo"><i class="bi bi-arrow-counterclockwise"></i></button>
+                        <button type="button" class="dg-tool" data-act="clear" title="Clear the canvas"><i class="bi bi-trash3"></i></button>
+                    </div>`;
+            }
+
+            // This builds the canvas and chat once, so the drawing and a half-typed guess survive every new view.
+            function mountPlay() {
+                gameBody.innerHTML = `
+                    <div class="party-stage dg-top" id="dgTop"></div>
+                    ${partyTimerHtml("phaseTimer")}
+                    <div class="dg-play">
+                        <div class="dg-board">
+                            <div class="dg-canvas-wrap">
+                                <canvas id="dgCanvas" aria-label="Drawing canvas"></canvas>
+                                <div class="dg-overlay d-none" id="dgOverlay"></div>
+                            </div>
+                            <div class="dg-tools" id="dgTools"></div>
+                        </div>
+                        <div class="dg-side">
+                            <div class="party-chat" id="dgChatLog" aria-live="polite">${chatLines.map(chatLineHtml).join("")}</div>
+                            <form class="party-chat-form" id="guessForm">
+                                <input type="text" class="input-cyan" id="guessInput" maxlength="${MAX_GUESS_LENGTH}" placeholder="Type your guess" autocomplete="off">
+                                <button type="submit" class="btn action-btn-primary" id="guessSendBtn" title="Send"><i class="bi bi-send"></i></button>
+                            </form>
+                        </div>
+                    </div>`;
+
+                canvas = document.getElementById("dgCanvas");
+                ctx = canvas.getContext("2d");
+
+                canvas.addEventListener("pointerdown", onPointerDown);
+                canvas.addEventListener("pointermove", onPointerMove);
+                canvas.addEventListener("pointerup", onPointerEnd);
+                canvas.addEventListener("pointercancel", onPointerEnd);
+                canvas.addEventListener("lostpointercapture", onPointerEnd);
+
+                resizeObserver = new ResizeObserver(() => resizeCanvas());
+                resizeObserver.observe(canvas);
+
+                const log = document.getElementById("dgChatLog");
+                log.scrollTop = log.scrollHeight;
+
+                playMounted = true;
+                resizeCanvas();
+            }
+
+            function unmountPlay() {
+                if (resizeObserver) resizeObserver.disconnect();
+                resizeObserver = null;
+                canvas = null;
+                ctx = null;
+                playMounted = false;
+            }
+
+            function updatePlay() {
+                const isDrawer = view.drawerId === party.myId;
+                const watching = !isDrawer && !view.guesserIds.includes(party.myId);
+
+                const top = document.getElementById("dgTop");
+                top.style.setProperty("--stage-c", view.phase === "reveal" ? "var(--lime)" : view.word && !isDrawer ? "var(--lime)" : "var(--pink)");
+                top.innerHTML = renderTop(isDrawer);
+
+                const overlayHtml = renderOverlay(isDrawer);
+                const overlay = document.getElementById("dgOverlay");
+                overlay.classList.toggle("d-none", !overlayHtml);
+                overlay.innerHTML = overlayHtml;
+
+                const drawing = view.phase === "draw" && isDrawer;
+                document.getElementById("dgTools").innerHTML = drawing ? renderTools() : "";
+                canvas.classList.toggle("is-drawing", drawing);
+
+                // This blocks the chat for the drawer and late joiners while a word is being drawn.
+                const blocked = view.phase === "draw" && (isDrawer || watching);
+                const input = document.getElementById("guessInput");
+                input.disabled = blocked;
+                document.getElementById("guessSendBtn").disabled = blocked;
+                input.placeholder = view.phase !== "draw" ? "Chat with the room"
+                    : isDrawer ? "You are drawing, so you cannot chat"
+                    : watching ? "You guess from the next turn"
+                    : view.word ? "Chat with the other winners"
+                    : "Type your guess";
+            }
+
+            function renderResult() {
+                const players = party.players;
+                const rows = players.map(p => ({ name: p.name, order: p.order, self: p.id === party.myId, points: view.scores[p.id] || 0, gain: view.gains[p.id] || 0 }));
+                const top = Math.max(0, ...rows.map(r => r.points));
+                const winners = rows.filter(r => r.points === top && top > 0).map(r => r.name);
+
+                return `
+                    <div class="party-stage" style="--stage-c: var(--lime)">
+                        <span class="party-stage-kicker">Game ${view.round} over</span>
+                        <h2 class="party-stage-title">${winners.length ? `${partyEscapeHtml(winners.join(" and "))} ${winners.length > 1 ? "win" : "wins"}!` : "Nobody scored this time"}</h2>
+                        <p class="party-stage-text">${top > 0 ? `Top score: <b>${top}</b> points.` : "Try bigger drawings next time."}</p>
+                    </div>
+
+                    <div>
+                        <span class="party-label">Scores</span>
+                        ${partyScoreboardHtml(rows)}
+                    </div>
+
+                    <div class="party-row">
+                        <button type="button" class="btn action-btn-ghost" data-act="share"><i class="bi bi-share"></i> Share result</button>
+                        ${party.isHost ? `
+                            <button type="button" class="btn action-btn-ghost" data-act="lobby"><i class="bi bi-sliders"></i> Change settings</button>
+                            <button type="button" class="btn action-btn-primary" data-act="start"${party.players.length >= MIN_PLAYERS ? "" : " disabled"}><i class="bi bi-arrow-repeat"></i> Next game</button>` : ""}
+                    </div>
+                    ${party.isHost ? "" : `<div class="party-hint text-center">Waiting for the room creator to start the next game.</div>`}`;
+            }
+
+            function render() {
+                if (!view) return;
+
+                if (view.phase === "lobby" || view.phase === "result") {
+                    unmountPlay();
+                    gameBody.innerHTML = view.phase === "lobby" ? renderLobby() : renderResult();
+                } else {
+                    if (!playMounted) mountPlay();
+                    updatePlay();
+                }
+
+                updateTimer();
+                renderBadges();
+                renderFooter();
+            }
+
+            function renderBadges() {
+                const badges = {};
+                const playing = view.phase === "choose" || view.phase === "draw" || view.phase === "reveal";
+
+                for (const player of party.players) {
+                    const badge = { chip: view.scores[player.id] || 0 };
+
+                    if (playing && view.drawerId === player.id) {
+                        badge.icon = "bi-brush";
+                        badge.iconTitle = "Drawing";
+                    } else if (playing && view.guessedIds.includes(player.id)) {
+                        badge.icon = "bi-check-circle-fill";
+                        badge.iconTitle = "Guessed the word";
+                    } else if (view.phase === "draw" && view.guesserIds.includes(player.id)) {
+                        badge.icon = "bi-hourglass-split";
+                        badge.iconTitle = "Guessing";
+                    } else if (playing && !view.guesserIds.includes(player.id)) {
+                        badge.note = "watching";
+                    }
+
+                    badges[player.id] = badge;
+                }
+
+                party.setBadges(badges);
+            }
+
+            function renderFooter() {
+                const playing = view.phase === "choose" || view.phase === "draw" || view.phase === "reveal";
+                document.getElementById("footerRound").textContent = view.round;
+                document.getElementById("footerTurn").textContent = playing ? `${view.turnNumber} / ${view.turnCount}` : "-";
+                document.getElementById("footerPhase").textContent = PHASE_LABELS[view.phase] || "-";
+            }
+
+            function updateTimer() {
+                updatePartyTimer(document.getElementById("phaseTimer"), viewDeadline, viewTotalMs);
+            }
+
+            function startTimerLoop() {
+                clearInterval(timerInterval);
+                timerInterval = setInterval(updateTimer, TIMER_TICK_MS);
+            }
+
+            function serializeResult() {
+                if (!view || view.phase !== "result") return "";
+                const scores = party.players
+                    .map(p => ({ name: p.name, points: view.scores[p.id] || 0 }))
+                    .sort((a, b) => b.points - a.points);
+                const winner = scores.length && scores[0].points > 0 ? `${scores[0].name} wins with ${scores[0].points} points` : "Nobody scored";
+                return `🎨 Draw & Guess game ${view.round}: ${winner}. Scores: ${scores.map(p => `${p.name} ${p.points}`).join(", ")}`;
+            }
+
+            // ---------- UI events ----------
+
+            bindPartySegments(gameBody, (key, value) => party.act({ type: "setting", key, value }));
+
+            gameBody.addEventListener("click", event => {
+                const button = event.target.closest("[data-act]");
+                if (!button || button.disabled) return;
+
+                switch (button.dataset.act) {
+                    case "start": party.act({ type: "start" }); break;
+                    case "lobby": party.act({ type: "lobby" }); break;
+                    case "share": partyShareText(serializeResult(), button); break;
+                    case "pick": party.act({ type: "pick", index: Number(button.dataset.index) }); break;
+                    case "undo": party.act({ type: "undo" }); break;
+                    case "clear": party.act({ type: "clear" }); break;
+                    case "colour":
+                        tool.colour = Number(button.dataset.index);
+                        tool.eraser = false;
+                        document.getElementById("dgTools").innerHTML = renderTools();
+                        break;
+                    case "size":
+                        tool.size = Number(button.dataset.index);
+                        document.getElementById("dgTools").innerHTML = renderTools();
+                        break;
+                    case "eraser":
+                        tool.eraser = !tool.eraser;
+                        document.getElementById("dgTools").innerHTML = renderTools();
+                        break;
+                }
+            });
+
+            gameBody.addEventListener("submit", event => {
+                event.preventDefault();
+                if (event.target.id !== "guessForm") return;
+
+                const input = document.getElementById("guessInput");
+                const text = partyCleanText(input.value, MAX_GUESS_LENGTH);
+                if (!text) return;
+
+                input.value = "";
+                party.act({ type: "guess", text });
+            });
+
+            document.getElementById("copyResultBtn").addEventListener("click", event => partyCopyText(serializeResult(), event.currentTarget));
+        </script>
+    </body>
+</html>

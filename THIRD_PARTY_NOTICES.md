@@ -71,6 +71,10 @@ Museum of Art Collection API, Wikimedia Feed API, iNaturalist, OpenStreetMap,
 Razorpay IFSC, Zippopotam.us, Frankfurter, ExchangeRate-API, Gold API, ipwho.is
 and Lorem Picsum.
 
+Scrum Poker and the Party Games use the free PeerJS cloud server only to help
+browsers find each other. After that, players talk to each other directly over
+WebRTC, and no game data is stored on a server.
+
 ## Updating this file
 
 When you add, upgrade or remove a vendored library:

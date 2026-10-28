@@ -1,8 +1,12 @@
 # Toolstack
 
 A collection of free, browser-based developer and productivity tools, such as
-formatters, converters, generators and calculators. Everything runs as static
-HTML, CSS and JavaScript, with no build step.
+formatters, converters, generators and calculators, plus multiplayer party
+games. Everything runs as static HTML, CSS and JavaScript, with no build step.
+ 
+The party games share `js/party-room.js` and `css/party-games.css`. The room
+creator acts as the referee, and every player connects straight to them with
+PeerJS.
 
 ## Running locally
 
