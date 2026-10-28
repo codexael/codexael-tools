@@ -1,0 +1,1141 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Codexael Toolstack - Reaction Race</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <!-- Metadata -->
+        <meta name="description" content="Tap the moment the pad turns green. The fastest reaction wins. 2-16 players, free.">
+        <meta name="author" content="Codexael">
+        <meta name="theme-color" content="#fff4e0" media="(prefers-color-scheme: light)">
+        <meta name="theme-color" content="#17140f" media="(prefers-color-scheme: dark)">
+
+        <!-- Open Graph -->
+        <meta property="og:title" content="Codexael Toolstack — Reaction Race: Who's Fastest?">
+        <meta property="og:description" content="Tap the moment the pad turns green. The fastest reaction wins. 2-16 players, free.">
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="https://tools.codexael.com/reaction_race.html">
+        <meta property="og:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+        <meta property="og:image:width" content="1200">
+        <meta property="og:image:height" content="630">
+        <meta property="og:image:type" content="image/png">
+        <meta property="og:image:alt" content="Codexael Toolstack — Reaction Race: Who's Fastest?">
+        <meta property="og:site_name" content="Codexael Toolstack">
+
+        <!-- Twitter Card -->
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="Codexael Toolstack — Reaction Race: Who's Fastest?">
+        <meta name="twitter:description" content="Tap the moment the pad turns green. The fastest reaction wins. 2-16 players, free.">
+        <meta name="twitter:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+
+        <!-- Favicon / App Icon -->
+        <link rel="icon" type="image/svg+xml" href="assets/images/codexael_icon.svg">
+        <link rel="apple-touch-icon" href="assets/images/codexael_icon.svg">
+
+        <!-- Bootstrap 5.2.0-beta1 -->
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+
+        <!-- Bootstrap with Popper 5.2.0-beta1 -->
+        <script src="js/bootstrap.bundle.min.js"></script>
+
+        <!-- Bootstrap Icons 1.11.3 -->
+        <link rel="stylesheet" href="css/bootstrap-icons.min.css">
+
+        <!-- PeerJS 1.5.4 -->
+        <script src="js/peerjs.min.js"></script>
+
+        <!-- Google fonts -->
+        <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+        <!-- Custom CSS -->
+        <link rel="stylesheet" href="css/keycaps.css">
+        <link rel="stylesheet" href="css/party-games.css">
+
+        <style>
+            /* The pad is the big button that players watch and tap, and it fills most of the panel. */
+            .rr-pad {
+                flex: 1 0 auto;
+                min-height: clamp(240px, 48vh, 440px);
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 10px;
+                padding: 20px;
+                background: var(--paper);
+                color: var(--ink);
+                border: 4px solid var(--ink);
+                border-radius: 16px;
+                box-shadow: 4px 4px 0 var(--ink);
+                text-align: center;
+                cursor: pointer;
+                user-select: none;
+                -webkit-user-select: none;
+                touch-action: manipulation;
+                -webkit-tap-highlight-color: transparent;
+            }
+
+            .rr-pad:focus-visible {
+                outline: 4px dashed var(--ink);
+                outline-offset: 4px;
+            }
+
+            .rr-pad.is-ready {
+                background: var(--yellow);
+                color: #111111;
+            }
+
+            .rr-pad.is-waiting {
+                background: var(--red);
+                color: #111111;
+            }
+
+            .rr-pad.is-green {
+                background: var(--lime);
+                color: #111111;
+            }
+
+            .rr-pad.is-done {
+                background: var(--cyan);
+                color: #111111;
+            }
+
+            .rr-pad.is-false {
+                background: var(--orange);
+                color: #111111;
+            }
+
+            .rr-pad > i {
+                font-size: 2.6rem;
+            }
+
+            .rr-pad-title {
+                font-family: var(--display-font);
+                font-size: clamp(2rem, 8vw, 3.6rem);
+                line-height: 1.1;
+            }
+
+            .rr-pad-sub {
+                max-width: 36ch;
+                font-size: 0.85rem;
+                font-weight: 700;
+            }
+
+            .rr-round-line {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: space-between;
+                gap: 8px;
+                font-size: 0.8rem;
+                font-weight: 700;
+                text-transform: uppercase;
+            }
+
+            .rr-tapped {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 6px;
+            }
+
+            .rr-tapped-chip {
+                padding: 1px 8px;
+                background: var(--paper);
+                border: 2px solid var(--ink);
+                border-left: 6px solid var(--member-c, var(--ink));
+                font-size: 0.75rem;
+                font-weight: 700;
+            }
+
+            .rr-tapped-chip.is-in {
+                background: var(--member-c, var(--lime));
+                color: #111111;
+            }
+
+            .rr-results {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .rr-result-row {
+                display: grid;
+                grid-template-columns: 34px minmax(0, 1fr) auto auto;
+                align-items: center;
+                gap: 10px;
+                padding: 6px 10px;
+                background: var(--paper);
+                border: 3px solid var(--ink);
+                border-left: 8px solid var(--member-c, var(--ink));
+                box-shadow: 1.5px 1.5px 0 var(--ink);
+                font-size: 0.85rem;
+                font-weight: 700;
+            }
+
+            .rr-result-row.is-fastest {
+                background: var(--lime);
+                color: #111111;
+            }
+
+            .rr-result-rank,
+            .rr-result-time {
+                font-family: var(--display-font);
+            }
+
+            .rr-result-name {
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+            .rr-result-gain {
+                min-width: 2.4em;
+                padding: 0 4px;
+                background: var(--yellow);
+                color: #111111;
+                border: 2px solid var(--ink);
+                font-size: 0.72rem;
+                text-align: center;
+            }
+
+            .rr-medal {
+                display: inline-block;
+                color: var(--yellow);
+                -webkit-text-stroke: 1px #111111;
+                animation: rr-pop 0.4s ease-out;
+            }
+
+            .rr-stats {
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+                font-size: 0.8rem;
+            }
+
+            .rr-stat-row {
+                display: grid;
+                grid-template-columns: minmax(0, 1fr) 4.6em 4.6em 3.6em;
+                gap: 8px;
+                padding: 4px 8px;
+                border-bottom: 2px dashed var(--ink);
+            }
+
+            .rr-stat-row.is-head {
+                font-size: 0.7rem;
+                font-weight: 700;
+                text-transform: uppercase;
+            }
+
+            .rr-stat-row span:not(:first-child) {
+                text-align: right;
+            }
+
+            .rr-stat-row span:first-child {
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+            .rr-practice-stats {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 8px 16px;
+                font-size: 0.8rem;
+                font-weight: 700;
+            }
+
+            @keyframes rr-pop {
+                0% { transform: scale(0.3) rotate(-20deg); }
+                70% { transform: scale(1.3) rotate(8deg); }
+                100% { transform: scale(1) rotate(0); }
+            }
+
+            @media (max-width: 575px) {
+                .rr-pad {
+                    min-height: clamp(220px, 46vh, 360px);
+                }
+
+                .rr-result-row {
+                    grid-template-columns: 28px minmax(0, 1fr) auto auto;
+                    gap: 6px;
+                    padding: 6px 8px;
+                }
+
+                .rr-stat-row {
+                    grid-template-columns: minmax(0, 1fr) 4.2em 4.2em 2.6em;
+                    gap: 4px;
+                }
+            }
+
+            @media (prefers-reduced-motion: reduce) {
+                .rr-medal {
+                    animation: none;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <!-- Common layout -->
+        <div id="navbar-container"></div>
+
+        <div class="container-fluid tool-wrapper">
+
+            <!-- Setup view -->
+            <div class="row" id="partySetup"></div>
+
+            <!-- Room view -->
+            <div class="row g-3 g-md-0 gx-md-3 gx-0 d-none party-room" id="partyRoom">
+
+                <div class="col-md-8 editor-panel party-game-panel" id="gamePanel" style="--panel-c: var(--lime)">
+                    <div class="editor-header">
+                        <span class="editor-title">Reaction Race</span>
+                        <div class="editor-actions">
+                            <button title="Copy result" data-shortcut="copy" id="copyResultBtn"><i class="bi bi-copy icon-btn"></i></button>
+                            <button title="Fullscreen" onclick="toggleEditorFullScreen('gamePanel')"><i class="bi bi-arrows-fullscreen icon-btn"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="party-body invisible-scrollbars" id="gameBody"></div>
+
+                    <div class="editor-footer">
+                        <div class="status">
+                            <span>Round <b id="footerRound">0</b></span>
+                            <span>Phase <b id="footerPhase">Lobby</b></span>
+                            <span>Your best <b id="footerBest">-</b></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4 editor-panel party-side-panel" id="partyPanel"></div>
+
+            </div>
+        </div>
+
+        <div id="footer-container"></div>
+
+        <!-- Common JS -->
+        <script src="js/tool-help.js"></script>
+        <script src="js/storage.js"></script>
+        <script src="js/common.js"></script>
+        <script src="js/script.js"></script>
+        <script src="js/party-room.js"></script>
+
+        <!-- Custom JS -->
+        <script>
+            const pageTitle = "Reaction Race";
+
+            const MIN_PLAYERS = 2;
+            const MAX_PLAYERS = 16;
+            const MIN_DELAY_MS = 1500;
+            const MAX_DELAY_MS = 5000;
+            const ROUND_GRACE_MS = 4000;
+            const ROUND_RESULT_MS = 3000;
+            const MIN_REACTION_MS = 80;
+            const MAX_REACTION_MS = 3000;
+            const FALSE_START_MS = 1000;
+            const ARRIVAL_SLACK_MS = 30;
+            const TIMER_TICK_MS = 250;
+            const BEST_STORAGE_KEY = "toolstack_reaction_best_ms";
+            const ROUND_OPTIONS = ["3", "5", "10"];
+
+            const PHASE_LABELS = { lobby: "Lobby", armed: "Reacting", roundResult: "Round result", result: "Final result" };
+
+            const gameBody = document.getElementById("gameBody");
+
+            // This holds the newest view from the referee, and every client draws only from it.
+            let view = null;
+            let viewDeadline = null;
+            let viewTotalMs = 0;
+            let timerInterval = null;
+            let personalBest = loadBest();
+
+            // This holds the local pad, which measures reaction times on this device only.
+            const pad = { mode: "", round: 0, state: "idle", greenAt: 0, ms: 0, timer: null, frame: 0 };
+
+            // This holds the local practice session, which never goes to the referee.
+            const practice = { active: false, attempts: 0, last: null, sessionBest: null };
+
+            // ---------- Personal best ----------
+
+            function loadBest() {
+                try {
+                    const value = Number(getStorageString(BEST_STORAGE_KEY, ""));
+                    return Number.isFinite(value) && value >= MIN_REACTION_MS ? value : null;
+                } catch (error) {
+                    return null;
+                }
+            }
+
+            function saveBest(ms) {
+                if (personalBest !== null && ms >= personalBest) return;
+                personalBest = ms;
+                showSuccessToast(`New personal best: ${ms} ms`);
+
+                try {
+                    setStorageString(BEST_STORAGE_KEY, String(ms));
+                } catch (error) {
+                    // This ignores blocked storage because the best time is only a convenience.
+                }
+            }
+
+            // ---------- Referee state ----------
+
+            // This holds the whole game, and only the referee keeps it.
+            const game = {
+                phase: "lobby",
+                settings: { rounds: "5" },
+                round: 0,
+                totalRounds: 5,
+                order: [],
+                delayMs: 0,
+                armedAt: 0,
+                times: new Map(),
+                history: new Map(),
+                roundResults: [],
+                scores: new Map(),
+                gains: new Map(),
+                deadline: 0,
+                totalMs: 0,
+                timer: null
+            };
+
+            const FRESH_GAME = { ...game, settings: { ...game.settings } };
+
+            function resetGame() {
+                clearTimeout(game.timer);
+                Object.assign(game, FRESH_GAME, { settings: { ...FRESH_GAME.settings }, times: new Map(), history: new Map(), roundResults: [], scores: new Map(), gains: new Map() });
+            }
+
+            function inRound(id) {
+                return game.order.includes(id);
+            }
+
+            function setPhaseTimer(ms, onEnd) {
+                clearTimeout(game.timer);
+                game.totalMs = ms;
+                game.deadline = Date.now() + ms;
+                game.timer = setTimeout(onEnd, ms);
+            }
+
+            function clearPhaseTimer() {
+                clearTimeout(game.timer);
+                game.deadline = 0;
+                game.totalMs = 0;
+            }
+
+            function randomDelay() {
+                return MIN_DELAY_MS + partyRandomInt(MAX_DELAY_MS - MIN_DELAY_MS + 1);
+            }
+
+            function startGame() {
+                const players = party.players;
+                if (players.length < MIN_PLAYERS) {
+                    showInfoToast(`Reaction Race needs at least ${MIN_PLAYERS} players`);
+                    return;
+                }
+
+                game.totalRounds = Number(game.settings.rounds) || 5;
+                game.round = 0;
+                game.order = players.map(p => p.id);
+                game.scores = new Map();
+                game.history = new Map(game.order.map(id => [id, []]));
+                startRound();
+            }
+
+            function startRound() {
+                game.round += 1;
+                game.times = new Map();
+                game.gains = new Map();
+                game.roundResults = [];
+                game.delayMs = randomDelay();
+                game.phase = "armed";
+
+                // This round timer is hidden from players, because showing it would give the delay away.
+                clearPhaseTimer();
+                game.armedAt = performance.now();
+                game.timer = setTimeout(closeRound, game.delayMs + ROUND_GRACE_MS);
+
+                publish();
+                party.emit({ type: "arm", round: game.round, delayMs: game.delayMs }, [...game.order]);
+            }
+
+            function addPoints(id, points) {
+                if (!points) return;
+                game.scores.set(id, (game.scores.get(id) || 0) + points);
+                game.gains.set(id, (game.gains.get(id) || 0) + points);
+            }
+
+            function isCleanTap(entry) {
+                return !entry.falseStart && !entry.miss;
+            }
+
+            function closeRound() {
+                clearPhaseTimer();
+
+                // This gives every player who did not tap in time the slowest time.
+                for (const id of game.order) {
+                    if (!game.times.has(id)) game.times.set(id, { ms: MAX_REACTION_MS, miss: true });
+                }
+
+                const clean = game.order.filter(id => isCleanTap(game.times.get(id))).sort((a, b) => game.times.get(a).ms - game.times.get(b).ms);
+
+                // This gives the fastest player one point per player in the round, and equal times share the same points.
+                let lastMs = null;
+                let lastPoints = 0;
+                clean.forEach((id, index) => {
+                    const ms = game.times.get(id).ms;
+                    const points = ms === lastMs ? lastPoints : game.order.length - index;
+                    lastMs = ms;
+                    lastPoints = points;
+                    addPoints(id, points);
+                });
+
+                const rest = game.order.filter(id => !clean.includes(id)).sort((a, b) => Number(!!game.times.get(a).miss) - Number(!!game.times.get(b).miss));
+
+                game.roundResults = [...clean, ...rest].map(id => ({ id, ...game.times.get(id), gain: game.gains.get(id) || 0 }));
+
+                for (const id of game.order) {
+                    if (!game.history.has(id)) game.history.set(id, []);
+                    game.history.get(id).push({ ...game.times.get(id) });
+                }
+
+                game.phase = "roundResult";
+                setPhaseTimer(ROUND_RESULT_MS, nextRound);
+                publish();
+            }
+
+            function nextRound() {
+                if (game.round >= game.totalRounds) {
+                    finishGame();
+                    return;
+                }
+                startRound();
+            }
+
+            function finishGame() {
+                clearPhaseTimer();
+                game.phase = "result";
+                publish();
+            }
+
+            // This ends the game early when it can no longer go on.
+            function abortGame(reason) {
+                clearPhaseTimer();
+                game.phase = "lobby";
+                game.order = [];
+                game.times = new Map();
+                party.emit({ type: "notice", text: reason });
+                publish();
+            }
+
+            // This works out the average time, best clean time and false starts of one player.
+            function statsOf(id) {
+                const entries = game.history.get(id) || [];
+                const counted = entries.map(e => e.falseStart ? FALSE_START_MS : e.ms);
+                const clean = entries.filter(isCleanTap).map(e => e.ms);
+
+                return {
+                    rounds: entries.length,
+                    avg: counted.length ? Math.round(counted.reduce((sum, ms) => sum + ms, 0) / counted.length) : null,
+                    best: clean.length ? Math.min(...clean) : null,
+                    falseStarts: entries.filter(e => e.falseStart).length
+                };
+            }
+
+            function buildView(id) {
+                const showTimes = game.phase === "roundResult" || game.phase === "result";
+                const stats = {};
+                for (const player of party.players) stats[player.id] = statsOf(player.id);
+
+                return {
+                    phase: game.phase,
+                    settings: { ...game.settings },
+                    round: game.round,
+                    totalRounds: game.totalRounds,
+                    inRound: inRound(id),
+                    order: [...game.order],
+                    reportedIds: [...game.times.keys()],
+                    roundResults: showTimes ? game.roundResults.map(r => ({ ...r })) : [],
+                    stats,
+                    scores: Object.fromEntries(game.scores),
+                    gains: showTimes ? Object.fromEntries(game.gains) : {},
+                    remainingMs: game.deadline ? Math.max(0, game.deadline - Date.now()) : 0,
+                    totalMs: game.totalMs
+                };
+            }
+
+            function publish() {
+                party.publish(buildView);
+            }
+
+            // This checks one reported tap and turns it into a clean time, a false start or a miss.
+            function judgeTap(action) {
+                if (action.falseStart === true) return { ms: FALSE_START_MS, falseStart: true };
+
+                const ms = Number(action.ms);
+                if (!Number.isFinite(ms)) return null;
+
+                // This treats a report that came before green could even have shown as a false start.
+                const elapsed = performance.now() - game.armedAt;
+                if (ms < MIN_REACTION_MS || elapsed + ARRIVAL_SLACK_MS < game.delayMs + MIN_REACTION_MS) return { ms: FALSE_START_MS, falseStart: true };
+
+                if (ms > MAX_REACTION_MS) return { ms: MAX_REACTION_MS, miss: true };
+                return { ms: Math.round(ms) };
+            }
+
+            // This applies one move from a player after checking that the move is allowed right now.
+            function handleAction(player, action) {
+                if (!action || typeof action.type !== "string") return;
+
+                switch (action.type) {
+                    case "setting": {
+                        if (!player.host || game.phase !== "lobby") return;
+                        if (action.key !== "rounds" || !ROUND_OPTIONS.includes(String(action.value))) return;
+                        game.settings.rounds = String(action.value);
+                        publish();
+                        return;
+                    }
+
+                    case "start":
+                        if (!player.host || (game.phase !== "lobby" && game.phase !== "result")) return;
+                        startGame();
+                        return;
+
+                    case "lobby":
+                        if (!player.host || game.phase !== "result") return;
+                        game.phase = "lobby";
+                        game.order = [];
+                        publish();
+                        return;
+
+                    case "time": {
+                        if (game.phase !== "armed" || !inRound(player.id) || Number(action.round) !== game.round || game.times.has(player.id)) return;
+                        const entry = judgeTap(action);
+                        if (!entry) return;
+                        game.times.set(player.id, entry);
+
+                        if (game.order.every(id => game.times.has(id))) closeRound();
+                        else publish();
+                        return;
+                    }
+                }
+            }
+
+            function handleLeave(player) {
+                game.scores.delete(player.id);
+                game.history.delete(player.id);
+
+                if (!inRound(player.id) || game.phase === "lobby" || game.phase === "result") {
+                    publish();
+                    return;
+                }
+
+                game.order = game.order.filter(id => id !== player.id);
+                game.times.delete(player.id);
+                game.roundResults = game.roundResults.filter(r => r.id !== player.id);
+
+                if (game.order.length < MIN_PLAYERS) {
+                    abortGame(`${player.name} left, and Reaction Race needs at least ${MIN_PLAYERS} players`);
+                    return;
+                }
+
+                // This closes the round when the player who left was the last one still to tap.
+                if (game.phase === "armed" && game.order.every(id => game.times.has(id))) {
+                    closeRound();
+                    return;
+                }
+
+                publish();
+            }
+
+            // ---------- Room ----------
+
+            const party = createPartyRoom({
+                gameId: "reaction",
+                title: "Reaction Race",
+                icon: "bi-lightning-charge-fill",
+                colour: "var(--lime)",
+                intro: "Wait for the pad to turn green, then tap as fast as you can. Tap too soon and the round counts against you.",
+                minPlayers: MIN_PLAYERS,
+                maxPlayers: MAX_PLAYERS,
+                onEnter() {
+                    if (party.isHost) {
+                        resetGame();
+                        publish();
+                    }
+                    startTimerLoop();
+                },
+                onExit() {
+                    resetGame();
+                    view = null;
+                    clearInterval(timerInterval);
+                    clearPadTimers();
+                    Object.assign(pad, { mode: "", round: 0, state: "idle", greenAt: 0, ms: 0 });
+                    Object.assign(practice, { active: false, attempts: 0, last: null, sessionBest: null });
+                    gameBody.innerHTML = "";
+                },
+                onView(next) {
+                    if (!next || typeof next.phase !== "string") return;
+
+                    view = next;
+                    viewDeadline = partyDeadlineFrom(next.remainingMs);
+                    viewTotalMs = next.totalMs;
+
+                    // This stops practice as soon as a real game starts.
+                    if (next.phase !== "lobby" && practice.active) stopPractice();
+
+                    // This drops the race pad once its round is over, so an old green can never fire.
+                    if (pad.mode === "race" && (next.phase !== "armed" || next.round !== pad.round)) {
+                        clearPadTimers();
+                        Object.assign(pad, { mode: "", round: 0, state: "idle" });
+                    }
+
+                    render();
+                },
+                onEvent(event) {
+                    if (!event) return;
+                    if (event.type === "notice") showInfoToast(String(event.text));
+
+                    if (event.type === "arm" && view && view.phase === "armed" && view.inRound && Number(event.round) === view.round) {
+                        const delay = Number(event.delayMs);
+                        if (!Number.isFinite(delay)) return;
+                        armPad("race", view.round, Math.min(MAX_DELAY_MS, Math.max(MIN_DELAY_MS, delay)));
+                    }
+                },
+                host: {
+                    onJoin: () => publish(),
+                    onLeave: handleLeave,
+                    onAction: handleAction
+                }
+            });
+
+            // ---------- Pad ----------
+
+            function clearPadTimers() {
+                clearTimeout(pad.timer);
+                cancelAnimationFrame(pad.frame);
+                pad.timer = null;
+                pad.frame = 0;
+            }
+
+            // This shows red and turns the pad green after the delay, measured on this device.
+            function armPad(mode, round, delayMs) {
+                clearPadTimers();
+                Object.assign(pad, { mode, round, state: "waiting", greenAt: 0, ms: 0 });
+                updatePad();
+
+                pad.timer = setTimeout(() => {
+                    pad.timer = null;
+
+                    // This turns green in the frame that is painted next, so the start time matches what the eye sees.
+                    pad.frame = requestAnimationFrame(() => {
+                        pad.frame = 0;
+                        if (pad.state !== "waiting") return;
+                        pad.state = "green";
+                        updatePad();
+                        pad.greenAt = performance.now();
+                    });
+                }, delayMs);
+            }
+
+            function falseStart() {
+                clearPadTimers();
+                pad.state = "false";
+
+                if (pad.mode === "race") {
+                    party.act({ type: "time", round: pad.round, falseStart: true });
+                } else {
+                    practice.attempts += 1;
+                    practice.last = null;
+                }
+
+                afterTap();
+            }
+
+            // This handles one tap, click or key press on the pad, using the time the input really happened.
+            function tapPad(timeStamp) {
+                if (!document.getElementById("rrPad")) return;
+
+                if (pad.state === "waiting") {
+                    falseStart();
+                    return;
+                }
+
+                if (pad.state === "green") {
+                    const at = Number.isFinite(timeStamp) && timeStamp > 0 ? timeStamp : performance.now();
+                    const ms = Math.round(at - pad.greenAt);
+
+                    if (ms < MIN_REACTION_MS) {
+                        falseStart();
+                        return;
+                    }
+
+                    pad.state = "done";
+                    pad.ms = ms;
+                    if (ms <= MAX_REACTION_MS) saveBest(ms);
+
+                    if (pad.mode === "race") {
+                        party.act({ type: "time", round: pad.round, ms });
+                    } else {
+                        practice.attempts += 1;
+                        practice.last = ms;
+                        if (practice.sessionBest === null || ms < practice.sessionBest) practice.sessionBest = ms;
+                    }
+
+                    afterTap();
+                    return;
+                }
+
+                // This starts a new practice try when the pad is resting.
+                if (practice.active && view && view.phase === "lobby") armPad("practice", 0, randomDelay());
+            }
+
+            function afterTap() {
+                if (pad.mode === "practice") render();
+                else updatePad();
+                renderFooter();
+            }
+
+            function startPractice() {
+                practice.active = true;
+                clearPadTimers();
+                Object.assign(pad, { mode: "practice", round: 0, state: "idle", greenAt: 0, ms: 0 });
+                render();
+            }
+
+            function stopPractice() {
+                practice.active = false;
+                if (pad.mode === "practice") {
+                    clearPadTimers();
+                    Object.assign(pad, { mode: "", round: 0, state: "idle" });
+                }
+            }
+
+            // This returns what the pad should show right now.
+            function padState() {
+                if (view.phase === "lobby") return pad.mode === "practice" ? pad.state : "idle";
+                return pad.mode === "race" && pad.round === view.round ? pad.state : "ready";
+            }
+
+            function padInner(state) {
+                const isPractice = view.phase === "lobby";
+
+                switch (state) {
+                    case "ready":
+                        return `<i class="bi bi-hourglass-split"></i><span class="rr-pad-title">Get ready</span><span class="rr-pad-sub">The pad turns red, then green. Tap on green.</span>`;
+                    case "waiting":
+                        return `<i class="bi bi-hand-index-thumb"></i><span class="rr-pad-title">Wait...</span><span class="rr-pad-sub">Do not tap yet</span>`;
+                    case "green":
+                        return `<i class="bi bi-lightning-charge-fill"></i><span class="rr-pad-title">TAP!</span>`;
+                    case "done":
+                        return `<i class="bi bi-stopwatch"></i><span class="rr-pad-title">${pad.ms} ms</span><span class="rr-pad-sub">${isPractice ? "Tap to go again" : "Waiting for the others"}</span>`;
+                    case "false":
+                        return `<i class="bi bi-x-octagon-fill"></i><span class="rr-pad-title">Too soon!</span><span class="rr-pad-sub">${isPractice ? "Tap to try again" : `This round counts as ${FALSE_START_MS} ms and earns no points`}</span>`;
+                    default:
+                        return `<i class="bi bi-play-circle"></i><span class="rr-pad-title">Tap to start</span><span class="rr-pad-sub">Wait for green, then tap, click or press Space as fast as you can</span>`;
+                }
+            }
+
+            function padHtml() {
+                const state = padState();
+                return `<div class="rr-pad is-${state}" id="rrPad" role="button" tabindex="0" aria-live="polite">${padInner(state)}</div>`;
+            }
+
+            // This changes the pad in place, so its focus and size stay the same.
+            function updatePad() {
+                const el = document.getElementById("rrPad");
+                if (!el || !view) return;
+                const state = padState();
+                el.className = `rr-pad is-${state}`;
+                el.innerHTML = padInner(state);
+            }
+
+            // ---------- Rendering ----------
+
+            function nameOf(id) {
+                const player = party.getPlayer(id);
+                return player ? player.name : "Someone who left";
+            }
+
+            function colourOf(id) {
+                const player = party.getPlayer(id);
+                return partyColourClass(player ? player.order : 0);
+            }
+
+            function msText(ms) {
+                return ms === null || ms === undefined ? "-" : `${ms} ms`;
+            }
+
+            function entryText(entry) {
+                if (entry.falseStart) return "Too soon!";
+                if (entry.miss) return "No tap";
+                return msText(entry.ms);
+            }
+
+            function renderPractice() {
+                return `
+                    <div class="rr-round-line">
+                        <span><i class="bi bi-bullseye"></i> Practice · only you see this</span>
+                        <span>Tries ${practice.attempts}</span>
+                    </div>
+                    ${padHtml()}
+                    <div class="rr-practice-stats">
+                        <span>Last ${msText(practice.last)}</span>
+                        <span>Session best ${msText(practice.sessionBest)}</span>
+                        <span>Personal best ${msText(personalBest)}</span>
+                    </div>
+                    <div class="party-row">
+                        <button type="button" class="btn action-btn-ghost" data-act="stopPractice"><i class="bi bi-stop-fill"></i> Stop practice</button>
+                        ${party.isHost ? `<button type="button" class="btn action-btn-primary" data-act="start"${party.players.length >= MIN_PLAYERS ? "" : " disabled"}><i class="bi bi-play-fill"></i> Start game</button>` : ""}
+                    </div>`;
+            }
+
+            function renderLobby() {
+                if (practice.active) return renderPractice();
+
+                const canEdit = party.isHost;
+                const enoughPlayers = party.players.length >= MIN_PLAYERS;
+
+                return `
+                    <div class="party-stage" style="--stage-c: var(--lime)">
+                        <span class="party-stage-kicker">How to play</span>
+                        <p class="party-stage-text">Each round the pad shows red. After a random wait it turns green, and everyone taps as fast as they can. The fastest player gets the most points. Tapping on red is a false start and counts as ${FALSE_START_MS} ms.</p>
+                    </div>
+
+                    <div class="party-settings">
+                        <div>
+                            <span class="party-label">Rounds</span>
+                            ${partySegmentHtml("rounds", ROUND_OPTIONS.map(value => [value, `${value} rounds`]), view.settings.rounds, !canEdit)}
+                        </div>
+                    </div>
+
+                    <div class="party-row">
+                        <button type="button" class="btn action-btn-ghost" data-act="practice"><i class="bi bi-bullseye"></i> Practice</button>
+                        ${canEdit ? `<button type="button" class="btn action-btn-primary" data-act="start"${enoughPlayers ? "" : " disabled"}><i class="bi bi-play-fill"></i> Start game</button>` : ""}
+                    </div>
+                    ${canEdit
+                        ? `<div class="party-hint text-center">${enoughPlayers ? "Everyone in the room plays this game." : `Waiting for at least ${MIN_PLAYERS} players, so practise while you wait.`}</div>`
+                        : `<div class="party-empty-hint">Waiting for the room creator to start the game</div>`}`;
+            }
+
+            function renderTapped() {
+                return `<div class="rr-tapped">${view.order.map(id => `
+                    <span class="rr-tapped-chip ${colourOf(id)}${view.reportedIds.includes(id) ? " is-in" : ""}">${view.reportedIds.includes(id) ? `<i class="bi bi-check-lg"></i> ` : ""}${partyEscapeHtml(nameOf(id))}${id === party.myId ? " (you)" : ""}</span>`).join("")}</div>`;
+            }
+
+            function renderArmed() {
+                return `
+                    <div class="rr-round-line">
+                        <span>Round ${view.round} of ${view.totalRounds}</span>
+                        <span>${view.reportedIds.length} of ${view.order.length} done</span>
+                    </div>
+                    ${view.inRound
+                        ? padHtml()
+                        : `<div class="party-empty-hint"><i class="bi bi-eye"></i> You joined during this game, so you watch until the next one.</div>`}
+                    ${renderTapped()}`;
+            }
+
+            function renderResultRows() {
+                const fastest = view.roundResults.find(isCleanTap);
+
+                return `<div class="rr-results">${view.roundResults.map((row, index) => {
+                    const isFastest = fastest && row.id === fastest.id;
+                    return `
+                        <div class="rr-result-row ${colourOf(row.id)}${isFastest ? " is-fastest" : ""}">
+                            <span class="rr-result-rank">#${index + 1}</span>
+                            <span class="rr-result-name" title="${partyEscapeHtml(nameOf(row.id))}">${isFastest ? `<i class="bi bi-lightning-charge-fill rr-medal" title="Fastest"></i> ` : ""}${partyEscapeHtml(nameOf(row.id))}${row.id === party.myId ? " (you)" : ""}</span>
+                            <span class="rr-result-time">${entryText(row)}</span>
+                            <span class="rr-result-gain">+${row.gain || 0}</span>
+                        </div>`;
+                }).join("")}</div>`;
+            }
+
+            function renderRoundResult() {
+                const fastest = view.roundResults.find(isCleanTap);
+                const lastRound = view.round >= view.totalRounds;
+
+                return `
+                    <div class="party-stage" style="--stage-c: var(--lime)">
+                        <span class="party-stage-kicker">Round ${view.round} of ${view.totalRounds}</span>
+                        <h2 class="party-stage-title">${fastest ? `${partyEscapeHtml(nameOf(fastest.id))} was fastest` : "Nobody tapped in time"}</h2>
+                        ${fastest ? `<p class="party-stage-text"><i class="bi bi-lightning-charge-fill"></i> ${fastest.ms} ms</p>` : ""}
+                    </div>
+                    ${renderResultRows()}
+                    <div>
+                        <span class="party-label">${lastRound ? "Final results in" : "Next round in"}</span>
+                        ${partyTimerHtml("phaseTimer")}
+                    </div>`;
+            }
+
+            function scoreRows() {
+                return party.players.map(p => ({ name: p.name, order: p.order, self: p.id === party.myId, points: view.scores[p.id] || 0, gain: view.gains[p.id] || 0 }));
+            }
+
+            function rankedPlayers() {
+                return party.players
+                    .filter(p => view.stats[p.id] && view.stats[p.id].rounds > 0)
+                    .sort((a, b) => (view.scores[b.id] || 0) - (view.scores[a.id] || 0) || (view.stats[a.id].avg || 0) - (view.stats[b.id].avg || 0));
+            }
+
+            function renderResult() {
+                const ranked = rankedPlayers();
+                const winner = ranked[0];
+
+                return `
+                    <div class="party-stage" style="--stage-c: var(--yellow)">
+                        <span class="party-stage-kicker">Final results · ${view.totalRounds} rounds</span>
+                        <h2 class="party-stage-title">${winner ? `${partyEscapeHtml(winner.name)} wins!` : "Game over"}</h2>
+                        ${winner ? `<p class="party-stage-text">${view.scores[winner.id] || 0} points · best ${msText(view.stats[winner.id].best)} · average ${msText(view.stats[winner.id].avg)}</p>` : ""}
+                    </div>
+
+                    <div>
+                        <span class="party-label">Last round</span>
+                        ${renderResultRows()}
+                    </div>
+
+                    <div>
+                        <span class="party-label">Scores</span>
+                        ${partyScoreboardHtml(scoreRows())}
+                    </div>
+
+                    <div>
+                        <span class="party-label">Times</span>
+                        <div class="rr-stats">
+                            <div class="rr-stat-row is-head"><span>Player</span><span>Average</span><span>Best</span><span title="False starts">Early</span></div>
+                            ${ranked.map(p => `
+                                <div class="rr-stat-row">
+                                    <span title="${partyEscapeHtml(p.name)}">${partyEscapeHtml(p.name)}${p.id === party.myId ? " (you)" : ""}</span>
+                                    <span>${msText(view.stats[p.id].avg)}</span>
+                                    <span>${msText(view.stats[p.id].best)}</span>
+                                    <span>${view.stats[p.id].falseStarts}</span>
+                                </div>`).join("")}
+                        </div>
+                    </div>
+
+                    <div class="party-row">
+                        <button type="button" class="btn action-btn-ghost" data-act="share"><i class="bi bi-share"></i> Share result</button>
+                        ${party.isHost ? `
+                            <button type="button" class="btn action-btn-ghost" data-act="lobby"><i class="bi bi-sliders"></i> Change settings</button>
+                            <button type="button" class="btn action-btn-primary" data-act="start"${party.players.length >= MIN_PLAYERS ? "" : " disabled"}><i class="bi bi-arrow-repeat"></i> Play again</button>` : ""}
+                    </div>
+                    ${party.isHost ? "" : `<div class="party-hint text-center">Waiting for the room creator to start the next game.</div>`}`;
+            }
+
+            function render() {
+                if (!view) return;
+
+                switch (view.phase) {
+                    case "lobby": gameBody.innerHTML = renderLobby(); break;
+                    case "armed": gameBody.innerHTML = renderArmed(); break;
+                    case "roundResult": gameBody.innerHTML = renderRoundResult(); break;
+                    case "result": gameBody.innerHTML = renderResult(); break;
+                }
+
+                updateTimer();
+                renderBadges();
+                renderFooter();
+            }
+
+            function renderBadges() {
+                const badges = {};
+
+                for (const player of party.players) {
+                    const badge = { chip: view.scores[player.id] || 0 };
+
+                    if (view.phase === "armed" && view.order.includes(player.id)) {
+                        badge.icon = view.reportedIds.includes(player.id) ? "bi-check-circle-fill" : "bi-hourglass-split";
+                        badge.iconTitle = view.reportedIds.includes(player.id) ? "Tapped" : "Waiting for green";
+                    } else if (view.phase !== "lobby" && !view.order.includes(player.id)) {
+                        badge.note = "watching";
+                    }
+
+                    badges[player.id] = badge;
+                }
+
+                party.setBadges(badges);
+            }
+
+            function renderFooter() {
+                if (!view) return;
+                document.getElementById("footerRound").textContent = view.phase === "lobby" ? "0" : `${view.round}/${view.totalRounds}`;
+                document.getElementById("footerPhase").textContent = practice.active ? "Practice" : PHASE_LABELS[view.phase] || "-";
+                document.getElementById("footerBest").textContent = msText(personalBest);
+            }
+
+            function updateTimer() {
+                updatePartyTimer(document.getElementById("phaseTimer"), viewDeadline, viewTotalMs);
+            }
+
+            function startTimerLoop() {
+                clearInterval(timerInterval);
+                timerInterval = setInterval(updateTimer, TIMER_TICK_MS);
+            }
+
+            function myPlace() {
+                const ranked = rankedPlayers();
+                const index = ranked.findIndex(p => p.id === party.myId);
+                return index < 0 ? null : index + 1;
+            }
+
+            function serializeResult() {
+                if (!view || (view.phase !== "result" && view.phase !== "roundResult")) return "";
+                const scores = rankedPlayers()
+                    .map((p, index) => `${index + 1}. ${p.name} ${view.scores[p.id] || 0} pts (best ${msText(view.stats[p.id].best)}, avg ${msText(view.stats[p.id].avg)})`)
+                    .join(", ");
+                return `⚡ Reaction Race after round ${view.round} of ${view.totalRounds}: ${scores}`;
+            }
+
+            function shareText() {
+                if (!view || view.phase !== "result") return "";
+                const place = myPlace();
+                const stats = view.stats[party.myId];
+                if (!place || !stats) return serializeResult();
+                return `⚡ I placed #${place} in Reaction Race with a best time of ${msText(stats.best)} and an average of ${msText(stats.avg)}`;
+            }
+
+            // ---------- UI events ----------
+
+            bindPartySegments(gameBody, (key, value) => party.act({ type: "setting", key, value }));
+
+            gameBody.addEventListener("click", event => {
+                const button = event.target.closest("[data-act]");
+                if (!button || button.disabled) return;
+
+                switch (button.dataset.act) {
+                    case "start": party.act({ type: "start" }); break;
+                    case "lobby": party.act({ type: "lobby" }); break;
+                    case "practice": startPractice(); break;
+                    case "stopPractice":
+                        stopPractice();
+                        render();
+                        break;
+                    case "share": partyShareText(shareText(), button); break;
+                }
+            });
+
+            // This uses pointerdown instead of click, because click fires only when the finger lifts.
+            gameBody.addEventListener("pointerdown", event => {
+                if (!event.target.closest("#rrPad") || event.button > 0) return;
+                event.preventDefault();
+                tapPad(event.timeStamp);
+            });
+
+            document.addEventListener("keydown", event => {
+                if ((event.key !== " " && event.key !== "Enter") || event.repeat) return;
+
+                const padEl = document.getElementById("rrPad");
+                if (!padEl) return;
+
+                // This leaves Space and Enter alone when they are meant for another button or a text box.
+                const active = document.activeElement;
+                if (active && active !== padEl && active !== document.body && active.matches("input, textarea, select, button, a, [contenteditable]")) return;
+
+                event.preventDefault();
+                tapPad(event.timeStamp);
+            });
+
+            document.getElementById("copyResultBtn").addEventListener("click", event => partyCopyText(serializeResult(), event.currentTarget));
+        </script>
+    </body>
+</html>

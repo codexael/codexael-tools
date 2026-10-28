@@ -505,6 +505,156 @@ const TOOL_HELP = {
             "Your last location is saved so the page opens on it next time; \"Near me\" rounds your position to about 1 km.",
             "Sightings come from iNaturalist, where the community has confirmed each identification."
         ]
+    },
+    "imposter.html": {
+        title: "Imposter",
+        icon: "bi-incognito",
+        items: [
+            "Enter your name and click \"Create Room\" to get a 6-digit code, or enter a friend's code and click \"Join Room\"; the invite link fills the code in for them.",
+            "The room creator is the referee: they pick the word pack, one or two imposters (two needs 6 or more players) and one or two clue rounds, then click \"Start round\".",
+            "Everyone sees the same secret word except the imposter, who only sees the category; click \"Hide\" to cover your card if someone is looking at your screen.",
+            "Players take turns giving a short clue; a clue cannot contain the secret word, and a player who runs out of time is skipped.",
+            "Then everyone votes for the player they think is the imposter; you can change your vote until everyone has voted, and a tie means nobody is caught.",
+            "A caught imposter gets one last chance to guess the secret word.",
+            "Crew members score 1 point for voting for an imposter; an imposter scores 2 points for escaping, or for guessing the word after being caught.",
+            "Players who join during a round watch until the next one; if the room creator leaves, the room closes for everyone.",
+            "Click \"Share result\" or the copy icon to share how the round went."
+        ]
+    },
+    "draw_and_guess.html": {
+        title: "Draw & Guess",
+        icon: "bi-brush",
+        items: [
+            "Enter your name and click \"Create Room\" to get a 6-digit room code, or enter a friend's code and click \"Join Room\"; the invite link fills the code in for you.",
+            "Draw & Guess needs 3 to 12 players; only the room creator can pick the number of rounds and the draw time, and start the game.",
+            "Everyone takes turns as the drawer; the drawer picks one of three secret words, and a word is picked for them after 10 seconds.",
+            "Draw on the canvas with your mouse, finger or pen; pick a colour, a brush size or the eraser, and use undo or clear to fix mistakes.",
+            "Everyone else types guesses in the chat; a right guess is hidden from the others, and only you are told when a guess is one letter off.",
+            "The word pattern shows how many letters there are, and one or two letters are revealed as time runs out.",
+            "Early guesses score up to 100 points, and the drawer gets 20 points for every player who guesses the word.",
+            "The turn ends when everyone has guessed or the time is up; then the word is shown and the next player draws.",
+            "Players who join during a game can guess from the next turn and get their own drawing turns later in the game; if the room creator leaves, the room closes for everyone."
+        ]
+    },
+    "emoji_charades.html": {
+        title: "Emoji Charades",
+        icon: "bi-emoji-laughing",
+        items: [
+            "Enter your name and click \"Create Room\" to get a 6-digit room code, or enter a friend's code and click \"Join Room\"; the invite link fills the code in for you.",
+            "Emoji Charades needs 2 to 12 players; only the room creator can pick the pack (Movies, Songs & bands, Phrases & idioms, Food, Places or Mixed), the time per turn and the number of rounds.",
+            "Everyone takes turns as the clue giver, who gets a secret phrase and describes it using only emoji.",
+            "Tap emoji on the keyboard, or type them with your device keyboard; letters and numbers are removed, and \"Space\" separates ideas.",
+            "The clue appears live for everyone, along with the category and the number of words in the phrase.",
+            "If you do not know your phrase, click \"New phrase\" once per turn before you add any emoji.",
+            "Everyone else types guesses in the chat; small typos are forgiven, and a right guess is hidden from the others.",
+            "Early guesses score up to 100 points, and the clue giver gets 20 points for every player who guesses the phrase.",
+            "Players who join during a game can guess from the next turn and get their own clue turns later in the game; if the room creator leaves, the room closes for everyone."
+        ]
+    },
+    "quiz_battle.html": {
+        title: "Quiz Battle",
+        icon: "bi-trophy",
+        items: [
+            "Enter your name and click \"Create Room\" to get a 6-digit room code, then share the code or copy the invite link; friends enter a different name and the code, then click \"Join Room\".",
+            "The room creator chooses where questions come from: Built-in (a mixed pack on General, Science, Geography, Tech, Movies & Music, Sports and India), Open Trivia DB, or Custom.",
+            "For Custom, paste one question per line as \"Question | Right answer | Wrong 1 | Wrong 2 | Wrong 3\"; any bad lines are listed so you can fix them, and your questions are saved in this browser.",
+            "The room creator also picks the number of questions (5, 10, 15 or 20) and the time per question (10, 15, 20 or 30 seconds), then clicks \"Start quiz\".",
+            "Click an answer or press 1–4; your answer locks at once, and the others only see that you have answered, not what you picked.",
+            "A right answer earns 500 to 1000 points depending on how fast you were, plus 100 bonus points for each right answer in a row, up to 500.",
+            "After each question you see the right answer, how many players picked each option, and a short leaderboard; the room creator can click Next to skip ahead.",
+            "The final screen shows a podium and all scores; click \"Share result\" to share your place, or the room creator clicks \"Play again\" or \"Change settings\".",
+            "If Open Trivia DB cannot be reached or you are offline, the game uses the built-in questions instead; players who join during a game watch until the next one."
+        ]
+    },
+    "word_spy.html": {
+        title: "Word Spy",
+        icon: "bi-grid-3x3-gap-fill",
+        items: [
+            "Enter your name and click \"Create Room\" to get a 6-digit room code; friends enter a different name and the code, then click \"Join Room\", or open your invite link so the code is filled in.",
+            "Pick the Red or Blue team yourself; the room creator can also click \"Shuffle teams\" to split everyone at random.",
+            "Each team needs one spymaster and at least two players; click \"Be spymaster\" to take the seat, or the room creator can click \"Random spymasters\".",
+            "The starting team has 9 agents and the other team 8, plus 7 bystanders and 1 assassin; only the spymasters see which word is which.",
+            "On their turn the spymaster types a one-word clue that is not a word on the board and picks a number from 0 to 9 or ∞; the team then gets that many guesses plus one.",
+            "Teammates tap a card to point at it, and a card opens when most of the team points at the same card; tap it again to take your pick back.",
+            "Opening the other team's agent or a bystander ends your turn, and opening the assassin loses the game at once; after one guess you can vote to end the turn.",
+            "The first team to find all their agents wins; the clue log, the agents left for each team and an optional turn timer keep everyone on track.",
+            "After the game the full key is shown; the room creator can click \"Play again\" to keep the teams and let the other team start, and anyone can share the result."
+        ]
+    },
+    "two_truths_lie.html": {
+        title: "Two Truths and a Lie",
+        icon: "bi-chat-quote",
+        items: [
+            "Enter your name and click \"Create Room\" to get a 6-digit room code, then share the code or invite link; you need at least 3 players.",
+            "The room creator sets the writing time (2, 3 or 5 minutes, or no timer) and the voting time (30, 45 or 60 seconds), then clicks \"Start writing\".",
+            "Write three statements about yourself (up to 120 characters each), click \"Mark as lie\" on the false one, and click Ready; click \"Edit my statements\" to change them.",
+            "Stuck? Click \"Need ideas?\" for random prompts; only you see them.",
+            "The room creator starts guessing once at least 3 players are ready; players who are not ready can still vote.",
+            "One player at a time is in the spotlight with their statements shuffled; everyone else votes for the lie and can change their vote until everyone has voted.",
+            "The reveal shows the lie and who voted for what: guessers get 1 point for finding the lie, and the author gets 1 point for each player fooled.",
+            "The final scores name the Best liar (fooled the most) and the Lie detector (found the most lies); click \"Share result\" to share how you did.",
+            "If the player in the spotlight leaves, their turn is skipped; players who join during a game watch until the next one."
+        ]
+    },
+    "would_you_rather.html": {
+        title: "Would You Rather",
+        icon: "bi-signpost-split",
+        items: [
+            "Enter your name and click \"Create Room\" to get a 6-digit room code, then share the code or copy the invite link so friends can join.",
+            "The room creator picks a mode: \"Would you rather\" with two options, or \"Hot takes\" with a statement to agree or disagree with.",
+            "Choose a pack (Work & tech, Food, Superpowers, Travel, Silly or Mixed), or Custom to paste your own lines: \"Option A | Option B\", or one statement per line for Hot takes.",
+            "Set the number of questions (5, 10, 15 or 20) and the time to choose (15, 20 or 30 seconds, or host-paced).",
+            "For each question, pick your side and also guess which side most players will pick; you can change both until the reveal.",
+            "You get 1 point when your guess matches the majority; a tie means nobody scores that question.",
+            "The reveal shows a split bar with percentages and the names on each side, and tells you if you sided with the majority or were a rebel.",
+            "The room creator can click \"Reveal now\" or Next at any time; in host-paced mode the game waits for these clicks.",
+            "The final scores name the Crowd reader (most right guesses) and the Rebel (most often in the minority); click \"Share result\" to share how you did."
+        ]
+    },
+    "board_games.html": {
+        title: "Board Game Duel",
+        icon: "bi-grid-3x3",
+        items: [
+            "Enter your name and click \"Create Room\" to get a 6-digit room code; friends enter a different name and the code, then click \"Join Room\", or open your invite link so the code is filled in.",
+            "The room creator picks the game: Tic-Tac-Toe, Connect Four or Dots & Boxes with a 3×3, 4×4 or 5×5 board, and an optional 15 or 30 second turn timer.",
+            "Everyone joins the queue when they enter; the first two in the queue play while everyone else watches the board live.",
+            "Click \"Leave the queue and watch\" to sit out, or \"Join the queue\" to get back in line.",
+            "Click a cell or a column, or use Tab and Enter, to move; in Dots & Boxes, closing a box gives you another move.",
+            "When the timer runs out, Tic-Tac-Toe and Connect Four make a random move for you, and Dots & Boxes passes the turn.",
+            "The winner stays on and the loser goes to the back of the queue; after a draw both players go to the back.",
+            "Click \"Resign\" twice to give up a match; leaving the room during a match gives the win to the other player.",
+            "The match history and the win count for each player stay for the whole session; share your result or copy it at any time."
+        ]
+    },
+    "reaction_race.html": {
+        title: "Reaction Race",
+        icon: "bi-lightning-charge-fill",
+        items: [
+            "Enter your name and click \"Create Room\" to get a 6-digit room code, or enter a code and click \"Join Room\"; share the code or copy the invite link.",
+            "Only the room creator can choose the number of rounds (3, 5 or 10) and start the game; the game needs 2 to 16 players.",
+            "Each round the pad shows red, then turns green after a random wait; tap, click, or press Space or Enter as fast as you can.",
+            "Tapping while the pad is still red is a false start: the round counts as 1000 ms and earns no points.",
+            "Your reaction time is measured on your own device, so a slow network does not make you slower.",
+            "The fastest player in a round gets one point per player, the next one point less, and so on; a false start or no tap gets nothing.",
+            "After each round the times show for a few seconds and the next round starts by itself; the final results show points, average time and best time.",
+            "Click \"Practice\" in the lobby to train alone while you wait; practice is only on your device, and your best time is saved in your browser.",
+            "Players who join during a game watch until the next one; if the room creator leaves, the room closes for everyone."
+        ]
+    },
+    "typing_race.html": {
+        title: "Typing Race",
+        icon: "bi-keyboard-fill",
+        items: [
+            "Enter your name and click \"Create Room\" to get a 6-digit room code, or enter a code and click \"Join Room\"; share the code or copy the invite link.",
+            "Only the room creator can choose the text length (Short, Medium or Long) and the text type (Quotes & proverbs, Tech & code-ish, or Common words) and start the race.",
+            "After a 3-2-1 countdown everyone gets the same text; type it word by word in the box below the text.",
+            "A wrong letter turns red and you must fix it before you can move on; paste is turned off.",
+            "Your time, speed (WPM) and accuracy are measured on your own device, so a slow network does not slow you down.",
+            "Every player has a lane with a car that moves as they type, with their progress and live speed.",
+            "The race ends when everyone finishes, 90 seconds after the first player finishes, or after 5 minutes at most.",
+            "The winner gets one point per racer, the next one point less, and so on; anyone who does not finish gets no points; the room creator clicks \"Next race\" to keep going.",
+            "Your best WPM is saved in your browser; players who join during a race watch until the next one."
+        ]
     }
 };
 

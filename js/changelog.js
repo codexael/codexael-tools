@@ -52,13 +52,29 @@ const CHANGELOG = [
             { category: "Fun", title: "Wikipedia Today", desc: "Featured article, picture, news and most-read for any day.", link: "wikipedia_today.html", icon: "bi-wikipedia" },
             { category: "Fun", title: "Wildlife Spotted Near You", desc: "See birds, insects and plants people spotted near you.", link: "wildlife_near_you.html", icon: "bi-binoculars" }
         ]
+    },
+    {
+        version: "1.1",
+        date: "2026-10-28",
+        items: [
+            { category: "Party Games", title: "Draw & Guess", desc: "Draw a secret word while friends race to guess it live.", link: "draw_and_guess.html", icon: "bi-brush" },
+            { category: "Party Games", title: "Quiz Battle", desc: "Race friends through live quiz rounds with a leaderboard.", link: "quiz_battle.html", icon: "bi-trophy" },
+            { category: "Party Games", title: "Word Spy", desc: "Team word game where one-word clues find your agents.", link: "word_spy.html", icon: "bi-grid-3x3-gap-fill" },
+            { category: "Party Games", title: "Imposter", desc: "Find the faker who does not know the secret word.", link: "imposter.html", icon: "bi-incognito" },
+            { category: "Party Games", title: "Two Truths and a Lie", desc: "Spot the lie among your teammates' three statements.", link: "two_truths_lie.html", icon: "bi-chat-quote" },
+            { category: "Party Games", title: "Emoji Charades", desc: "Describe movies and phrases using only emoji.", link: "emoji_charades.html", icon: "bi-emoji-laughing" },
+            { category: "Party Games", title: "Reaction Race", desc: "Tap the moment the pad turns green, and the fastest wins.", link: "reaction_race.html", icon: "bi-lightning-charge-fill" },
+            { category: "Party Games", title: "Typing Race", desc: "Type the same passage as your friends and race live.", link: "typing_race.html", icon: "bi-keyboard-fill" },
+            { category: "Party Games", title: "Would You Rather", desc: "Pick a side and predict what the room will choose.", link: "would_you_rather.html", icon: "bi-signpost-split" },
+            { category: "Party Games", title: "Board Game Duel", desc: "Tic-Tac-Toe, Connect Four and Dots & Boxes, winner stays on.", link: "board_games.html", icon: "bi-grid-3x3" }
+        ]
     }
 ];
 
 // Derived from the last changelog entry so a release only needs one edit.
 const APP_VERSION = CHANGELOG[CHANGELOG.length - 1].version;
 
-const CATEGORY_ORDER = ["Formatters", "Generators", "Converters", "Editors", "Productivity", "Fun"];
+const CATEGORY_ORDER = ["Formatters", "Generators", "Converters", "Editors", "Productivity", "Fun", "Party Games"];
 
 const LAST_SEEN_VERSION_KEY = "toolstack_last_seen_version";
 

@@ -1,0 +1,1070 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Codexael Toolstack - Two Truths and a Lie</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <!-- Metadata -->
+        <meta name="description" content="Share three statements, then try to spot your friends' lies. A great icebreaker for 3-12 players.">
+        <meta name="author" content="Codexael">
+        <meta name="theme-color" content="#fff4e0" media="(prefers-color-scheme: light)">
+        <meta name="theme-color" content="#17140f" media="(prefers-color-scheme: dark)">
+
+        <!-- Open Graph -->
+        <meta property="og:title" content="Codexael Toolstack — Two Truths and a Lie Online">
+        <meta property="og:description" content="Share three statements, then try to spot your friends' lies. A great icebreaker for 3-12 players.">
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="https://tools.codexael.com/two_truths_lie.html">
+        <meta property="og:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+        <meta property="og:image:width" content="1200">
+        <meta property="og:image:height" content="630">
+        <meta property="og:image:type" content="image/png">
+        <meta property="og:image:alt" content="Codexael Toolstack — Two Truths and a Lie Online">
+        <meta property="og:site_name" content="Codexael Toolstack">
+
+        <!-- Twitter Card -->
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="Codexael Toolstack — Two Truths and a Lie Online">
+        <meta name="twitter:description" content="Share three statements, then try to spot your friends' lies. A great icebreaker for 3-12 players.">
+        <meta name="twitter:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+
+        <!-- Favicon / App Icon -->
+        <link rel="icon" type="image/svg+xml" href="assets/images/codexael_icon.svg">
+        <link rel="apple-touch-icon" href="assets/images/codexael_icon.svg">
+
+        <!-- Bootstrap 5.2.0-beta1 -->
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+
+        <!-- Bootstrap with Popper 5.2.0-beta1 -->
+        <script src="js/bootstrap.bundle.min.js"></script>
+
+        <!-- Bootstrap Icons 1.11.3 -->
+        <link rel="stylesheet" href="css/bootstrap-icons.min.css">
+
+        <!-- PeerJS 1.5.4 -->
+        <script src="js/peerjs.min.js"></script>
+
+        <!-- Google fonts -->
+        <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+        <!-- Custom CSS -->
+        <link rel="stylesheet" href="css/keycaps.css">
+        <link rel="stylesheet" href="css/party-games.css">
+
+        <style>
+            .tt-statements {
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            /* Each statement row holds the text box and the key that marks it as the lie. */
+            .tt-statement {
+                display: grid;
+                grid-template-columns: minmax(0, 1fr) auto;
+                align-items: center;
+                gap: 10px;
+            }
+
+            .tt-statement .input-cyan {
+                margin-bottom: 0;
+            }
+
+            .tt-lie-btn {
+                padding: 8px 10px;
+                background: var(--paper);
+                color: var(--ink);
+                border: 2.5px solid var(--ink);
+                border-radius: 8px;
+                box-shadow: 0 2px 0 var(--ink);
+                font-size: 0.75rem;
+                font-weight: 700;
+                white-space: nowrap;
+            }
+
+            .tt-lie-btn:hover:not(:disabled) {
+                background: var(--lilac);
+                color: #111111;
+            }
+
+            .tt-lie-btn.is-active {
+                background: var(--red);
+                color: #111111;
+                transform: translateY(2px);
+                box-shadow: 0 0 0 var(--ink);
+            }
+
+            /* A submitted statement is shown as a locked card, with the lie in red. */
+            .tt-locked {
+                padding: 8px 12px;
+                background: var(--paper);
+                border: 3px solid var(--ink);
+                font-size: 0.85rem;
+                font-weight: 700;
+                overflow-wrap: anywhere;
+            }
+
+            .tt-locked.is-lie {
+                background: var(--red);
+                color: #111111;
+            }
+
+            .tt-tag {
+                display: inline-block;
+                margin-right: 6px;
+                padding: 0 6px;
+                background: var(--ink);
+                color: var(--bg);
+                font-size: 0.68rem;
+                text-transform: uppercase;
+            }
+
+            .tt-ideas {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+                padding: 12px;
+                background: var(--lilac);
+                color: #111111;
+                border: 3px solid var(--ink);
+                box-shadow: 2.5px 2.5px 0 var(--ink);
+                font-size: 0.82rem;
+                font-weight: 700;
+            }
+
+            .tt-ideas ul {
+                margin: 0;
+                padding-left: 20px;
+            }
+
+            .tt-ideas button {
+                align-self: flex-start;
+                width: auto;
+                margin-bottom: 0;
+                padding: 4px 10px;
+                font-size: 0.75rem;
+            }
+
+            .tt-ready-list {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 6px;
+            }
+
+            .tt-ready-name {
+                padding: 1px 8px;
+                background: var(--paper);
+                border: 2px solid var(--ink);
+                border-left: 6px solid var(--member-c, var(--ink));
+                font-size: 0.75rem;
+                font-weight: 700;
+            }
+
+            .tt-ready-name.is-ready {
+                background: var(--lime);
+                color: #111111;
+            }
+
+            .tt-title {
+                display: grid;
+                gap: 4px;
+                padding: 10px 12px;
+                background: var(--lilac);
+                color: #111111;
+                border: 3px solid var(--ink);
+                box-shadow: 2px 2px 0 var(--ink);
+                font-weight: 700;
+                text-align: center;
+            }
+
+            .tt-title small {
+                font-size: 0.7rem;
+                text-transform: uppercase;
+            }
+
+            .tt-titles {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+                gap: 10px;
+            }
+
+            .tt-choice-label {
+                display: block;
+                margin-bottom: 4px;
+                font-size: 0.7rem;
+                text-transform: uppercase;
+            }
+
+            @media (max-width: 575px) {
+                .tt-statement {
+                    grid-template-columns: 1fr;
+                    gap: 6px;
+                }
+
+                .tt-lie-btn {
+                    justify-self: start;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <!-- Common layout -->
+        <div id="navbar-container"></div>
+
+        <div class="container-fluid tool-wrapper">
+
+            <!-- Setup view -->
+            <div class="row" id="partySetup"></div>
+
+            <!-- Room view -->
+            <div class="row g-3 g-md-0 gx-md-3 gx-0 d-none party-room" id="partyRoom">
+
+                <div class="col-md-8 editor-panel party-game-panel" id="gamePanel" style="--panel-c: var(--lilac)">
+                    <div class="editor-header">
+                        <span class="editor-title">Two Truths and a Lie</span>
+                        <div class="editor-actions">
+                            <button title="Copy result" data-shortcut="copy" id="copyResultBtn"><i class="bi bi-copy icon-btn"></i></button>
+                            <button title="Fullscreen" onclick="toggleEditorFullScreen('gamePanel')"><i class="bi bi-arrows-fullscreen icon-btn"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="party-body invisible-scrollbars" id="gameBody"></div>
+
+                    <div class="editor-footer">
+                        <div class="status">
+                            <span>Spotlight <b id="footerSpot">-</b></span>
+                            <span>Phase <b id="footerPhase">Lobby</b></span>
+                            <span>Ready <b id="footerReady">0</b></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4 editor-panel party-side-panel" id="partyPanel"></div>
+
+            </div>
+        </div>
+
+        <div id="footer-container"></div>
+
+        <!-- Common JS -->
+        <script src="js/tool-help.js"></script>
+        <script src="js/storage.js"></script>
+        <script src="js/common.js"></script>
+        <script src="js/script.js"></script>
+        <script src="js/party-room.js"></script>
+
+        <!-- Custom JS -->
+        <script>
+            const pageTitle = "Two Truths and a Lie";
+
+            const MIN_PLAYERS = 3;
+            const MAX_PLAYERS = 12;
+            const MAX_STATEMENT_LENGTH = 120;
+            const STATEMENT_COUNT = 3;
+            const IDEA_COUNT = 4;
+            const TIMER_TICK_MS = 250;
+
+            const PHASE_LABELS = { lobby: "Lobby", write: "Writing", guess: "Guessing", reveal: "Reveal", final: "Final" };
+
+            const IDEAS = [
+                "A place you have travelled to",
+                "A weird food you like",
+                "A famous person you have met",
+                "Your first job",
+                "A hidden talent",
+                "A pet you had as a child",
+                "A sport you have played",
+                "A strange thing you collect",
+                "A movie you have watched many times",
+                "An instrument you can play",
+                "The worst haircut you ever had",
+                "A language you can speak",
+                "A time you got lost",
+                "Something you are scared of",
+                "An award you have won",
+                "A school subject you failed or loved",
+                "A celebrity you look like",
+                "A record you have set",
+                "A dish you can cook well",
+                "A bone you have broken",
+                "A concert you went to",
+                "A strange gift you got",
+                "Something you did on a dare",
+                "A city you have lived in",
+                "A habit nobody knows about",
+                "A game you are really good at",
+                "The longest trip you have taken",
+                "A TV show you were on",
+                "An unusual job your family has",
+                "Something you built yourself",
+                "The earliest you have ever woken up",
+                "A wild animal you have seen up close"
+            ];
+
+            const gameBody = document.getElementById("gameBody");
+
+            // This holds the newest view from the referee, and every client draws only from it.
+            let view = null;
+            let viewDeadline = null;
+            let viewTotalMs = 0;
+            let timerInterval = null;
+
+            // This keeps the half-written statements on this page until the player presses Ready.
+            let draft = { statements: ["", "", ""], lie: null };
+            let draftGameNo = -1;
+            let shownIdeas = [];
+
+            // ---------- Referee state ----------
+
+            // This holds the whole game, and only the referee keeps it.
+            const game = {
+                phase: "lobby",
+                settings: { writeTime: "180", voteTime: "45" },
+                gameNo: 0,
+                playerIds: [],
+                entries: new Map(),
+                order: [],
+                spotIndex: -1,
+                spot: null,
+                votes: new Map(),
+                scores: new Map(),
+                gains: new Map(),
+                fooled: new Map(),
+                caught: new Map(),
+                deadline: 0,
+                totalMs: 0,
+                timer: null
+            };
+
+            const FRESH_GAME = { ...game, settings: { ...game.settings } };
+
+            function resetGame() {
+                clearTimeout(game.timer);
+                Object.assign(game, FRESH_GAME, {
+                    settings: { ...FRESH_GAME.settings },
+                    playerIds: [],
+                    entries: new Map(),
+                    order: [],
+                    votes: new Map(),
+                    scores: new Map(),
+                    gains: new Map(),
+                    fooled: new Map(),
+                    caught: new Map()
+                });
+            }
+
+            function inGame(id) {
+                return game.playerIds.includes(id);
+            }
+
+            function setPhaseTimer(ms, onEnd) {
+                clearTimeout(game.timer);
+                game.totalMs = ms;
+                game.deadline = Date.now() + ms;
+                game.timer = setTimeout(onEnd, ms);
+            }
+
+            function clearPhaseTimer() {
+                clearTimeout(game.timer);
+                game.deadline = 0;
+                game.totalMs = 0;
+            }
+
+            function startWriting() {
+                if (party.players.length < MIN_PLAYERS) {
+                    party.emit({ type: "notice", text: `Two Truths and a Lie needs at least ${MIN_PLAYERS} players` }, [party.myId]);
+                    return;
+                }
+
+                game.gameNo += 1;
+                game.phase = "write";
+                game.playerIds = party.players.map(p => p.id);
+                game.entries = new Map();
+                game.order = [];
+                game.spotIndex = -1;
+                game.spot = null;
+                game.votes = new Map();
+                game.scores = new Map(game.playerIds.map(id => [id, 0]));
+                game.gains = new Map();
+                game.fooled = new Map();
+                game.caught = new Map();
+
+                const writeMs = Number(game.settings.writeTime) * 1000;
+                if (writeMs) setPhaseTimer(writeMs, writingTimeUp);
+                else clearPhaseTimer();
+
+                publish();
+            }
+
+            function readyCount() {
+                return game.playerIds.filter(id => game.entries.has(id)).length;
+            }
+
+            // This starts guessing when time runs out, or keeps waiting without a timer when too few players are ready.
+            function writingTimeUp() {
+                if (readyCount() >= MIN_PLAYERS) {
+                    startGuessing();
+                    return;
+                }
+
+                clearPhaseTimer();
+                party.emit({ type: "notice", text: `Time is up, but at least ${MIN_PLAYERS} players must be ready before guessing starts` });
+                publish();
+            }
+
+            function startGuessing() {
+                clearPhaseTimer();
+                game.order = partyShuffle(game.playerIds.filter(id => game.entries.has(id)));
+                game.spotIndex = -1;
+                startSpotlight();
+            }
+
+            // This moves the spotlight to the next player who is still here, or ends the game when nobody is left.
+            function startSpotlight() {
+                clearPhaseTimer();
+
+                do {
+                    game.spotIndex += 1;
+                } while (game.spotIndex < game.order.length && !(inGame(game.order[game.spotIndex]) && game.entries.has(game.order[game.spotIndex])));
+
+                if (game.spotIndex >= game.order.length) {
+                    finishGame();
+                    return;
+                }
+
+                const id = game.order[game.spotIndex];
+                const entry = game.entries.get(id);
+                const shown = partyShuffle([0, 1, 2]);
+
+                // This keeps a copy of the shuffled statements, so the reveal still works if the author leaves.
+                game.spot = { id, statements: shown.map(i => entry.statements[i]), lie: shown.indexOf(entry.lie) };
+                game.votes = new Map();
+                game.gains = new Map();
+                game.phase = "guess";
+                setPhaseTimer(Number(game.settings.voteTime) * 1000, revealSpotlight);
+                publish();
+            }
+
+            function voterIds() {
+                return game.spot ? game.playerIds.filter(id => id !== game.spot.id) : [];
+            }
+
+            function allVoted() {
+                return voterIds().every(id => game.votes.has(id));
+            }
+
+            function addCount(map, id, amount) {
+                map.set(id, (map.get(id) || 0) + amount);
+            }
+
+            function addPoints(id, points) {
+                if (!points) return;
+                addCount(game.scores, id, points);
+                addCount(game.gains, id, points);
+            }
+
+            // This gives a point to each guesser who found the lie and a point to the author for each player fooled.
+            function revealSpotlight() {
+                clearPhaseTimer();
+                game.gains = new Map();
+
+                const authorHere = inGame(game.spot.id);
+
+                for (const [voter, choice] of game.votes) {
+                    if (choice === game.spot.lie) {
+                        addPoints(voter, 1);
+                        addCount(game.caught, voter, 1);
+                    } else if (authorHere) {
+                        addPoints(game.spot.id, 1);
+                        addCount(game.fooled, game.spot.id, 1);
+                    }
+                }
+
+                game.phase = "reveal";
+                publish();
+            }
+
+            function finishGame() {
+                clearPhaseTimer();
+                game.phase = "final";
+                game.spot = null;
+                game.gains = new Map();
+                publish();
+            }
+
+            function backToLobby(reason) {
+                clearPhaseTimer();
+                game.phase = "lobby";
+                game.playerIds = [];
+                game.entries = new Map();
+                game.order = [];
+                game.spot = null;
+                if (reason) party.emit({ type: "notice", text: reason });
+                publish();
+            }
+
+            function buildView(id) {
+                const spot = game.spot;
+                const showSpot = (game.phase === "guess" || game.phase === "reveal") && spot;
+                const revealed = game.phase === "reveal";
+                const entry = game.entries.get(id);
+                const scored = revealed || game.phase === "final";
+
+                return {
+                    phase: game.phase,
+                    settings: { ...game.settings },
+                    gameNo: game.gameNo,
+                    inGame: inGame(id),
+                    playerIds: [...game.playerIds],
+                    readyIds: game.playerIds.filter(pid => game.entries.has(pid)),
+                    myEntry: game.phase === "write" && entry ? { statements: [...entry.statements], lie: entry.lie } : null,
+                    spotNo: game.spotIndex + 1,
+                    spotTotal: game.order.length,
+                    spotlightId: showSpot ? spot.id : null,
+                    statements: showSpot ? [...spot.statements] : null,
+                    myLie: showSpot && spot.id === id ? spot.lie : null,
+                    lie: revealed ? spot.lie : null,
+                    votedIds: game.phase === "guess" ? [...game.votes.keys()] : [],
+                    voterCount: showSpot ? voterIds().length : 0,
+                    myVote: showSpot && game.votes.has(id) ? game.votes.get(id) : null,
+                    votes: revealed ? Object.fromEntries(game.votes) : null,
+                    isLast: game.order.slice(game.spotIndex + 1).every(pid => !inGame(pid) || !game.entries.has(pid)),
+                    scores: Object.fromEntries(game.scores),
+                    gains: revealed ? Object.fromEntries(game.gains) : {},
+                    fooled: scored ? Object.fromEntries(game.fooled) : {},
+                    caught: scored ? Object.fromEntries(game.caught) : {},
+                    remainingMs: game.deadline ? Math.max(0, game.deadline - Date.now()) : 0,
+                    totalMs: game.totalMs
+                };
+            }
+
+            function publish() {
+                party.publish(buildView);
+            }
+
+            // This applies one move from a player after checking that the move is allowed right now.
+            function handleAction(player, action) {
+                if (!action || typeof action.type !== "string") return;
+
+                switch (action.type) {
+                    case "setting": {
+                        if (!player.host || game.phase !== "lobby") return;
+                        const allowed = { writeTime: ["120", "180", "300", "0"], voteTime: ["30", "45", "60"] };
+                        if (!allowed[action.key] || !allowed[action.key].includes(String(action.value))) return;
+                        game.settings[action.key] = String(action.value);
+                        publish();
+                        return;
+                    }
+
+                    case "start":
+                        if (!player.host || (game.phase !== "lobby" && game.phase !== "final")) return;
+                        startWriting();
+                        return;
+
+                    case "lobby":
+                        if (!player.host || (game.phase !== "final" && game.phase !== "write")) return;
+                        backToLobby(game.phase === "write" ? "The room creator went back to the settings" : "");
+                        return;
+
+                    case "submit": {
+                        if (game.phase !== "write" || !inGame(player.id)) return;
+                        if (!Array.isArray(action.statements) || action.statements.length !== STATEMENT_COUNT) return;
+                        const statements = action.statements.map(text => partyCleanText(text, MAX_STATEMENT_LENGTH));
+                        const lie = Number(action.lie);
+                        if (statements.some(text => !text) || !Number.isInteger(lie) || lie < 0 || lie >= STATEMENT_COUNT) return;
+                        game.entries.set(player.id, { statements, lie });
+                        publish();
+                        return;
+                    }
+
+                    case "edit":
+                        if (game.phase !== "write" || !game.entries.has(player.id)) return;
+                        game.entries.delete(player.id);
+                        publish();
+                        return;
+
+                    case "startGuess":
+                        if (!player.host || game.phase !== "write" || readyCount() < MIN_PLAYERS) return;
+                        startGuessing();
+                        return;
+
+                    case "vote": {
+                        if (game.phase !== "guess" || !inGame(player.id) || player.id === game.spot.id) return;
+                        const choice = Number(action.choice);
+                        if (!Number.isInteger(choice) || choice < 0 || choice >= STATEMENT_COUNT) return;
+                        game.votes.set(player.id, choice);
+
+                        if (allVoted()) revealSpotlight();
+                        else publish();
+                        return;
+                    }
+
+                    case "next":
+                        if (!player.host || game.phase !== "reveal") return;
+                        startSpotlight();
+                        return;
+                }
+            }
+
+            function handleLeave(player) {
+                game.scores.delete(player.id);
+                game.gains.delete(player.id);
+                game.fooled.delete(player.id);
+                game.caught.delete(player.id);
+
+                if (!inGame(player.id)) {
+                    publish();
+                    return;
+                }
+
+                const wasSpotlight = game.phase === "guess" && game.spot && game.spot.id === player.id;
+
+                game.playerIds = game.playerIds.filter(id => id !== player.id);
+                game.entries.delete(player.id);
+                game.votes.delete(player.id);
+
+                if (game.playerIds.length < MIN_PLAYERS) {
+                    const reason = `${player.name} left, and Two Truths and a Lie needs at least ${MIN_PLAYERS} players`;
+                    if (game.phase === "write") {
+                        backToLobby(reason);
+                    } else if (game.phase === "guess" || game.phase === "reveal") {
+                        party.emit({ type: "notice", text: reason });
+                        finishGame();
+                    } else {
+                        publish();
+                    }
+                    return;
+                }
+
+                // This skips the turn of a spotlight player who left before the reveal.
+                if (wasSpotlight) {
+                    party.emit({ type: "notice", text: `${player.name} left, so their turn is skipped` });
+                    startSpotlight();
+                    return;
+                }
+
+                if (game.phase === "guess" && allVoted()) {
+                    revealSpotlight();
+                    return;
+                }
+
+                publish();
+            }
+
+            // ---------- Room ----------
+
+            const party = createPartyRoom({
+                gameId: "truths",
+                title: "Two Truths and a Lie",
+                icon: "bi-chat-quote",
+                colour: "var(--lilac)",
+                intro: "Write three things about yourself, where one is a lie. Then everyone tries to spot the lie, one player at a time.",
+                minPlayers: MIN_PLAYERS,
+                maxPlayers: MAX_PLAYERS,
+                onEnter() {
+                    draft = { statements: ["", "", ""], lie: null };
+                    draftGameNo = -1;
+                    shownIdeas = [];
+                    if (party.isHost) {
+                        resetGame();
+                        publish();
+                    }
+                    startTimerLoop();
+                },
+                onExit() {
+                    resetGame();
+                    view = null;
+                    shownIdeas = [];
+                    clearInterval(timerInterval);
+                    gameBody.innerHTML = "";
+                },
+                onView(next) {
+                    if (!next || typeof next.phase !== "string") return;
+
+                    // This clears the draft when a new game starts.
+                    if (next.phase === "write" && next.gameNo !== draftGameNo) {
+                        draft = { statements: ["", "", ""], lie: null };
+                        draftGameNo = next.gameNo;
+                        shownIdeas = [];
+                    }
+
+                    view = next;
+                    viewDeadline = partyDeadlineFrom(next.remainingMs);
+                    viewTotalMs = next.totalMs;
+                    render();
+                },
+                onEvent(event) {
+                    if (event && event.type === "notice") showInfoToast(String(event.text));
+                },
+                host: {
+                    onJoin: () => publish(),
+                    onLeave: handleLeave,
+                    onAction: handleAction
+                }
+            });
+
+            // ---------- Rendering ----------
+
+            function nameOf(id) {
+                const player = party.getPlayer(id);
+                return player ? player.name : "Someone who left";
+            }
+
+            function colourOf(id) {
+                const player = party.getPlayer(id);
+                return partyColourClass(player ? player.order : 0);
+            }
+
+            function scoreRows() {
+                return view.playerIds
+                    .map(id => party.getPlayer(id))
+                    .filter(Boolean)
+                    .map(p => ({ id: p.id, name: p.name, order: p.order, self: p.id === party.myId, points: view.scores[p.id] || 0, gain: view.gains[p.id] || 0 }));
+            }
+
+            function renderLobby() {
+                const canEdit = party.isHost;
+                const enoughPlayers = party.players.length >= MIN_PLAYERS;
+
+                return `
+                    <div class="party-stage" style="--stage-c: var(--lilac)">
+                        <span class="party-stage-kicker">How to play</span>
+                        <p class="party-stage-text">Everyone writes three short statements about themselves and secretly marks one as the lie. Then each player takes the spotlight, and the others vote on which statement is the lie. Find the lie for 1 point, and earn 1 point for every player you fool.</p>
+                    </div>
+
+                    <div class="party-settings">
+                        <div>
+                            <span class="party-label">Writing time</span>
+                            ${partySegmentHtml("writeTime", [["120", "2 min"], ["180", "3 min"], ["300", "5 min"], ["0", "No timer"]], view.settings.writeTime, !canEdit)}
+                        </div>
+                        <div>
+                            <span class="party-label">Voting time</span>
+                            ${partySegmentHtml("voteTime", [["30", "30s"], ["45", "45s"], ["60", "60s"]], view.settings.voteTime, !canEdit)}
+                        </div>
+                    </div>
+
+                    ${canEdit
+                        ? `<button type="button" class="btn action-btn-primary" data-act="start"${enoughPlayers ? "" : " disabled"}><i class="bi bi-play-fill"></i> Start writing</button>
+                           <div class="party-hint text-center">${enoughPlayers ? "Everyone in the room plays this game." : `Waiting for at least ${MIN_PLAYERS} players.`}</div>`
+                        : `<div class="party-empty-hint">Waiting for the room creator to start the game</div>`}`;
+            }
+
+            function renderIdeas() {
+                if (!shownIdeas.length) return "";
+                return `
+                    <div class="tt-ideas">
+                        <span>Ideas to write about:</span>
+                        <ul>${shownIdeas.map(idea => `<li>${partyEscapeHtml(idea)}</li>`).join("")}</ul>
+                        <button type="button" class="btn action-btn-ghost" data-act="ideas"><i class="bi bi-shuffle"></i> More ideas</button>
+                    </div>`;
+            }
+
+            function renderReadyList() {
+                return `<div class="tt-ready-list">${view.playerIds.map(id => `
+                    <span class="tt-ready-name ${colourOf(id)}${view.readyIds.includes(id) ? " is-ready" : ""}">${view.readyIds.includes(id) ? `<i class="bi bi-check-lg"></i> ` : ""}${partyEscapeHtml(nameOf(id))}</span>`).join("")}
+                </div>`;
+            }
+
+            function renderWrite() {
+                const ready = view.readyIds.length;
+                const hostControls = party.isHost ? `
+                    <div class="party-row">
+                        <button type="button" class="btn action-btn-ghost" data-act="lobby"><i class="bi bi-sliders"></i> Back to settings</button>
+                        <button type="button" class="btn action-btn-primary" data-act="startGuess"${ready >= MIN_PLAYERS ? "" : " disabled"}><i class="bi bi-play-fill"></i> Start guessing (${ready} ready)</button>
+                    </div>
+                    <div class="party-hint text-center">${ready === view.playerIds.length ? "Everyone is ready." : `You can start once at least ${MIN_PLAYERS} players are ready. Players who are not ready can still vote.`}</div>` : "";
+
+                let writer;
+                if (!view.inGame) {
+                    writer = `<div class="party-empty-hint"><i class="bi bi-eye"></i> You joined during this game, so you watch until the next one.</div>`;
+                } else if (view.myEntry) {
+                    writer = `
+                        <div class="tt-statements">${view.myEntry.statements.map((text, i) => `
+                            <div class="tt-locked${view.myEntry.lie === i ? " is-lie" : ""}"><span class="tt-tag">${view.myEntry.lie === i ? "Lie" : "Truth"}</span>${partyEscapeHtml(text)}</div>`).join("")}
+                        </div>
+                        <button type="button" class="btn action-btn-ghost" data-act="edit"><i class="bi bi-pencil"></i> Edit my statements</button>
+                        <div class="party-hint text-center">You are ready. Waiting for the others.</div>`;
+                } else {
+                    writer = `
+                        <div class="tt-statements">${draft.statements.map((text, i) => `
+                            <div class="tt-statement">
+                                <input type="text" class="input-cyan" id="statement${i}" data-index="${i}" maxlength="${MAX_STATEMENT_LENGTH}" placeholder="Statement ${i + 1} about you" autocomplete="off" value="${partyEscapeHtml(text)}">
+                                <button type="button" class="tt-lie-btn${draft.lie === i ? " is-active" : ""}" data-act="markLie" data-index="${i}"><i class="bi ${draft.lie === i ? "bi-x-circle-fill" : "bi-circle"}"></i> ${draft.lie === i ? "The lie" : "Mark as lie"}</button>
+                            </div>`).join("")}
+                        </div>
+                        <div class="party-row">
+                            <button type="button" class="btn action-btn-ghost" data-act="ideas"><i class="bi bi-lightbulb"></i> Need ideas?</button>
+                            <button type="button" class="btn action-btn-primary" data-act="submit"><i class="bi bi-check-lg"></i> Ready</button>
+                        </div>
+                        ${renderIdeas()}`;
+                }
+
+                return `
+                    <div class="party-stage" style="--stage-c: var(--lilac)">
+                        <span class="party-stage-kicker">Write</span>
+                        <h2 class="party-stage-title">Two truths and a lie about you</h2>
+                        <p class="party-stage-text">Keep each statement under ${MAX_STATEMENT_LENGTH} characters. A good lie sounds true, and a good truth sounds strange.</p>
+                    </div>
+                    ${view.totalMs ? partyTimerHtml("phaseTimer") : ""}
+                    ${writer}
+                    <div>
+                        <span class="party-label">Ready (${ready} of ${view.playerIds.length})</span>
+                        ${renderReadyList()}
+                    </div>
+                    ${hostControls}`;
+            }
+
+            function renderSpotStage(kicker) {
+                const self = view.spotlightId === party.myId;
+                return `
+                    <div class="party-stage" style="--stage-c: var(--lilac)">
+                        <span class="party-stage-kicker">${kicker} · ${view.spotNo} of ${view.spotTotal}</span>
+                        <h2 class="party-stage-title">${self ? "You are in the spotlight" : `${partyEscapeHtml(nameOf(view.spotlightId))} is in the spotlight`}</h2>
+                    </div>`;
+            }
+
+            function renderGuess() {
+                const self = view.spotlightId === party.myId;
+                const canVote = view.inGame && !self;
+                const labels = ["A", "B", "C"];
+
+                return `
+                    ${renderSpotStage("Spotlight")}
+                    ${partyTimerHtml("phaseTimer")}
+                    <div>
+                        <span class="party-label">${self ? "Your statements, shuffled" : canVote ? "Which one is the lie?" : "The players are voting"}</span>
+                        <div class="party-choices">${view.statements.map((text, i) => `
+                            <button type="button" class="party-choice${view.myVote === i || view.myLie === i ? " is-selected" : ""}" data-act="vote" data-choice="${i}"${canVote ? "" : " disabled"}>
+                                <span class="party-choice-key">${labels[i]}</span>${partyEscapeHtml(text)}
+                                ${view.myLie === i ? `<span class="party-choice-voters">This is your lie</span>` : ""}
+                            </button>`).join("")}
+                        </div>
+                    </div>
+                    <div class="party-hint text-center">${self ? "Keep a straight face while the others vote." : !view.inGame ? "<i class=\"bi bi-eye\"></i> You joined during this game, so you watch until the next one." : "You can change your vote until everyone has voted."}
+                        ${view.votedIds.length} of ${view.voterCount} voted.</div>`;
+            }
+
+            function renderReveal() {
+                const labels = ["A", "B", "C"];
+                const author = view.spotlightId;
+                const votes = Object.entries(view.votes);
+                const fooled = votes.filter(([, choice]) => choice !== view.lie).length;
+                const found = votes.length - fooled;
+
+                return `
+                    ${renderSpotStage("Reveal")}
+                    <div class="party-choices">${view.statements.map((text, i) => {
+                        const isLie = view.lie === i;
+                        const voters = votes.filter(([, choice]) => choice === i).map(([voter]) => nameOf(voter));
+                        return `
+                            <div class="party-choice ${isLie ? "is-wrong" : "is-correct"}">
+                                <span class="tt-choice-label"><span class="party-choice-key">${labels[i]}</span>${isLie ? "The lie" : "Truth"}${view.myVote === i ? " · your vote" : ""}</span>
+                                ${partyEscapeHtml(text)}
+                                <span class="party-choice-voters">${voters.length ? `Votes from ${partyEscapeHtml(voters.join(", "))}` : "No votes"}</span>
+                            </div>`;
+                    }).join("")}
+                    </div>
+                    <div class="party-hint text-center">${found} found the lie and earned 1 point each. ${partyEscapeHtml(nameOf(author))} fooled ${fooled} and earned ${fooled} point${fooled === 1 ? "" : "s"}.</div>
+                    <div>
+                        <span class="party-label">Scores</span>
+                        ${partyScoreboardHtml(scoreRows())}
+                    </div>
+                    ${party.isHost
+                        ? `<button type="button" class="btn action-btn-primary" data-act="next"><i class="bi bi-skip-forward-fill"></i> ${view.isLast ? "Final scores" : "Next player"}</button>`
+                        : `<div class="party-hint text-center">Waiting for the room creator to move on.</div>`}`;
+            }
+
+            // This returns the names of the players with the highest count in a map, or an empty list when nobody scored.
+            function leaders(counts) {
+                const ids = view.playerIds.filter(id => party.getPlayer(id));
+                const top = Math.max(0, ...ids.map(id => counts[id] || 0));
+                return top > 0 ? { names: ids.filter(id => (counts[id] || 0) === top).map(nameOf), top } : null;
+            }
+
+            function renderTitle(icon, title, leader, unit) {
+                return `
+                    <div class="tt-title">
+                        <small><i class="bi ${icon}"></i> ${title}</small>
+                        <span>${leader ? `${partyEscapeHtml(leader.names.join(", "))} · ${leader.top} ${unit}` : "Nobody this time"}</span>
+                    </div>`;
+            }
+
+            function renderFinal() {
+                const rows = scoreRows();
+                const sorted = [...rows].sort((a, b) => b.points - a.points);
+                const winner = sorted[0];
+
+                return `
+                    <div class="party-stage" style="--stage-c: var(--lime)">
+                        <span class="party-stage-kicker">Game over</span>
+                        <h2 class="party-stage-title">${winner ? `${partyEscapeHtml(winner.name)} wins!` : "Game over"}</h2>
+                    </div>
+
+                    <div class="tt-titles">
+                        ${renderTitle("bi-mask", "Best liar", leaders(view.fooled), "fooled")}
+                        ${renderTitle("bi-search", "Lie detector", leaders(view.caught), "found")}
+                    </div>
+
+                    <div>
+                        <span class="party-label">Final scores</span>
+                        ${partyScoreboardHtml(rows)}
+                    </div>
+
+                    <div class="party-row">
+                        <button type="button" class="btn action-btn-ghost" data-act="share"><i class="bi bi-share"></i> Share result</button>
+                        ${party.isHost ? `
+                            <button type="button" class="btn action-btn-ghost" data-act="lobby"><i class="bi bi-sliders"></i> Change settings</button>
+                            <button type="button" class="btn action-btn-primary" data-act="start"${party.players.length >= MIN_PLAYERS ? "" : " disabled"}><i class="bi bi-arrow-repeat"></i> Play again</button>` : ""}
+                    </div>
+                    ${party.isHost ? "" : `<div class="party-hint text-center">Waiting for the room creator to start the next game.</div>`}`;
+            }
+
+            function render() {
+                if (!view) return;
+
+                const active = document.activeElement;
+                const focused = active && active.tagName === "INPUT" ? active.id : null;
+                const caret = focused ? [active.selectionStart, active.selectionEnd] : null;
+
+                switch (view.phase) {
+                    case "lobby": gameBody.innerHTML = renderLobby(); break;
+                    case "write": gameBody.innerHTML = renderWrite(); break;
+                    case "guess": gameBody.innerHTML = renderGuess(); break;
+                    case "reveal": gameBody.innerHTML = renderReveal(); break;
+                    case "final": gameBody.innerHTML = renderFinal(); break;
+                }
+
+                // This puts the cursor back in the statement the player was typing when a new view arrives.
+                const input = focused && document.getElementById(focused);
+                if (input) {
+                    input.focus();
+                    input.setSelectionRange(caret[0], caret[1]);
+                }
+
+                updateTimer();
+                renderBadges();
+                renderFooter();
+            }
+
+            function renderBadges() {
+                const badges = {};
+
+                for (const player of party.players) {
+                    const badge = { chip: view.scores[player.id] || 0 };
+                    const playing = view.playerIds.includes(player.id);
+
+                    if (view.phase === "write" && playing) {
+                        const ready = view.readyIds.includes(player.id);
+                        badge.icon = ready ? "bi-check-circle-fill" : "bi-pencil-fill";
+                        badge.iconTitle = ready ? "Ready" : "Writing";
+                    } else if (view.phase === "guess" && playing) {
+                        if (player.id === view.spotlightId) {
+                            badge.icon = "bi-lightbulb-fill";
+                            badge.iconTitle = "In the spotlight";
+                        } else {
+                            const voted = view.votedIds.includes(player.id);
+                            badge.icon = voted ? "bi-check-circle-fill" : "bi-hourglass-split";
+                            badge.iconTitle = voted ? "Voted" : "Thinking";
+                        }
+                    } else if (view.phase !== "lobby" && !playing) {
+                        badge.note = "watching";
+                    }
+
+                    badges[player.id] = badge;
+                }
+
+                party.setBadges(badges);
+            }
+
+            function renderFooter() {
+                const spotting = view.phase === "guess" || view.phase === "reveal";
+                document.getElementById("footerSpot").textContent = spotting ? `${view.spotNo}/${view.spotTotal}` : "-";
+                document.getElementById("footerPhase").textContent = PHASE_LABELS[view.phase] || "-";
+                document.getElementById("footerReady").textContent = view.phase === "lobby" ? "0" : `${view.readyIds.length}/${view.playerIds.length}`;
+            }
+
+            function updateTimer() {
+                updatePartyTimer(document.getElementById("phaseTimer"), viewDeadline, viewTotalMs);
+            }
+
+            function startTimerLoop() {
+                clearInterval(timerInterval);
+                timerInterval = setInterval(updateTimer, TIMER_TICK_MS);
+            }
+
+            function serializeResult() {
+                if (!view || view.phase !== "final") return "";
+
+                const rows = scoreRows().sort((a, b) => b.points - a.points);
+                const me = rows.find(row => row.self);
+                if (!me) return rows.length ? `🤥 ${rows[0].name} won Two Truths and a Lie with ${rows[0].points} points` : "";
+
+                const rank = 1 + rows.filter(row => row.points > me.points).length;
+                return `🤥 I placed #${rank} of ${rows.length} in Two Truths and a Lie: I fooled ${view.fooled[me.id] || 0} and found ${view.caught[me.id] || 0} lies`;
+            }
+
+            // ---------- UI events ----------
+
+            function submitDraft() {
+                const statements = draft.statements.map(text => partyCleanText(text, MAX_STATEMENT_LENGTH));
+
+                if (statements.some(text => !text)) {
+                    showInfoToast("Write all three statements first");
+                    return;
+                }
+                if (draft.lie === null) {
+                    showInfoToast("Mark which statement is the lie");
+                    return;
+                }
+
+                party.act({ type: "submit", statements, lie: draft.lie });
+            }
+
+            // This shows a few random writing prompts on this page only.
+            function showIdeas() {
+                shownIdeas = partyShuffle(IDEAS).slice(0, IDEA_COUNT);
+                render();
+            }
+
+            bindPartySegments(gameBody, (key, value) => party.act({ type: "setting", key, value }));
+
+            gameBody.addEventListener("click", event => {
+                const button = event.target.closest("[data-act]");
+                if (!button || button.disabled) return;
+
+                switch (button.dataset.act) {
+                    case "start": party.act({ type: "start" }); break;
+                    case "lobby": party.act({ type: "lobby" }); break;
+                    case "startGuess": party.act({ type: "startGuess" }); break;
+                    case "next": party.act({ type: "next" }); break;
+                    case "edit": party.act({ type: "edit" }); break;
+                    case "submit": submitDraft(); break;
+                    case "ideas": showIdeas(); break;
+                    case "vote": party.act({ type: "vote", choice: Number(button.dataset.choice) }); break;
+                    case "share": partyShareText(serializeResult(), button); break;
+                    case "markLie":
+                        draft.lie = Number(button.dataset.index);
+                        render();
+                        break;
+                }
+            });
+
+            gameBody.addEventListener("input", event => {
+                const index = Number(event.target.dataset.index);
+                if (!event.target.id.startsWith("statement") || !Number.isInteger(index)) return;
+                draft.statements[index] = event.target.value.slice(0, MAX_STATEMENT_LENGTH);
+            });
+
+            // This lets Enter in a statement box press Ready.
+            gameBody.addEventListener("keydown", event => {
+                if (event.key === "Enter" && event.target.id && event.target.id.startsWith("statement")) {
+                    event.preventDefault();
+                    submitDraft();
+                }
+            });
+
+            document.getElementById("copyResultBtn").addEventListener("click", event => partyCopyText(serializeResult(), event.currentTarget));
+        </script>
+    </body>
+</html>

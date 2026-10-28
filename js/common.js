@@ -719,6 +719,26 @@ function getNavbar() {
                         </div>
                     </li>
 
+                    <li class="has-dropdown" id="gamesMenu">
+                        <a href="#" class="nav-link" onclick="toggleMenu(event,'gamesMenu')">Party Games <i class="bi bi-chevron-down chevron"></i></a>
+                        <div class="mega-menu">
+                            <div class="mega-grid">
+                                <div class="mega-label">Party Games</div>
+                                <a href="draw_and_guess.html" class="menu-item"><span class="icon-wrap"><i class="bi bi-brush"></i></span> Draw &amp; Guess</a>
+                                <a href="quiz_battle.html" class="menu-item"><span class="icon-wrap"><i class="bi bi-trophy"></i></span> Quiz Battle</a>
+                                <a href="word_spy.html" class="menu-item"><span class="icon-wrap"><i class="bi bi-grid-3x3-gap-fill"></i></span> Word Spy</a>
+                                <a href="imposter.html" class="menu-item"><span class="icon-wrap"><i class="bi bi-incognito"></i></span> Imposter</a>
+                                <a href="two_truths_lie.html" class="menu-item"><span class="icon-wrap"><i class="bi bi-chat-quote"></i></span> Two Truths and a Lie</a>
+                                <a href="emoji_charades.html" class="menu-item"><span class="icon-wrap"><i class="bi bi-emoji-laughing"></i></span> Emoji Charades</a>
+                                <a href="reaction_race.html" class="menu-item"><span class="icon-wrap"><i class="bi bi-lightning-charge-fill"></i></span> Reaction Race</a>
+                                <a href="typing_race.html" class="menu-item"><span class="icon-wrap"><i class="bi bi-keyboard-fill"></i></span> Typing Race</a>
+                                <a href="would_you_rather.html" class="menu-item"><span class="icon-wrap"><i class="bi bi-signpost-split"></i></span> Would You Rather</a>
+                                <a href="board_games.html" class="menu-item"><span class="icon-wrap"><i class="bi bi-grid-3x3"></i></span> Board Game Duel</a>
+                            </div>
+                            <div class="mega-footer"><a href="index.html">See all features →</a></div>
+                        </div>
+                    </li>
+
                     <!-- <li class="has-dropdown" id="enterpriseMenu">
                         <a href="#" onclick="toggleMenu(event,'enterpriseMenu')">Enterprise <i class="bi bi-chevron-down chevron"></i></a>
                         <div class="mega-menu simple-dropdown">
@@ -815,6 +835,18 @@ function getNavbar() {
             <a href="riddle_of_the_day.html" class="mobile-link"><i class="bi bi-puzzle"></i> Riddle of the Day</a>
             <a href="wikipedia_today.html" class="mobile-link"><i class="bi bi-wikipedia"></i> Wikipedia Today</a>
             <a href="wildlife_near_you.html" class="mobile-link"><i class="bi bi-binoculars"></i> Wildlife Spotted Near You</a>
+
+            <div class="mobile-section-title">Party Games</div>
+            <a href="draw_and_guess.html" class="mobile-link"><i class="bi bi-brush"></i> Draw &amp; Guess</a>
+            <a href="quiz_battle.html" class="mobile-link"><i class="bi bi-trophy"></i> Quiz Battle</a>
+            <a href="word_spy.html" class="mobile-link"><i class="bi bi-grid-3x3-gap-fill"></i> Word Spy</a>
+            <a href="imposter.html" class="mobile-link"><i class="bi bi-incognito"></i> Imposter</a>
+            <a href="two_truths_lie.html" class="mobile-link"><i class="bi bi-chat-quote"></i> Two Truths and a Lie</a>
+            <a href="emoji_charades.html" class="mobile-link"><i class="bi bi-emoji-laughing"></i> Emoji Charades</a>
+            <a href="reaction_race.html" class="mobile-link"><i class="bi bi-lightning-charge-fill"></i> Reaction Race</a>
+            <a href="typing_race.html" class="mobile-link"><i class="bi bi-keyboard-fill"></i> Typing Race</a>
+            <a href="would_you_rather.html" class="mobile-link"><i class="bi bi-signpost-split"></i> Would You Rather</a>
+            <a href="board_games.html" class="mobile-link"><i class="bi bi-grid-3x3"></i> Board Game Duel</a>
 
             <!-- <div class="mobile-section-title">Company</div>
             <a href="#" class="mobile-link"><i class="bi bi-building"></i> Enterprise</a>

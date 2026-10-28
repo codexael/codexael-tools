@@ -1,0 +1,1348 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Codexael Toolstack - Would You Rather</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <!-- Metadata -->
+        <meta name="description" content="Pick a side, then guess what the room will choose. 2-20 players, free, no sign-up.">
+        <meta name="author" content="Codexael">
+        <meta name="theme-color" content="#fff4e0" media="(prefers-color-scheme: light)">
+        <meta name="theme-color" content="#17140f" media="(prefers-color-scheme: dark)">
+
+        <!-- Open Graph -->
+        <meta property="og:title" content="Codexael Toolstack — Would You Rather: Party Game">
+        <meta property="og:description" content="Pick a side, then guess what the room will choose. 2-20 players, free, no sign-up.">
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="https://tools.codexael.com/would_you_rather.html">
+        <meta property="og:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+        <meta property="og:image:width" content="1200">
+        <meta property="og:image:height" content="630">
+        <meta property="og:image:type" content="image/png">
+        <meta property="og:image:alt" content="Codexael Toolstack — Would You Rather: Party Game">
+        <meta property="og:site_name" content="Codexael Toolstack">
+
+        <!-- Twitter Card -->
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="Codexael Toolstack — Would You Rather: Party Game">
+        <meta name="twitter:description" content="Pick a side, then guess what the room will choose. 2-20 players, free, no sign-up.">
+        <meta name="twitter:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+
+        <!-- Favicon / App Icon -->
+        <link rel="icon" type="image/svg+xml" href="assets/images/codexael_icon.svg">
+        <link rel="apple-touch-icon" href="assets/images/codexael_icon.svg">
+
+        <!-- Bootstrap 5.2.0-beta1 -->
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+
+        <!-- Bootstrap with Popper 5.2.0-beta1 -->
+        <script src="js/bootstrap.bundle.min.js"></script>
+
+        <!-- Bootstrap Icons 1.11.3 -->
+        <link rel="stylesheet" href="css/bootstrap-icons.min.css">
+
+        <!-- PeerJS 1.5.4 -->
+        <script src="js/peerjs.min.js"></script>
+
+        <!-- Google fonts -->
+        <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+        <!-- Custom CSS -->
+        <link rel="stylesheet" href="css/keycaps.css">
+        <link rel="stylesheet" href="css/party-games.css">
+
+        <style>
+            /* The custom line box is tall enough to paste a whole set. */
+            .wr-custom-input {
+                min-height: 160px;
+                margin-bottom: 0;
+                resize: vertical;
+                font-size: 0.8rem;
+                font-weight: 400;
+            }
+
+            .wr-errors {
+                margin: 0;
+                padding: 10px 12px 10px 28px;
+                background: var(--red);
+                color: #111111;
+                border: 3px solid var(--ink);
+                font-size: 0.78rem;
+                font-weight: 700;
+            }
+
+            .wr-sides .party-choice {
+                min-height: 90px;
+                font-size: 1rem;
+                text-align: center;
+            }
+
+            /* The first side is always pink and the second always cyan, so the split bar matches the cards. */
+            .wr-sides .party-choice:nth-child(1),
+            .wr-predict .party-choice:nth-child(1) { --c: var(--pink); }
+
+            .wr-sides .party-choice:nth-child(2),
+            .wr-predict .party-choice:nth-child(2) { --c: var(--cyan); }
+
+            .wr-predict .party-choice {
+                min-height: 0;
+                padding: 8px 12px;
+                font-size: 0.82rem;
+                text-align: center;
+            }
+
+            .wr-or {
+                margin: -4px 0;
+                font-family: var(--display-font);
+                font-size: 0.8rem;
+                text-align: center;
+                text-transform: uppercase;
+            }
+
+            /* The split bar shows how the room voted, with the first side growing from the middle. */
+            .wr-split {
+                display: flex;
+                height: 54px;
+                background: var(--paper);
+                border: 4px solid var(--ink);
+                box-shadow: 4px 4px 0 var(--ink);
+                overflow: hidden;
+            }
+
+            .wr-split-a,
+            .wr-split-b {
+                display: flex;
+                align-items: center;
+                min-width: 0;
+                padding: 0 10px;
+                color: #111111;
+                font-family: var(--display-font);
+                font-size: 1.1rem;
+                white-space: nowrap;
+            }
+
+            .wr-split-a {
+                width: var(--share);
+                background: var(--pink);
+                justify-content: flex-start;
+            }
+
+            .wr-split-b {
+                flex: 1;
+                background: var(--cyan);
+                justify-content: flex-end;
+            }
+
+            .wr-split-a + .wr-split-b {
+                border-left: 4px solid var(--ink);
+            }
+
+            .wr-split.is-animated .wr-split-a {
+                animation: wr-grow 1.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+            }
+
+            @keyframes wr-grow {
+                0% { width: 50%; }
+                30% { width: 50%; }
+            }
+
+            .wr-sides-names {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 12px;
+            }
+
+            .wr-side-names {
+                padding: 8px 10px;
+                background: var(--paper);
+                border: 3px solid var(--ink);
+                border-top: 8px solid var(--side-c);
+                font-size: 0.8rem;
+                overflow-wrap: anywhere;
+            }
+
+            .wr-side-names b {
+                display: block;
+                margin-bottom: 4px;
+                font-size: 0.85rem;
+            }
+
+            .wr-side-names.is-a { --side-c: var(--pink); }
+            .wr-side-names.is-b { --side-c: var(--cyan); }
+
+            .wr-notes {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .wr-note {
+                padding: 8px 12px;
+                background: var(--paper);
+                border: 3px solid var(--ink);
+                box-shadow: 2px 2px 0 var(--ink);
+                font-size: 0.85rem;
+                font-weight: 700;
+                text-align: center;
+            }
+
+            .wr-note.is-good {
+                background: var(--lime);
+                color: #111111;
+            }
+
+            .wr-note.is-rebel {
+                background: var(--orange);
+                color: #111111;
+            }
+
+            .wr-title {
+                display: grid;
+                gap: 4px;
+                padding: 10px 12px;
+                background: var(--pink);
+                color: #111111;
+                border: 3px solid var(--ink);
+                box-shadow: 2px 2px 0 var(--ink);
+                font-weight: 700;
+                text-align: center;
+            }
+
+            .wr-title small {
+                font-size: 0.7rem;
+                text-transform: uppercase;
+            }
+
+            .wr-titles {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+                gap: 10px;
+            }
+
+            @media (max-width: 575px) {
+                .wr-sides-names {
+                    grid-template-columns: 1fr;
+                }
+
+                .wr-split-a,
+                .wr-split-b {
+                    padding: 0 6px;
+                    font-size: 0.9rem;
+                }
+            }
+
+            @media (prefers-reduced-motion: reduce) {
+                .wr-split.is-animated .wr-split-a {
+                    animation: none;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <!-- Common layout -->
+        <div id="navbar-container"></div>
+
+        <div class="container-fluid tool-wrapper">
+
+            <!-- Setup view -->
+            <div class="row" id="partySetup"></div>
+
+            <!-- Room view -->
+            <div class="row g-3 g-md-0 gx-md-3 gx-0 d-none party-room" id="partyRoom">
+
+                <div class="col-md-8 editor-panel party-game-panel" id="gamePanel" style="--panel-c: var(--pink)">
+                    <div class="editor-header">
+                        <span class="editor-title">Would You Rather</span>
+                        <div class="editor-actions">
+                            <button title="Copy result" data-shortcut="copy" id="copyResultBtn"><i class="bi bi-copy icon-btn"></i></button>
+                            <button title="Fullscreen" onclick="toggleEditorFullScreen('gamePanel')"><i class="bi bi-arrows-fullscreen icon-btn"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="party-body invisible-scrollbars" id="gameBody"></div>
+
+                    <div class="editor-footer">
+                        <div class="status">
+                            <span>Question <b id="footerQuestion">0</b></span>
+                            <span>Phase <b id="footerPhase">Lobby</b></span>
+                            <span>Pack <b id="footerPack">-</b></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4 editor-panel party-side-panel" id="partyPanel"></div>
+
+            </div>
+        </div>
+
+        <div id="footer-container"></div>
+
+        <!-- Common JS -->
+        <script src="js/tool-help.js"></script>
+        <script src="js/storage.js"></script>
+        <script src="js/common.js"></script>
+        <script src="js/script.js"></script>
+        <script src="js/party-room.js"></script>
+
+        <!-- Custom JS -->
+        <script>
+            const pageTitle = "Would You Rather";
+
+            const MIN_PLAYERS = 2;
+            const MAX_PLAYERS = 20;
+            const REVEAL_MS = 8000;
+            const TIMER_TICK_MS = 250;
+            const MAX_OPTION_LENGTH = 100;
+            const MAX_STATEMENT_LENGTH = 150;
+            const MAX_CUSTOM_LENGTH = 30000;
+            const MAX_CUSTOM_ITEMS = 100;
+            const MAX_SHOWN_ERRORS = 8;
+            const CUSTOM_STORAGE_KEY = "toolstack_wyr_custom";
+
+            const MODES = { wyr: "Would you rather", hot: "Hot takes" };
+            const PHASE_LABELS = { lobby: "Lobby", question: "Choosing", reveal: "Reveal", final: "Final" };
+
+            // Each pack has two-option questions for "Would you rather" and statements for "Hot takes".
+            const PACKS = {
+                work: {
+                    label: "Work & tech",
+                    wyr: [
+                        ["Work from home forever", "Work from a beach office forever"],
+                        ["Have unlimited coffee at work", "Have unlimited snacks at work"],
+                        ["Never attend another meeting", "Never answer another email"],
+                        ["Have a four-day work week", "Get a 20% pay rise"],
+                        ["Use only a keyboard", "Use only a mouse"],
+                        ["Have super fast Wi-Fi everywhere", "Have a phone battery that never dies"],
+                        ["Fix someone else's bugs", "Write the docs for your own code"],
+                        ["Work in total silence", "Work with music always playing"],
+                        ["Have a standing desk", "Have a giant bean bag desk"],
+                        ["Only use dark mode", "Only use light mode"],
+                        ["Present to the CEO", "Present to 500 strangers"],
+                        ["Have one long meeting a week", "Have five short meetings a day"],
+                        ["Get a robot assistant", "Get a human assistant"],
+                        ["Start work at 6 AM", "Finish work at 9 PM"],
+                        ["Never sit in traffic again", "Never wait for a slow computer again"],
+                        ["Keep your camera on in every call", "Only use chat in every call"],
+                        ["Work at a tiny startup", "Work at a giant company"],
+                        ["Know every programming language", "Speak every human language"],
+                        ["Have a desk with a great view", "Have a desk next to the coffee machine"],
+                        ["Lose your phone for a week", "Lose your laptop for a week"],
+                        ["Have a boss who checks everything", "Have a boss who is never around"],
+                        ["Reply to every email within a minute", "Reply to emails once a week"],
+                        ["Always make a typo in your messages", "Always post in the wrong chat"],
+                        ["Get a free lunch every day", "Get a free ride home every day"],
+                        ["Be the best person in the team", "Be in the best team"]
+                    ],
+                    hot: [
+                        "Meetings should last 15 minutes or less.",
+                        "Working from home is better than working in the office.",
+                        "Dark mode is better than light mode.",
+                        "Every email should fit in one short paragraph.",
+                        "Tabs are better than spaces.",
+                        "Fridays should have no meetings.",
+                        "A messy desk means a creative mind.",
+                        "Cameras should be optional in video calls.",
+                        "Coffee is needed to do good work.",
+                        "Open-plan offices are a bad idea.",
+                        "Everyone should learn a little coding.",
+                        "Phones should stay out of meetings.",
+                        "Emoji are fine in work messages.",
+                        "A four-day week would not hurt the work.",
+                        "Team chat is more useful than email.",
+                        "Standups should really be done standing up.",
+                        "AI will make work more fun.",
+                        "Eating lunch at your desk is fine.",
+                        "The best ideas come in the shower.",
+                        "Keyboard shortcuts are worth learning.",
+                        "Printers are the worst office machine.",
+                        "Out-of-office replies should be funny.",
+                        "Night owls do better work than early birds.",
+                        "Learning on the job beats training courses.",
+                        "Two screens are better than one."
+                    ]
+                },
+                food: {
+                    label: "Food",
+                    wyr: [
+                        ["Eat pizza every day", "Eat biryani every day"],
+                        ["Only eat sweet food", "Only eat salty food"],
+                        ["Give up chocolate", "Give up cheese"],
+                        ["Have breakfast for every meal", "Have dinner for every meal"],
+                        ["Only eat spicy food", "Only eat plain food"],
+                        ["Drink only tea", "Drink only coffee"],
+                        ["Never eat ice cream again", "Never eat chips again"],
+                        ["Cook every meal yourself", "Eat out for every meal"],
+                        ["Eat a whole lemon", "Eat a whole raw onion"],
+                        ["Have a personal chef", "Have a personal baker"],
+                        ["Only eat with chopsticks", "Only eat with your hands"],
+                        ["Eat cold pizza", "Eat warm salad"],
+                        ["Give up rice", "Give up bread"],
+                        ["Eat the same meal forever", "Never eat the same meal twice"],
+                        ["Have unlimited sushi", "Have unlimited tacos"],
+                        ["Always eat dessert first", "Never eat dessert at all"],
+                        ["Live without sugar", "Live without salt"],
+                        ["Only drink water", "Only drink juice"],
+                        ["Have a fridge that never runs out", "Have a kitchen that cleans itself"],
+                        ["Eat food that is too hot", "Eat food that is too cold"],
+                        ["Give up fried food", "Give up fast food"],
+                        ["Have pancakes", "Have waffles"],
+                        ["Eat street food", "Eat at a fancy restaurant"],
+                        ["Be a great cook", "Be a great baker"],
+                        ["Have popcorn at every movie", "Have nachos at every movie"]
+                    ],
+                    hot: [
+                        "Pineapple belongs on pizza.",
+                        "Breakfast is the most important meal of the day.",
+                        "Cereal is a kind of soup.",
+                        "A hot dog is a sandwich.",
+                        "Tea is better than coffee.",
+                        "Dessert is the best part of any meal.",
+                        "Spicy food is always better.",
+                        "Ketchup goes with everything.",
+                        "Home cooking beats restaurant food.",
+                        "Leftovers taste better the next day.",
+                        "Cold pizza is better than hot pizza.",
+                        "Chocolate ice cream is better than vanilla.",
+                        "Fruit is the best dessert.",
+                        "Brunch is overrated.",
+                        "Street food beats fine dining.",
+                        "Popcorn is the best snack.",
+                        "Samosas are better than spring rolls.",
+                        "Mango is the king of fruits.",
+                        "Coriander makes every dish better.",
+                        "Food tastes better when you eat with your hands.",
+                        "Sweet and salty go together perfectly.",
+                        "Instant noodles count as a real meal.",
+                        "Soup is a great dinner.",
+                        "Milk should go in the bowl before cereal.",
+                        "Dark chocolate is better than milk chocolate."
+                    ]
+                },
+                powers: {
+                    label: "Superpowers",
+                    wyr: [
+                        ["Be able to fly", "Be invisible"],
+                        ["Read minds", "See the future"],
+                        ["Teleport anywhere", "Stop time"],
+                        ["Talk to animals", "Speak every language"],
+                        ["Have super strength", "Have super speed"],
+                        ["Breathe underwater", "Walk through walls"],
+                        ["Never need sleep", "Never need food"],
+                        ["Heal any injury", "Never get sick"],
+                        ["Control the weather", "Control fire"],
+                        ["Shrink to the size of an ant", "Grow as tall as a building"],
+                        ["Have a perfect memory", "Learn any skill in one day"],
+                        ["Rewind time by 10 seconds", "Pause time for 10 seconds"],
+                        ["Copy any skill you see", "Know every fact"],
+                        ["Have x-ray vision", "Have night vision"],
+                        ["Jump over buildings", "Run up walls"],
+                        ["Be lucky all the time", "Be liked by everyone"],
+                        ["Clone yourself", "Swap bodies with anyone for a day"],
+                        ["Make plants grow at once", "Make any machine work"],
+                        ["Move things with your mind", "Freeze things with a touch"],
+                        ["Never get lost", "Always find lost things"],
+                        ["Glow in the dark", "Change colour like a chameleon"],
+                        ["Have a pet dragon", "Have a pet unicorn"],
+                        ["Be a secret superhero", "Be a famous superhero"],
+                        ["Hear everything in the city", "See everything in the city"],
+                        ["Turn anything into gold", "Turn anything into food"]
+                    ],
+                    hot: [
+                        "Flying is the best superpower.",
+                        "Being invisible would get boring fast.",
+                        "Reading minds would be more of a curse than a gift.",
+                        "Time travel should never be used to change the past.",
+                        "Super strength is overrated.",
+                        "Heroes should keep their real names secret.",
+                        "Talking to animals would be the most fun power.",
+                        "Teleporting would ruin the fun of travel.",
+                        "Knowing the future would make life boring.",
+                        "Villains usually have the better costumes.",
+                        "Never needing sleep would be amazing.",
+                        "Every superhero needs a sidekick.",
+                        "Batman counts as a superhero.",
+                        "Super speed beats super strength.",
+                        "Healing others is the best power of all.",
+                        "A cape is a bad idea for a superhero.",
+                        "Having a superpower would make you lonely.",
+                        "Everyone has a small talent that is like a superpower.",
+                        "Controlling the weather would be the most useful power.",
+                        "A perfect memory is a real superpower.",
+                        "Most people would use superpowers to find parking.",
+                        "Shape-shifting is the most fun power.",
+                        "Superheroes should get paid for their work.",
+                        "Invisibility is better than flight.",
+                        "One great power beats many small ones."
+                    ]
+                },
+                travel: {
+                    label: "Travel",
+                    wyr: [
+                        ["Travel to space", "Travel to the bottom of the ocean"],
+                        ["Visit the past", "Visit the future"],
+                        ["Go on a beach holiday", "Go on a mountain holiday"],
+                        ["Travel by train", "Travel by plane"],
+                        ["Explore a big city", "Explore a quiet village"],
+                        ["Have free flights forever", "Have free hotels forever"],
+                        ["Travel alone", "Travel with a big group"],
+                        ["Go camping", "Stay in a luxury hotel"],
+                        ["Visit every country once", "Live in one country you love"],
+                        ["Take a road trip", "Take a cruise"],
+                        ["Pack too much", "Pack too little"],
+                        ["Travel with no phone", "Travel with no map"],
+                        ["Live on a houseboat", "Live in a tree house"],
+                        ["Plan every detail", "Go with the flow"],
+                        ["See the Northern Lights", "See the Great Wall of China"],
+                        ["Visit a jungle", "Visit a desert"],
+                        ["Always get the window seat", "Always get the aisle seat"],
+                        ["Learn the local language", "Learn the local dances"],
+                        ["Spend a month in Japan", "Spend a month in Italy"],
+                        ["Travel in summer", "Travel in winter"],
+                        ["Sleep on a night train", "Sleep on a night bus"],
+                        ["Ride a camel", "Ride a hot air balloon"],
+                        ["Take a long flight with Wi-Fi", "Take a short flight without Wi-Fi"],
+                        ["Go on a safari", "Go scuba diving"],
+                        ["Only travel by bicycle", "Only travel by boat"]
+                    ],
+                    hot: [
+                        "The window seat is the best seat.",
+                        "Beach holidays beat mountain holidays.",
+                        "Planning a trip is half the fun.",
+                        "Train travel is better than flying.",
+                        "Travelling alone is better than travelling in a group.",
+                        "Souvenirs are a waste of money.",
+                        "Road trips are the best kind of trip.",
+                        "Packing light is always better.",
+                        "Museums are the best part of visiting a city.",
+                        "Local food is the best reason to travel.",
+                        "Camping is more fun than hotels.",
+                        "Airport food is never worth it.",
+                        "You should learn a few local words before a trip.",
+                        "Early morning flights are worth the cheap price.",
+                        "Long weekends beat long holidays.",
+                        "Taking photos all the time ruins a trip.",
+                        "Cruises are boring.",
+                        "Getting lost is the best way to see a city.",
+                        "Winter trips are better than summer trips.",
+                        "Staying at home is the best holiday.",
+                        "Hostels are a great way to meet people.",
+                        "Postcards should make a comeback.",
+                        "The journey matters more than the place.",
+                        "Budget trips are more fun than luxury trips.",
+                        "Every trip needs a rest day."
+                    ]
+                },
+                silly: {
+                    label: "Silly",
+                    wyr: [
+                        ["Have spaghetti for hair", "Have carrots for fingers"],
+                        ["Talk like a pirate forever", "Sing everything you say"],
+                        ["Have a tail", "Have wings that cannot fly"],
+                        ["Sneeze glitter", "Burp bubbles"],
+                        ["Always walk backwards", "Always hop on one leg"],
+                        ["Have a nose that honks", "Have ears that whistle"],
+                        ["Be a giant hamster", "Be a tiny elephant"],
+                        ["Live in a house made of cheese", "Live in a house made of jelly"],
+                        ["Laugh like a goose", "Laugh like a dolphin"],
+                        ["Wear clown shoes every day", "Wear a superhero cape every day"],
+                        ["Have a dinosaur the size of a cat", "Have a cat the size of a dinosaur"],
+                        ["Only speak in rhymes", "Only speak in questions"],
+                        ["Fight one horse-sized duck", "Fight 100 duck-sized horses"],
+                        ["Have your thoughts shown as subtitles", "Have your life narrated out loud"],
+                        ["Turn into a potato every night", "Turn into a cat every Monday"],
+                        ["Have a theme song play when you walk in", "Have a laugh track play after you speak"],
+                        ["Bounce instead of walk", "Float instead of walk"],
+                        ["Always have a pebble in your shoe", "Always have a song stuck in your head"],
+                        ["Have hiccups for a year", "Feel like sneezing for a year"],
+                        ["Be followed by pigeons", "Be followed by a goat"],
+                        ["Have a moustache that grows back in a minute", "Have eyebrows that change colour with your mood"],
+                        ["Eat soup with a fork", "Eat cereal with a knife"],
+                        ["Wear socks on your hands", "Wear gloves on your feet"],
+                        ["Talk to furniture", "Talk to plants"],
+                        ["Have a squeaky voice", "Have a very deep voice"]
+                    ],
+                    hot: [
+                        "Socks with sandals is a good look.",
+                        "Cats secretly rule the world.",
+                        "Ghosts would be fun roommates.",
+                        "Dogs are better than cats.",
+                        "Penguins would make great office workers.",
+                        "\"The floor is lava\" is the best game ever.",
+                        "Aliens would love our pizza.",
+                        "Talking in rhymes would make meetings better.",
+                        "Unicorns would be terrible pets.",
+                        "A day without music is a wasted day.",
+                        "Dinosaurs would make great pets.",
+                        "Big hats should come back in fashion.",
+                        "Rubber ducks are good listeners.",
+                        "Every room needs a disco ball.",
+                        "Snowmen have feelings.",
+                        "The moon looks like a big cheese.",
+                        "Clapping when the plane lands is fine.",
+                        "Robots should tell more jokes.",
+                        "Being tall is overrated.",
+                        "Bubble wrap is the best toy.",
+                        "Pillow forts are not just for kids.",
+                        "Squirrels are secretly planning something.",
+                        "Pyjamas should be allowed everywhere.",
+                        "Every pet deserves a middle name.",
+                        "Karaoke makes any party better."
+                    ]
+                }
+            };
+
+            const PACK_OPTIONS = [...Object.entries(PACKS).map(([id, pack]) => [id, pack.label]), ["mixed", "Mixed"], ["custom", "Custom"]];
+
+            const gameBody = document.getElementById("gameBody");
+
+            // This holds the newest view from the referee, and every client draws only from it.
+            let view = null;
+            let viewDeadline = null;
+            let viewTotalMs = 0;
+            let timerInterval = null;
+
+            // This remembers which reveal already played its split bar animation, so a redraw does not replay it.
+            let animatedReveal = "";
+
+            // This keeps the pasted custom lines on the room creator's page between renders.
+            let customDraft = "";
+            let customErrors = [];
+
+            try {
+                customDraft = getStorageString(CUSTOM_STORAGE_KEY, "") || "";
+            } catch (error) {
+                // This ignores blocked storage because the saved lines are only a convenience.
+            }
+
+            // ---------- Referee state ----------
+
+            // This holds the whole game, and only the referee keeps it.
+            const game = {
+                phase: "lobby",
+                settings: { mode: "wyr", pack: "mixed", count: "10", time: "20" },
+                gameNo: 0,
+                packLabel: "",
+                items: [],
+                index: -1,
+                playerIds: [],
+                picks: new Map(),
+                guesses: new Map(),
+                result: null,
+                scores: new Map(),
+                gains: new Map(),
+                rebels: new Map(),
+                customItems: null,
+                used: new Set(),
+                deadline: 0,
+                totalMs: 0,
+                timer: null
+            };
+
+            const FRESH_GAME = { ...game, settings: { ...game.settings } };
+
+            function resetGame() {
+                clearTimeout(game.timer);
+                Object.assign(game, FRESH_GAME, {
+                    settings: { ...FRESH_GAME.settings },
+                    items: [],
+                    playerIds: [],
+                    picks: new Map(),
+                    guesses: new Map(),
+                    scores: new Map(),
+                    gains: new Map(),
+                    rebels: new Map(),
+                    used: new Set()
+                });
+            }
+
+            function inGame(id) {
+                return game.playerIds.includes(id);
+            }
+
+            function setPhaseTimer(ms, onEnd) {
+                clearTimeout(game.timer);
+                game.totalMs = ms;
+                game.deadline = Date.now() + ms;
+                game.timer = setTimeout(onEnd, ms);
+            }
+
+            function clearPhaseTimer() {
+                clearTimeout(game.timer);
+                game.deadline = 0;
+                game.totalMs = 0;
+            }
+
+            function isTimed() {
+                return game.settings.time !== "0";
+            }
+
+            // This turns a pack entry into a question with a statement and two side labels.
+            function makeItem(mode, entry) {
+                return mode === "hot"
+                    ? { text: entry, a: "Agree", b: "Disagree" }
+                    : { text: "", a: entry[0], b: entry[1] };
+            }
+
+            function itemKey(mode, item) {
+                return `${mode}|${item.text}|${item.a}|${item.b}`;
+            }
+
+            // This picks questions from a pack that this room has not seen yet, and starts over when too few are left.
+            function pickFromPacks(mode, packId, count) {
+                const packs = packId === "mixed" ? Object.values(PACKS) : [PACKS[packId]];
+                const all = packs.flatMap(pack => pack[mode].map(entry => makeItem(mode, entry)));
+
+                let fresh = all.filter(item => !game.used.has(itemKey(mode, item)));
+                if (fresh.length < count) {
+                    all.forEach(item => game.used.delete(itemKey(mode, item)));
+                    fresh = all;
+                }
+
+                const picked = partyShuffle(fresh).slice(0, count);
+                picked.forEach(item => game.used.add(itemKey(mode, item)));
+                return picked;
+            }
+
+            // This reads pasted custom lines for the chosen mode and returns the good ones with a list of errors for the bad lines.
+            function parseCustomItems(text, mode) {
+                const items = [];
+                const errors = [];
+
+                String(text ?? "").split(/\r?\n/).forEach((line, i) => {
+                    if (!line.trim()) return;
+
+                    if (mode === "hot") {
+                        const statement = partyCleanText(line, MAX_CUSTOM_LENGTH);
+                        if (statement.includes("|")) errors.push(`Line ${i + 1}: hot takes use one statement per line, without "|"`);
+                        else if (statement.length > MAX_STATEMENT_LENGTH) errors.push(`Line ${i + 1}: the statement is longer than ${MAX_STATEMENT_LENGTH} characters`);
+                        else items.push(makeItem("hot", statement));
+                        return;
+                    }
+
+                    const parts = line.split("|").map(part => partyCleanText(part, MAX_CUSTOM_LENGTH));
+                    if (parts.length !== 2) errors.push(`Line ${i + 1}: needs 2 options split by "|", but has ${parts.length}`);
+                    else if (parts.some(part => !part)) errors.push(`Line ${i + 1}: one of the options is empty`);
+                    else if (parts.some(part => part.length > MAX_OPTION_LENGTH)) errors.push(`Line ${i + 1}: an option is longer than ${MAX_OPTION_LENGTH} characters`);
+                    else if (parts[0].toLowerCase() === parts[1].toLowerCase()) errors.push(`Line ${i + 1}: the two options must be different`);
+                    else items.push(makeItem("wyr", parts));
+                });
+
+                if (!items.length && !errors.length) errors.push("Paste at least one line first");
+                if (items.length > MAX_CUSTOM_ITEMS) errors.push(`Use at most ${MAX_CUSTOM_ITEMS} lines`);
+
+                return { items, errors };
+            }
+
+            // ---------- Game flow ----------
+
+            // This starts a game from the chosen pack, where customText is only sent by the room creator for a custom pack.
+            function startGame(customText) {
+                if (party.players.length < MIN_PLAYERS) {
+                    party.emit({ type: "notice", text: `Would You Rather needs at least ${MIN_PLAYERS} players` }, [party.myId]);
+                    return;
+                }
+
+                const mode = game.settings.mode;
+                const count = Number(game.settings.count);
+                let items;
+
+                if (game.settings.pack === "custom") {
+                    if (typeof customText === "string") {
+                        const parsed = parseCustomItems(customText.slice(0, MAX_CUSTOM_LENGTH), mode);
+                        if (parsed.errors.length) {
+                            party.emit({ type: "notice", text: parsed.errors[0] }, [party.myId]);
+                            return;
+                        }
+                        game.customItems = { mode, items: parsed.items };
+                    }
+
+                    if (!game.customItems || game.customItems.mode !== mode || !game.customItems.items.length) {
+                        party.emit({ type: "notice", text: "Paste your custom lines first" }, [party.myId]);
+                        return;
+                    }
+
+                    items = game.customItems.items.slice(0, count);
+                    game.packLabel = "Custom";
+                } else {
+                    items = pickFromPacks(mode, game.settings.pack, count);
+                    game.packLabel = game.settings.pack === "mixed" ? "Mixed" : PACKS[game.settings.pack].label;
+                }
+
+                game.gameNo += 1;
+                game.items = items.map(item => ({ ...item }));
+                game.index = -1;
+                game.playerIds = party.players.map(p => p.id);
+                game.scores = new Map(game.playerIds.map(id => [id, 0]));
+                game.rebels = new Map();
+                nextQuestion();
+            }
+
+            function nextQuestion() {
+                clearPhaseTimer();
+                game.index += 1;
+
+                if (game.index >= game.items.length) {
+                    finishGame();
+                    return;
+                }
+
+                game.phase = "question";
+                game.picks = new Map();
+                game.guesses = new Map();
+                game.result = null;
+                game.gains = new Map();
+                if (isTimed()) setPhaseTimer(Number(game.settings.time) * 1000, revealQuestion);
+                publish();
+            }
+
+            function isDone(id) {
+                return game.picks.has(id) && game.guesses.has(id);
+            }
+
+            function allDone() {
+                return game.playerIds.every(isDone);
+            }
+
+            function addCount(map, id, amount) {
+                map.set(id, (map.get(id) || 0) + amount);
+            }
+
+            // This finds the majority side, gives a point to everyone who predicted it, and counts who sided with the minority.
+            function revealQuestion() {
+                clearPhaseTimer();
+
+                const picks = [...game.picks.values()];
+                const counts = { a: picks.filter(side => side === "a").length, b: picks.filter(side => side === "b").length };
+                const majority = counts.a > counts.b ? "a" : counts.b > counts.a ? "b" : null;
+
+                game.gains = new Map();
+                if (majority) {
+                    for (const [id, guess] of game.guesses) {
+                        if (guess === majority) {
+                            addCount(game.scores, id, 1);
+                            addCount(game.gains, id, 1);
+                        }
+                    }
+                    for (const [id, side] of game.picks) {
+                        if (side !== majority) addCount(game.rebels, id, 1);
+                    }
+                }
+
+                game.result = { counts, majority, picks: Object.fromEntries(game.picks), guesses: Object.fromEntries(game.guesses) };
+                game.phase = "reveal";
+
+                if (isTimed()) setPhaseTimer(REVEAL_MS, nextQuestion);
+                publish();
+            }
+
+            function isLastQuestion() {
+                return game.index >= game.items.length - 1;
+            }
+
+            function finishGame() {
+                clearPhaseTimer();
+                game.phase = "final";
+                game.gains = new Map();
+                publish();
+            }
+
+            function buildView(id) {
+                const item = game.items[game.index];
+                const showItem = (game.phase === "question" || game.phase === "reveal") && item;
+                const revealed = game.phase === "reveal";
+
+                return {
+                    phase: game.phase,
+                    settings: { ...game.settings },
+                    gameNo: game.gameNo,
+                    packLabel: game.packLabel || (PACK_OPTIONS.find(([key]) => key === game.settings.pack) || ["", "-"])[1],
+                    index: game.index,
+                    total: game.items.length,
+                    inGame: inGame(id),
+                    playerIds: [...game.playerIds],
+                    item: showItem ? { ...item } : null,
+                    doneIds: game.phase === "question" ? game.playerIds.filter(isDone) : [],
+                    myPick: showItem ? game.picks.get(id) || null : null,
+                    myGuess: showItem ? game.guesses.get(id) || null : null,
+                    result: revealed ? game.result : null,
+                    isLast: isLastQuestion(),
+                    scores: Object.fromEntries(game.scores),
+                    gains: revealed ? Object.fromEntries(game.gains) : {},
+                    rebels: revealed || game.phase === "final" ? Object.fromEntries(game.rebels) : {},
+                    remainingMs: game.deadline ? Math.max(0, game.deadline - Date.now()) : 0,
+                    totalMs: game.totalMs
+                };
+            }
+
+            function publish() {
+                party.publish(buildView);
+            }
+
+            // This applies one move from a player after checking that the move is allowed right now.
+            function handleAction(player, action) {
+                if (!action || typeof action.type !== "string") return;
+
+                switch (action.type) {
+                    case "setting": {
+                        if (!player.host || game.phase !== "lobby") return;
+                        const allowed = { mode: Object.keys(MODES), pack: PACK_OPTIONS.map(([key]) => key), count: ["5", "10", "15", "20"], time: ["15", "20", "30", "0"] };
+                        if (!allowed[action.key] || !allowed[action.key].includes(String(action.value))) return;
+                        game.settings[action.key] = String(action.value);
+                        publish();
+                        return;
+                    }
+
+                    case "start":
+                        if (!player.host || (game.phase !== "lobby" && game.phase !== "final")) return;
+                        startGame(typeof action.custom === "string" ? action.custom : null);
+                        return;
+
+                    case "lobby":
+                        if (!player.host || game.phase !== "final") return;
+                        clearPhaseTimer();
+                        game.phase = "lobby";
+                        game.playerIds = [];
+                        game.items = [];
+                        game.index = -1;
+                        publish();
+                        return;
+
+                    case "pick":
+                    case "guess": {
+                        if (game.phase !== "question" || !inGame(player.id)) return;
+                        const side = String(action.side);
+                        if (side !== "a" && side !== "b") return;
+                        (action.type === "pick" ? game.picks : game.guesses).set(player.id, side);
+
+                        if (allDone()) revealQuestion();
+                        else publish();
+                        return;
+                    }
+
+                    case "reveal":
+                        if (!player.host || game.phase !== "question") return;
+                        revealQuestion();
+                        return;
+
+                    case "next":
+                        if (!player.host || game.phase !== "reveal") return;
+                        nextQuestion();
+                        return;
+                }
+            }
+
+            function handleLeave(player) {
+                game.scores.delete(player.id);
+                game.gains.delete(player.id);
+                game.rebels.delete(player.id);
+
+                if (!inGame(player.id)) {
+                    publish();
+                    return;
+                }
+
+                game.playerIds = game.playerIds.filter(id => id !== player.id);
+                game.picks.delete(player.id);
+                game.guesses.delete(player.id);
+
+                // This ends the game with the scores so far when too few players are left.
+                if (game.playerIds.length < MIN_PLAYERS && game.phase !== "final") {
+                    party.emit({ type: "notice", text: `${player.name} left, and Would You Rather needs at least ${MIN_PLAYERS} players` });
+                    finishGame();
+                    return;
+                }
+
+                if (game.phase === "question" && allDone()) {
+                    revealQuestion();
+                    return;
+                }
+
+                publish();
+            }
+
+            // ---------- Room ----------
+
+            const party = createPartyRoom({
+                gameId: "wyr",
+                title: "Would You Rather",
+                icon: "bi-signpost-split",
+                colour: "var(--pink)",
+                intro: "Pick a side, then guess which side most of the room will pick. Read the crowd right to score a point.",
+                minPlayers: MIN_PLAYERS,
+                maxPlayers: MAX_PLAYERS,
+                onEnter() {
+                    customErrors = [];
+                    animatedReveal = "";
+                    if (party.isHost) {
+                        resetGame();
+                        publish();
+                    }
+                    startTimerLoop();
+                },
+                onExit() {
+                    resetGame();
+                    view = null;
+                    customErrors = [];
+                    animatedReveal = "";
+                    clearInterval(timerInterval);
+                    gameBody.innerHTML = "";
+                },
+                onView(next) {
+                    if (!next || typeof next.phase !== "string") return;
+
+                    view = next;
+                    viewDeadline = partyDeadlineFrom(next.remainingMs);
+                    viewTotalMs = next.totalMs;
+                    render();
+                },
+                onEvent(event) {
+                    if (event && event.type === "notice") showInfoToast(String(event.text));
+                },
+                host: {
+                    onJoin: () => publish(),
+                    onLeave: handleLeave,
+                    onAction: handleAction
+                }
+            });
+
+            // ---------- Rendering ----------
+
+            function nameOf(id) {
+                const player = party.getPlayer(id);
+                return player ? player.name : "Someone who left";
+            }
+
+            function scoreRows() {
+                return view.playerIds
+                    .map(id => party.getPlayer(id))
+                    .filter(Boolean)
+                    .map(p => ({ id: p.id, name: p.name, order: p.order, self: p.id === party.myId, points: view.scores[p.id] || 0, gain: view.gains[p.id] || 0 }));
+            }
+
+            function renderLobby() {
+                const canEdit = party.isHost;
+                const enoughPlayers = party.players.length >= MIN_PLAYERS;
+                const hot = view.settings.mode === "hot";
+
+                let customBlock = "";
+                if (view.settings.pack === "custom") {
+                    customBlock = canEdit
+                        ? `<div>
+                               <label class="party-label" for="customInput">Your ${hot ? "statements" : "questions"}</label>
+                               <textarea class="input-cyan wr-custom-input" id="customInput" spellcheck="false" autocomplete="off" placeholder="${hot ? "One statement per line:&#10;Mondays are the best day of the week." : "One question per line:&#10;Option A | Option B&#10;&#10;Live by the sea | Live in the mountains"}">${partyEscapeHtml(customDraft)}</textarea>
+                           </div>
+                           ${customErrors.length ? `<ul class="wr-errors">${customErrors.slice(0, MAX_SHOWN_ERRORS).map(error => `<li>${partyEscapeHtml(error)}</li>`).join("")}${customErrors.length > MAX_SHOWN_ERRORS ? `<li>And ${customErrors.length - MAX_SHOWN_ERRORS} more</li>` : ""}</ul>` : ""}`
+                        : `<div class="party-hint">The room creator is writing custom ${hot ? "statements" : "questions"}.</div>`;
+                }
+
+                return `
+                    <div class="party-stage" style="--stage-c: var(--pink)">
+                        <span class="party-stage-kicker">How to play</span>
+                        <p class="party-stage-text">Each round, pick your side and also guess which side most players will pick. You get 1 point when you guess the majority right. A tie means nobody scores.</p>
+                    </div>
+
+                    <div class="party-settings">
+                        <div>
+                            <span class="party-label">Mode</span>
+                            ${partySegmentHtml("mode", Object.entries(MODES), view.settings.mode, !canEdit)}
+                        </div>
+                        <div>
+                            <span class="party-label">Pack</span>
+                            ${partySegmentHtml("pack", PACK_OPTIONS, view.settings.pack, !canEdit)}
+                        </div>
+                        ${customBlock}
+                        <div>
+                            <span class="party-label">Number of questions</span>
+                            ${partySegmentHtml("count", [["5", "5"], ["10", "10"], ["15", "15"], ["20", "20"]], view.settings.count, !canEdit)}
+                        </div>
+                        <div>
+                            <span class="party-label">Time to choose</span>
+                            ${partySegmentHtml("time", [["15", "15s"], ["20", "20s"], ["30", "30s"], ["0", "Host-paced"]], view.settings.time, !canEdit)}
+                        </div>
+                    </div>
+
+                    ${canEdit
+                        ? `<button type="button" class="btn action-btn-primary" data-act="start"${enoughPlayers ? "" : " disabled"}><i class="bi bi-play-fill"></i> Start game</button>
+                           <div class="party-hint text-center">${enoughPlayers ? "Everyone in the room plays this game." : `Waiting for at least ${MIN_PLAYERS} players.`}</div>`
+                        : `<div class="party-empty-hint">Waiting for the room creator to start the game</div>`}`;
+            }
+
+            function renderStage() {
+                const item = view.item;
+                const hot = view.settings.mode === "hot";
+
+                return `
+                    <div class="party-stage" style="--stage-c: var(--pink)">
+                        <span class="party-stage-kicker">${hot ? "Hot take" : "Would you rather"} · ${view.index + 1} of ${view.total}</span>
+                        <h2 class="party-stage-title">${hot ? partyEscapeHtml(item.text) : "Would you rather..."}</h2>
+                    </div>`;
+            }
+
+            function renderQuestion() {
+                const item = view.item;
+                const canPlay = view.inGame;
+
+                return `
+                    ${renderStage()}
+                    ${view.totalMs ? partyTimerHtml("phaseTimer") : ""}
+                    <div>
+                        <span class="party-label">1. Your side</span>
+                        <div class="party-choices wr-sides">
+                            <button type="button" class="party-choice${view.myPick === "a" ? " is-selected" : ""}" data-act="pick" data-side="a"${canPlay ? "" : " disabled"}>${partyEscapeHtml(item.a)}</button>
+                            <button type="button" class="party-choice${view.myPick === "b" ? " is-selected" : ""}" data-act="pick" data-side="b"${canPlay ? "" : " disabled"}>${partyEscapeHtml(item.b)}</button>
+                        </div>
+                    </div>
+                    <div>
+                        <span class="party-label">2. What will most players pick?</span>
+                        <div class="party-choices wr-predict">
+                            <button type="button" class="party-choice${view.myGuess === "a" ? " is-selected" : ""}" data-act="guess" data-side="a"${canPlay ? "" : " disabled"}><i class="bi bi-people-fill"></i> ${partyEscapeHtml(item.a)}</button>
+                            <button type="button" class="party-choice${view.myGuess === "b" ? " is-selected" : ""}" data-act="guess" data-side="b"${canPlay ? "" : " disabled"}><i class="bi bi-people-fill"></i> ${partyEscapeHtml(item.b)}</button>
+                        </div>
+                    </div>
+                    <div class="party-hint text-center">${!canPlay
+                        ? "<i class=\"bi bi-eye\"></i> You joined during this game, so you watch until the next one."
+                        : view.myPick && view.myGuess ? "You are done. You can still change your mind until the reveal." : "Pick your side and your guess."}
+                        ${view.doneIds.length} of ${view.playerIds.length} done.</div>
+                    ${party.isHost ? `<button type="button" class="btn action-btn-ghost" data-act="reveal"><i class="bi bi-eye-fill"></i> Reveal now</button>` : ""}`;
+            }
+
+            function renderSplit(result) {
+                const total = result.counts.a + result.counts.b;
+                const shareA = total ? Math.round(result.counts.a / total * 100) : 50;
+                const key = `${view.gameNo}-${view.index}`;
+                const animate = animatedReveal !== key;
+                animatedReveal = key;
+
+                return `
+                    <div class="wr-split${animate ? " is-animated" : ""}" style="--share: ${shareA}%" role="img" aria-label="${shareA}% picked the first side and ${100 - shareA}% picked the second side">
+                        <div class="wr-split-a">${total && shareA > 0 ? `${shareA}%` : ""}</div>
+                        <div class="wr-split-b">${total && shareA < 100 ? `${100 - shareA}%` : ""}</div>
+                    </div>`;
+            }
+
+            function renderMyNotes(result) {
+                if (!view.inGame) return "";
+
+                const notes = [];
+                const pick = view.myPick;
+                const guess = view.myGuess;
+
+                if (!result.majority) {
+                    notes.push(`<div class="wr-note">It is a tie, so nobody scores this time.</div>`);
+                } else {
+                    if (pick === result.majority) notes.push(`<div class="wr-note is-good"><i class="bi bi-people-fill"></i> You sided with the majority.</div>`);
+                    else if (pick) notes.push(`<div class="wr-note is-rebel"><i class="bi bi-lightning-fill"></i> You were a rebel this time.</div>`);
+                    else notes.push(`<div class="wr-note">You did not pick a side in time.</div>`);
+
+                    if (guess === result.majority) notes.push(`<div class="wr-note is-good"><i class="bi bi-check-circle-fill"></i> +1 point: you read the crowd right.</div>`);
+                    else if (guess) notes.push(`<div class="wr-note">Your guess missed the crowd.</div>`);
+                    else notes.push(`<div class="wr-note">You did not make a guess in time.</div>`);
+                }
+
+                return `<div class="wr-notes">${notes.join("")}</div>`;
+            }
+
+            function renderReveal() {
+                const item = view.item;
+                const result = view.result;
+                const sideNames = side => Object.entries(result.picks).filter(([, pick]) => pick === side).map(([id]) => nameOf(id));
+                const namesA = sideNames("a");
+                const namesB = sideNames("b");
+
+                return `
+                    ${renderStage()}
+                    ${renderSplit(result)}
+                    <div class="wr-sides-names">
+                        <div class="wr-side-names is-a">
+                            <b>${partyEscapeHtml(item.a)} · ${result.counts.a}${result.majority === "a" ? " · majority" : ""}</b>
+                            ${namesA.length ? partyEscapeHtml(namesA.join(", ")) : "Nobody"}
+                        </div>
+                        <div class="wr-side-names is-b">
+                            <b>${partyEscapeHtml(item.b)} · ${result.counts.b}${result.majority === "b" ? " · majority" : ""}</b>
+                            ${namesB.length ? partyEscapeHtml(namesB.join(", ")) : "Nobody"}
+                        </div>
+                    </div>
+                    ${renderMyNotes(result)}
+                    ${view.totalMs ? partyTimerHtml("phaseTimer") : ""}
+                    ${party.isHost
+                        ? `<button type="button" class="btn action-btn-primary" data-act="next"><i class="bi bi-skip-forward-fill"></i> ${view.isLast ? "Final scores" : "Next question"}</button>`
+                        : `<div class="party-hint text-center">${view.totalMs ? "The next question starts soon." : "Waiting for the room creator to move on."}</div>`}`;
+            }
+
+            // This returns the names of the players with the highest count in a map, or null when nobody scored.
+            function leaders(counts) {
+                const ids = view.playerIds.filter(id => party.getPlayer(id));
+                const top = Math.max(0, ...ids.map(id => counts[id] || 0));
+                return top > 0 ? { names: ids.filter(id => (counts[id] || 0) === top).map(nameOf), top } : null;
+            }
+
+            function renderTitle(icon, title, leader, unit) {
+                return `
+                    <div class="wr-title">
+                        <small><i class="bi ${icon}"></i> ${title}</small>
+                        <span>${leader ? `${partyEscapeHtml(leader.names.join(", "))} · ${leader.top} ${unit}` : "Nobody this time"}</span>
+                    </div>`;
+            }
+
+            function renderFinal() {
+                const rows = scoreRows();
+                const winner = [...rows].sort((a, b) => b.points - a.points)[0];
+
+                return `
+                    <div class="party-stage" style="--stage-c: var(--lime)">
+                        <span class="party-stage-kicker">Game over · ${partyEscapeHtml(view.packLabel)}</span>
+                        <h2 class="party-stage-title">${winner && winner.points > 0 ? `${partyEscapeHtml(winner.name)} reads the room best!` : "Game over"}</h2>
+                    </div>
+
+                    <div class="wr-titles">
+                        ${renderTitle("bi-binoculars-fill", "Crowd reader", leaders(view.scores), "right")}
+                        ${renderTitle("bi-lightning-fill", "Rebel", leaders(view.rebels), "times in the minority")}
+                    </div>
+
+                    <div>
+                        <span class="party-label">Final scores · right guesses</span>
+                        ${partyScoreboardHtml(rows)}
+                    </div>
+
+                    <div class="party-row">
+                        <button type="button" class="btn action-btn-ghost" data-act="share"><i class="bi bi-share"></i> Share result</button>
+                        ${party.isHost ? `
+                            <button type="button" class="btn action-btn-ghost" data-act="lobby"><i class="bi bi-sliders"></i> Change settings</button>
+                            <button type="button" class="btn action-btn-primary" data-act="start"${party.players.length >= MIN_PLAYERS ? "" : " disabled"}><i class="bi bi-arrow-repeat"></i> Play again</button>` : ""}
+                    </div>
+                    ${party.isHost ? "" : `<div class="party-hint text-center">Waiting for the room creator to start the next game.</div>`}`;
+            }
+
+            function render() {
+                if (!view) return;
+
+                const active = document.activeElement;
+                const focused = active && active.id;
+                const selection = active && active.tagName === "TEXTAREA" ? [active.selectionStart, active.selectionEnd, active.scrollTop] : null;
+
+                switch (view.phase) {
+                    case "lobby": gameBody.innerHTML = renderLobby(); break;
+                    case "question": gameBody.innerHTML = renderQuestion(); break;
+                    case "reveal": gameBody.innerHTML = renderReveal(); break;
+                    case "final": gameBody.innerHTML = renderFinal(); break;
+                }
+
+                // This keeps the cursor in the custom line box when a new view arrives.
+                const input = focused && document.getElementById(focused);
+                if (input && input.tagName === "TEXTAREA" && selection) {
+                    input.focus();
+                    input.setSelectionRange(selection[0], selection[1]);
+                    input.scrollTop = selection[2];
+                }
+
+                updateTimer();
+                renderBadges();
+                renderFooter();
+            }
+
+            function renderBadges() {
+                const badges = {};
+
+                for (const player of party.players) {
+                    const badge = { chip: view.scores[player.id] || 0 };
+                    const playing = view.playerIds.includes(player.id);
+
+                    if (view.phase === "question" && playing) {
+                        const done = view.doneIds.includes(player.id);
+                        badge.icon = done ? "bi-check-circle-fill" : "bi-hourglass-split";
+                        badge.iconTitle = done ? "Done" : "Choosing";
+                    } else if (view.phase !== "lobby" && !playing) {
+                        badge.note = "watching";
+                    }
+
+                    badges[player.id] = badge;
+                }
+
+                party.setBadges(badges);
+            }
+
+            function renderFooter() {
+                const inProgress = view.phase === "question" || view.phase === "reveal";
+                document.getElementById("footerQuestion").textContent = inProgress ? `${view.index + 1}/${view.total}` : "0";
+                document.getElementById("footerPhase").textContent = PHASE_LABELS[view.phase] || "-";
+                document.getElementById("footerPack").textContent = view.packLabel;
+            }
+
+            function updateTimer() {
+                updatePartyTimer(document.getElementById("phaseTimer"), viewDeadline, viewTotalMs);
+            }
+
+            function startTimerLoop() {
+                clearInterval(timerInterval);
+                timerInterval = setInterval(updateTimer, TIMER_TICK_MS);
+            }
+
+            function serializeResult() {
+                if (!view || view.phase !== "final") return "";
+
+                const rows = scoreRows().sort((a, b) => b.points - a.points);
+                const me = rows.find(row => row.self);
+                if (!me) return rows.length ? `🔀 ${rows[0].name} read the crowd best in Would You Rather with ${rows[0].points}/${view.total} right` : "";
+
+                const rank = 1 + rows.filter(row => row.points > me.points).length;
+                return `🔀 I read the crowd right ${me.points}/${view.total} times in Would You Rather and placed #${rank} of ${rows.length}`;
+            }
+
+            // ---------- UI events ----------
+
+            // This checks the pasted lines on the room creator's page and starts the game when they are all good.
+            function requestStart() {
+                if (view.settings.pack !== "custom" || view.phase !== "lobby") {
+                    party.act({ type: "start" });
+                    return;
+                }
+
+                const parsed = parseCustomItems(customDraft, view.settings.mode);
+                customErrors = parsed.errors;
+
+                if (customErrors.length) {
+                    showErrorToast(customErrors.length === 1 ? customErrors[0] : `${customErrors.length} lines need fixing`);
+                    render();
+                    return;
+                }
+
+                render();
+                party.act({ type: "start", custom: customDraft });
+            }
+
+            bindPartySegments(gameBody, (key, value) => {
+                customErrors = [];
+                party.act({ type: "setting", key, value });
+            });
+
+            gameBody.addEventListener("click", event => {
+                const button = event.target.closest("[data-act]");
+                if (!button || button.disabled) return;
+
+                switch (button.dataset.act) {
+                    case "start": requestStart(); break;
+                    case "lobby": party.act({ type: "lobby" }); break;
+                    case "reveal": party.act({ type: "reveal" }); break;
+                    case "next": party.act({ type: "next" }); break;
+                    case "pick": party.act({ type: "pick", side: button.dataset.side }); break;
+                    case "guess": party.act({ type: "guess", side: button.dataset.side }); break;
+                    case "share": partyShareText(serializeResult(), button); break;
+                }
+            });
+
+            gameBody.addEventListener("input", event => {
+                if (event.target.id !== "customInput") return;
+                customDraft = event.target.value.slice(0, MAX_CUSTOM_LENGTH);
+
+                try {
+                    setStorageString(CUSTOM_STORAGE_KEY, customDraft);
+                } catch (error) {
+                    // This ignores blocked storage because the lines still work for this visit.
+                }
+            });
+
+            document.getElementById("copyResultBtn").addEventListener("click", event => partyCopyText(serializeResult(), event.currentTarget));
+        </script>
+    </body>
+</html>

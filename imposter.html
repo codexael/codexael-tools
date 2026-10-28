@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Codexael Toolstack - Imposter</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <!-- Metadata -->
+        <meta name="description" content="Everyone knows the secret word except one player. Can you spot the imposter? 3-12 players.">
+        <meta name="author" content="Codexael">
+        <meta name="theme-color" content="#fff4e0" media="(prefers-color-scheme: light)">
+        <meta name="theme-color" content="#17140f" media="(prefers-color-scheme: dark)">
+
+        <!-- Open Graph -->
+        <meta property="og:title" content="Codexael Toolstack — Imposter: Find the Faker">
+        <meta property="og:description" content="Everyone knows the secret word except one player. Can you spot the imposter? 3-12 players.">
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="https://tools.codexael.com/imposter.html">
+        <meta property="og:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+        <meta property="og:image:width" content="1200">
+        <meta property="og:image:height" content="630">
+        <meta property="og:image:type" content="image/png">
+        <meta property="og:image:alt" content="Codexael Toolstack — Imposter: Find the Faker">
+        <meta property="og:site_name" content="Codexael Toolstack">
+
+        <!-- Twitter Card -->
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="Codexael Toolstack — Imposter: Find the Faker">
+        <meta name="twitter:description" content="Everyone knows the secret word except one player. Can you spot the imposter? 3-12 players.">
+        <meta name="twitter:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+
+        <!-- Favicon / App Icon -->
+        <link rel="icon" type="image/svg+xml" href="assets/images/codexael_icon.svg">
+        <link rel="apple-touch-icon" href="assets/images/codexael_icon.svg">
+
+        <!-- Bootstrap 5.2.0-beta1 -->
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+
+        <!-- Bootstrap with Popper 5.2.0-beta1 -->
+        <script src="js/bootstrap.bundle.min.js"></script>
+
+        <!-- Bootstrap Icons 1.11.3 -->
+        <link rel="stylesheet" href="css/bootstrap-icons.min.css">
+
+        <!-- PeerJS 1.5.4 -->
+        <script src="js/peerjs.min.js"></script>
+
+        <!-- Google fonts -->
+        <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+        <!-- Custom CSS -->
+        <link rel="stylesheet" href="css/keycaps.css">
+        <link rel="stylesheet" href="css/party-games.css">
+
+        <style>
+            /* The secret card hides its word until the player chooses to look. */
+            .imp-secret {
+                --stage-c: var(--lime);
+            }
+
+            .imp-secret.is-imposter {
+                --stage-c: var(--red);
+            }
+
+            .imp-secret.is-hidden .party-stage-title {
+                filter: blur(10px);
+                user-select: none;
+            }
+
+            .imp-secret-toggle {
+                width: auto;
+                margin-bottom: 0;
+                padding: 6px 12px;
+                font-size: 0.75rem;
+            }
+
+            .imp-clues {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .imp-clue {
+                display: grid;
+                grid-template-columns: minmax(0, 140px) minmax(0, 1fr);
+                align-items: center;
+                gap: 10px;
+                padding: 6px 10px;
+                background: var(--paper);
+                border: 3px solid var(--ink);
+                border-left: 8px solid var(--member-c, var(--ink));
+                box-shadow: 1.5px 1.5px 0 var(--ink);
+                font-size: 0.85rem;
+            }
+
+            .imp-clue.is-turn {
+                background: var(--yellow);
+                color: #111111;
+            }
+
+            .imp-clue-name {
+                font-weight: 700;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+            .imp-clue-words {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 6px;
+            }
+
+            .imp-clue-word {
+                padding: 0 6px;
+                background: var(--cyan);
+                color: #111111;
+                border: 2px solid var(--ink);
+                font-weight: 700;
+            }
+
+            .imp-clue-pending {
+                opacity: 0.6;
+                font-style: italic;
+            }
+
+            .imp-vote-count {
+                float: right;
+                font-family: var(--display-font);
+            }
+
+            @media (max-width: 575px) {
+                .imp-clue {
+                    grid-template-columns: 1fr;
+                    gap: 4px;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <!-- Common layout -->
+        <div id="navbar-container"></div>
+
+        <div class="container-fluid tool-wrapper">
+
+            <!-- Setup view -->
+            <div class="row" id="partySetup"></div>
+
+            <!-- Room view -->
+            <div class="row g-3 g-md-0 gx-md-3 gx-0 d-none party-room" id="partyRoom">
+
+                <div class="col-md-8 editor-panel party-game-panel" id="gamePanel" style="--panel-c: var(--red)">
+                    <div class="editor-header">
+                        <span class="editor-title">Imposter</span>
+                        <div class="editor-actions">
+                            <button title="Copy result" data-shortcut="copy" id="copyResultBtn"><i class="bi bi-copy icon-btn"></i></button>
+                            <button title="Fullscreen" onclick="toggleEditorFullScreen('gamePanel')"><i class="bi bi-arrows-fullscreen icon-btn"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="party-body invisible-scrollbars" id="gameBody"></div>
+
+                    <div class="editor-footer">
+                        <div class="status">
+                            <span>Round <b id="footerRound">0</b></span>
+                            <span>Phase <b id="footerPhase">Lobby</b></span>
+                            <span>Pack <b id="footerPack">-</b></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4 editor-panel party-side-panel" id="partyPanel"></div>
+
+            </div>
+        </div>
+
+        <div id="footer-container"></div>
+
+        <!-- Common JS -->
+        <script src="js/tool-help.js"></script>
+        <script src="js/storage.js"></script>
+        <script src="js/common.js"></script>
+        <script src="js/script.js"></script>
+        <script src="js/party-room.js"></script>
+
+        <!-- Custom JS -->
+        <script>
+            const pageTitle = "Imposter";
+
+            const MIN_PLAYERS = 3;
+            const MAX_PLAYERS = 12;
+            const MAX_CLUE_LENGTH = 30;
+            const MAX_GUESS_LENGTH = 40;
+            const CLUE_MS = 45000;
+            const VOTE_MS = 60000;
+            const GUESS_MS = 30000;
+            const TIMER_TICK_MS = 250;
+
+            const PACKS = {
+                food: { label: "Food", words: ["Pizza", "Sushi", "Pancake", "Burger", "Taco", "Ice cream", "Popcorn", "Biryani", "Noodles", "Chocolate", "Sandwich", "Salad", "Donut", "Cheese", "Samosa", "Pasta", "Waffle", "Curry", "Croissant", "Dumpling"] },
+                animals: { label: "Animals", words: ["Elephant", "Penguin", "Giraffe", "Octopus", "Kangaroo", "Owl", "Shark", "Tiger", "Camel", "Dolphin", "Panda", "Parrot", "Snake", "Frog", "Horse", "Bat", "Crocodile", "Zebra", "Squirrel", "Peacock"] },
+                places: { label: "Places", words: ["Airport", "Beach", "Hospital", "Library", "Cinema", "Gym", "Zoo", "Museum", "Bakery", "Train station", "Castle", "Desert", "Casino", "Space station", "School", "Supermarket", "Farm", "Stadium", "Hotel", "Submarine"] },
+                jobs: { label: "Jobs", words: ["Pilot", "Doctor", "Chef", "Firefighter", "Teacher", "Astronaut", "Plumber", "Magician", "Lawyer", "Farmer", "Dentist", "Barber", "Detective", "Photographer", "Architect", "Lifeguard", "Journalist", "Baker", "Judge", "Clown"] },
+                sports: { label: "Sports", words: ["Cricket", "Football", "Tennis", "Swimming", "Chess", "Boxing", "Golf", "Basketball", "Skiing", "Surfing", "Badminton", "Cycling", "Archery", "Bowling", "Volleyball", "Karate", "Rugby", "Table tennis", "Marathon", "Skateboarding"] },
+                office: { label: "Office life", words: ["Standup", "Deadline", "Coffee machine", "Spreadsheet", "Printer", "Lunch break", "Laptop", "Whiteboard", "Video call", "Sticky note", "Payday", "Email", "Bug fix", "Code review", "Retrospective", "Sprint", "Password", "Elevator", "Headphones", "Team outing"] },
+                things: { label: "Everyday things", words: ["Umbrella", "Toothbrush", "Mirror", "Candle", "Backpack", "Scissors", "Pillow", "Wallet", "Key", "Clock", "Ladder", "Balloon", "Remote control", "Glasses", "Sock", "Bicycle", "Camera", "Kettle", "Guitar", "Map"] }
+            };
+
+            const PHASE_LABELS = { lobby: "Lobby", clues: "Clues", vote: "Vote", guess: "Last guess", result: "Result" };
+
+            const gameBody = document.getElementById("gameBody");
+
+            // This holds the newest view from the referee, and every client draws only from it.
+            let view = null;
+            let viewDeadline = null;
+            let viewTotalMs = 0;
+            let secretHidden = false;
+            let timerInterval = null;
+
+            // ---------- Referee state ----------
+
+            // This holds the whole game, and only the referee keeps it.
+            const game = {
+                phase: "lobby",
+                settings: { pack: "food", imposters: "1", clueRounds: "1" },
+                round: 0,
+                word: "",
+                packLabel: "",
+                imposterIds: [],
+                order: [],
+                clues: [],
+                votes: new Map(),
+                guessId: null,
+                guess: "",
+                result: null,
+                scores: new Map(),
+                gains: new Map(),
+                deadline: 0,
+                totalMs: 0,
+                timer: null
+            };
+
+            const FRESH_GAME = { ...game, settings: { ...game.settings } };
+
+            function resetGame() {
+                clearTimeout(game.timer);
+                Object.assign(game, FRESH_GAME, { settings: { ...FRESH_GAME.settings }, votes: new Map(), scores: new Map(), gains: new Map() });
+            }
+
+            function inRound(id) {
+                return game.order.includes(id);
+            }
+
+            function setPhaseTimer(ms, onEnd) {
+                clearTimeout(game.timer);
+                game.totalMs = ms;
+                game.deadline = Date.now() + ms;
+                game.timer = setTimeout(onEnd, ms);
+            }
+
+            function clearPhaseTimer() {
+                clearTimeout(game.timer);
+                game.deadline = 0;
+                game.totalMs = 0;
+            }
+
+            function maxImposters(count) {
+                return count >= 6 ? 2 : 1;
+            }
+
+            function startRound() {
+                const players = party.players;
+                if (players.length < MIN_PLAYERS) {
+                    showInfoToast(`Imposter needs at least ${MIN_PLAYERS} players`);
+                    return;
+                }
+
+                const pack = PACKS[game.settings.pack] || PACKS.food;
+                const imposterCount = Math.min(Number(game.settings.imposters) || 1, maxImposters(players.length));
+
+                game.round += 1;
+                game.word = pack.words[partyRandomInt(pack.words.length)];
+                game.packLabel = pack.label;
+                game.order = partyShuffle(players.map(p => p.id));
+                game.imposterIds = partyShuffle(game.order).slice(0, imposterCount);
+                game.clues = [];
+                game.votes = new Map();
+                game.guess = "";
+                game.result = null;
+                game.gains = new Map();
+                game.phase = "clues";
+
+                // This makes sure an imposter is never asked for the very first clue.
+                if (game.imposterIds.includes(game.order[0])) {
+                    const swapIndex = game.order.findIndex(id => !game.imposterIds.includes(id));
+                    [game.order[0], game.order[swapIndex]] = [game.order[swapIndex], game.order[0]];
+                }
+
+                setPhaseTimer(CLUE_MS, skipClue);
+                publish();
+            }
+
+            function clueCount(id) {
+                return game.clues.filter(c => c.id === id).length;
+            }
+
+            // This returns the first player in order with the fewest clues, or null once everyone has given all their clues.
+            function currentTurnId() {
+                if (!game.order.length) return null;
+                const fewest = Math.min(...game.order.map(clueCount));
+                if (fewest >= Number(game.settings.clueRounds)) return null;
+                return game.order.find(id => clueCount(id) === fewest);
+            }
+
+            function advanceClue() {
+                if (currentTurnId() === null) {
+                    startVote();
+                    return;
+                }
+
+                setPhaseTimer(CLUE_MS, skipClue);
+                publish();
+            }
+
+            function skipClue() {
+                game.clues.push({ id: currentTurnId(), text: "" });
+                advanceClue();
+            }
+
+            function startVote() {
+                game.phase = "vote";
+                setPhaseTimer(VOTE_MS, finishVote);
+                publish();
+            }
+
+            // This counts the votes and picks the accused player, where a tie means nobody is accused.
+            function tallyVotes() {
+                const counts = new Map();
+                for (const target of game.votes.values()) counts.set(target, (counts.get(target) || 0) + 1);
+
+                const top = Math.max(0, ...counts.values());
+                const leaders = [...counts.keys()].filter(id => counts.get(id) === top);
+
+                return { counts, accusedId: top > 0 && leaders.length === 1 ? leaders[0] : null };
+            }
+
+            function finishVote() {
+                const { accusedId } = tallyVotes();
+
+                if (accusedId && game.imposterIds.includes(accusedId)) {
+                    game.phase = "guess";
+                    game.guessId = accusedId;
+                    setPhaseTimer(GUESS_MS, () => finishRound(""));
+                    publish();
+                    return;
+                }
+
+                finishRound("");
+            }
+
+            function addPoints(id, points) {
+                if (!points) return;
+                game.scores.set(id, (game.scores.get(id) || 0) + points);
+                game.gains.set(id, (game.gains.get(id) || 0) + points);
+            }
+
+            function finishRound(guess) {
+                clearPhaseTimer();
+
+                const { counts, accusedId } = tallyVotes();
+                const caught = accusedId !== null && game.imposterIds.includes(accusedId);
+                const guessed = caught && partyGuessMatches(guess, game.word);
+
+                // This gives one point to each crew member who voted for an imposter.
+                for (const [voter, target] of game.votes) {
+                    if (!game.imposterIds.includes(voter) && game.imposterIds.includes(target)) addPoints(voter, 1);
+                }
+
+                // This gives two points to every imposter who escaped, or to a caught imposter who guessed the word.
+                for (const id of game.imposterIds) {
+                    if (!caught || (id === accusedId && guessed)) addPoints(id, 2);
+                }
+
+                game.phase = "result";
+                game.guess = guess;
+                game.result = {
+                    accusedId,
+                    caught,
+                    guessed,
+                    counts: Object.fromEntries(counts),
+                    votes: Object.fromEntries(game.votes)
+                };
+
+                publish();
+            }
+
+            // This ends the round early when the game can no longer go on.
+            function abortRound(reason) {
+                clearPhaseTimer();
+                game.phase = "lobby";
+                game.order = [];
+                game.imposterIds = [];
+                party.emit({ type: "notice", text: reason });
+                publish();
+            }
+
+            function buildView(id) {
+                const isImposter = game.imposterIds.includes(id);
+                const showAll = game.phase === "result";
+
+                return {
+                    phase: game.phase,
+                    settings: { ...game.settings },
+                    round: game.round,
+                    packLabel: game.packLabel || PACKS[game.settings.pack].label,
+                    inRound: inRound(id),
+                    isImposter,
+                    imposterCount: game.imposterIds.length,
+                    word: showAll || (inRound(id) && !isImposter) ? game.word : null,
+                    imposterIds: showAll ? [...game.imposterIds] : (isImposter ? [...game.imposterIds] : []),
+                    order: [...game.order],
+                    turnId: game.phase === "clues" ? currentTurnId() : null,
+                    clueRounds: Number(game.settings.clueRounds),
+                    clues: game.clues.map(c => ({ ...c })),
+                    votedIds: [...game.votes.keys()],
+                    myVote: game.votes.get(id) || null,
+                    guessId: game.phase === "guess" ? game.guessId : null,
+                    guess: showAll ? game.guess : "",
+                    result: showAll ? game.result : null,
+                    scores: Object.fromEntries(game.scores),
+                    gains: showAll ? Object.fromEntries(game.gains) : {},
+                    remainingMs: game.deadline ? Math.max(0, game.deadline - Date.now()) : 0,
+                    totalMs: game.totalMs
+                };
+            }
+
+            function publish() {
+                party.publish(buildView);
+            }
+
+            // This applies one move from a player after checking that the move is allowed right now.
+            function handleAction(player, action) {
+                if (!action || typeof action.type !== "string") return;
+
+                switch (action.type) {
+                    case "setting": {
+                        if (!player.host || game.phase !== "lobby") return;
+                        const allowed = { pack: Object.keys(PACKS), imposters: ["1", "2"], clueRounds: ["1", "2"] };
+                        if (!allowed[action.key] || !allowed[action.key].includes(String(action.value))) return;
+                        game.settings[action.key] = String(action.value);
+                        publish();
+                        return;
+                    }
+
+                    case "start":
+                        if (!player.host || (game.phase !== "lobby" && game.phase !== "result")) return;
+                        startRound();
+                        return;
+
+                    case "lobby":
+                        if (!player.host || game.phase !== "result") return;
+                        game.phase = "lobby";
+                        game.order = [];
+                        game.imposterIds = [];
+                        publish();
+                        return;
+
+                    case "clue": {
+                        if (game.phase !== "clues" || player.id !== currentTurnId()) return;
+                        const text = partyCleanText(action.text, MAX_CLUE_LENGTH);
+                        if (!text) return;
+
+                        // This stops a player from simply saying the secret word.
+                        if (partyNormalizeGuess(text).includes(partyNormalizeGuess(game.word))) {
+                            party.emit({ type: "notice", text: "Your clue cannot contain the secret word" }, [player.id]);
+                            return;
+                        }
+
+                        game.clues.push({ id: player.id, text });
+                        advanceClue();
+                        return;
+                    }
+
+                    case "vote": {
+                        if (game.phase !== "vote" || !inRound(player.id)) return;
+                        const target = String(action.target);
+                        if (target === player.id || !inRound(target)) return;
+                        game.votes.set(player.id, target);
+
+                        if (game.order.every(id => game.votes.has(id))) finishVote();
+                        else publish();
+                        return;
+                    }
+
+                    case "guess":
+                        if (game.phase !== "guess" || player.id !== game.guessId) return;
+                        finishRound(partyCleanText(action.text, MAX_GUESS_LENGTH));
+                        return;
+                }
+            }
+
+            function handleLeave(player) {
+                game.scores.delete(player.id);
+
+                if (!inRound(player.id) || game.phase === "lobby" || game.phase === "result") {
+                    publish();
+                    return;
+                }
+
+                if (game.imposterIds.includes(player.id)) {
+                    abortRound(`${player.name} was an imposter and left, so the round is over`);
+                    return;
+                }
+
+                const wasTurn = game.phase === "clues" && currentTurnId() === player.id;
+
+                game.order = game.order.filter(id => id !== player.id);
+                game.votes.delete(player.id);
+                for (const [voter, target] of game.votes) {
+                    if (target === player.id) game.votes.delete(voter);
+                }
+
+                if (game.order.length < MIN_PLAYERS) {
+                    abortRound(`${player.name} left, and Imposter needs at least ${MIN_PLAYERS} players`);
+                    return;
+                }
+
+                // This moves the turn on when the player who left was giving a clue.
+                if (wasTurn) {
+                    advanceClue();
+                    return;
+                }
+
+                if (game.phase === "vote" && game.order.every(id => game.votes.has(id))) {
+                    finishVote();
+                    return;
+                }
+
+                publish();
+            }
+
+            // ---------- Room ----------
+
+            const party = createPartyRoom({
+                gameId: "imposter",
+                title: "Imposter",
+                icon: "bi-incognito",
+                colour: "var(--red)",
+                intro: "Everyone gets the same secret word except the imposter. Give clues, find the faker, and do not give the word away.",
+                minPlayers: MIN_PLAYERS,
+                maxPlayers: MAX_PLAYERS,
+                onEnter() {
+                    secretHidden = false;
+                    if (party.isHost) {
+                        resetGame();
+                        publish();
+                    }
+                    startTimerLoop();
+                },
+                onExit() {
+                    resetGame();
+                    view = null;
+                    clearInterval(timerInterval);
+                    gameBody.innerHTML = "";
+                },
+                onView(next) {
+                    if (!next || typeof next.phase !== "string") return;
+
+                    if (!view || view.round !== next.round) secretHidden = false;
+
+                    view = next;
+                    viewDeadline = partyDeadlineFrom(next.remainingMs);
+                    viewTotalMs = next.totalMs;
+                    render();
+                },
+                onEvent(event) {
+                    if (event && event.type === "notice") showInfoToast(String(event.text));
+                },
+                host: {
+                    onJoin: () => publish(),
+                    onLeave: handleLeave,
+                    onAction: handleAction
+                }
+            });
+
+            // ---------- Rendering ----------
+
+            function nameOf(id) {
+                const player = party.getPlayer(id);
+                return player ? player.name : "Someone who left";
+            }
+
+            function colourOf(id) {
+                const player = party.getPlayer(id);
+                return partyColourClass(player ? player.order : 0);
+            }
+
+            function renderLobby() {
+                const canEdit = party.isHost;
+                const enoughPlayers = party.players.length >= MIN_PLAYERS;
+                const twoAllowed = party.players.length >= 6;
+
+                return `
+                    <div class="party-stage" style="--stage-c: var(--yellow)">
+                        <span class="party-stage-kicker">How to play</span>
+                        <p class="party-stage-text">Everyone but the imposter sees the same secret word. Take turns giving a short clue. Then vote for who you think is faking. A caught imposter gets one last chance to guess the word.</p>
+                    </div>
+
+                    <div class="party-settings">
+                        <div>
+                            <span class="party-label">Word pack</span>
+                            ${partySegmentHtml("pack", Object.entries(PACKS).map(([id, pack]) => [id, pack.label]), view.settings.pack, !canEdit)}
+                        </div>
+                        <div>
+                            <span class="party-label">Imposters</span>
+                            ${partySegmentHtml("imposters", [["1", "One"], ["2", twoAllowed ? "Two" : "Two (6+ players)"]], view.settings.imposters, !canEdit)}
+                        </div>
+                        <div>
+                            <span class="party-label">Clue rounds</span>
+                            ${partySegmentHtml("clueRounds", [["1", "One clue each"], ["2", "Two clues each"]], view.settings.clueRounds, !canEdit)}
+                        </div>
+                    </div>
+
+                    ${canEdit
+                        ? `<button type="button" class="btn action-btn-primary" data-act="start"${enoughPlayers ? "" : " disabled"}><i class="bi bi-play-fill"></i> Start round</button>
+                           <div class="party-hint text-center">${enoughPlayers ? "Everyone in the room plays this round." : `Waiting for at least ${MIN_PLAYERS} players.`}</div>`
+                        : `<div class="party-empty-hint">Waiting for the room creator to start the round</div>`}`;
+            }
+
+            function renderSecret() {
+                if (!view.inRound) {
+                    return `<div class="party-empty-hint"><i class="bi bi-eye"></i> You joined during this round, so you watch until the next one.</div>`;
+                }
+
+                const partners = view.imposterIds.filter(id => id !== party.myId).map(nameOf);
+
+                return `
+                    <div class="party-stage imp-secret${view.isImposter ? " is-imposter" : ""}${secretHidden ? " is-hidden" : ""}">
+                        <span class="party-stage-kicker">${view.isImposter ? "Your secret role" : `Secret word · ${partyEscapeHtml(view.packLabel)}`}</span>
+                        <h2 class="party-stage-title">${view.isImposter ? "You are the imposter" : partyEscapeHtml(view.word)}</h2>
+                        <p class="party-stage-text">${view.isImposter
+                            ? `The category is <b>${partyEscapeHtml(view.packLabel)}</b>. Blend in and guess the word from the clues.${partners.length ? ` Your partner: <b>${partyEscapeHtml(partners.join(", "))}</b>.` : ""}`
+                            : "Give clues that prove you know the word without giving it away."}</p>
+                        <button type="button" class="btn action-btn-ghost imp-secret-toggle" data-act="toggleSecret"><i class="bi ${secretHidden ? "bi-eye" : "bi-eye-slash"}"></i> ${secretHidden ? "Show" : "Hide"}</button>
+                    </div>`;
+            }
+
+            function renderClueList() {
+                return `<div class="imp-clues">${view.order.map(id => {
+                    const words = view.clues.filter(c => c.id === id);
+                    const isTurn = view.turnId === id;
+                    return `
+                        <div class="imp-clue ${colourOf(id)}${isTurn ? " is-turn" : ""}">
+                            <span class="imp-clue-name">${isTurn ? `<i class="bi bi-caret-right-fill"></i> ` : ""}${partyEscapeHtml(nameOf(id))}${id === party.myId ? " (you)" : ""}</span>
+                            <span class="imp-clue-words">${words.length
+                                ? words.map(c => c.text ? `<span class="imp-clue-word">${partyEscapeHtml(c.text)}</span>` : `<span class="imp-clue-pending">skipped</span>`).join("")
+                                : `<span class="imp-clue-pending">${isTurn ? "thinking..." : "waiting"}</span>`}</span>
+                        </div>`;
+                }).join("")}</div>`;
+            }
+
+            function renderClues() {
+                const myTurn = view.turnId === party.myId;
+
+                return `
+                    ${renderSecret()}
+                    ${partyTimerHtml("phaseTimer")}
+                    <div>
+                        <span class="party-label">Clues${view.clueRounds > 1 ? ` · ${view.clueRounds} each` : ""}</span>
+                        ${renderClueList()}
+                    </div>
+                    ${myTurn
+                        ? `<form class="party-chat-form" id="clueForm">
+                               <input type="text" class="input-cyan" id="clueInput" maxlength="${MAX_CLUE_LENGTH}" placeholder="Your clue: one or two words" autocomplete="off">
+                               <button type="submit" class="btn action-btn-primary"><i class="bi bi-send"></i> Give clue</button>
+                           </form>`
+                        : `<div class="party-hint text-center">Waiting for <b>${partyEscapeHtml(nameOf(view.turnId))}</b> to give a clue.</div>`}`;
+            }
+
+            function renderVote() {
+                const canVote = view.inRound;
+                const counts = {};
+
+                return `
+                    ${renderSecret()}
+                    ${partyTimerHtml("phaseTimer")}
+                    <div>
+                        <span class="party-label">${canVote ? "Who is the imposter?" : "The players are voting"}</span>
+                        <div class="party-choices">${view.order.map(id => {
+                            const clues = view.clues.filter(c => c.id === id && c.text).map(c => c.text);
+                            const self = id === party.myId;
+                            counts[id] = 0;
+                            return `
+                                <button type="button" class="party-choice${view.myVote === id ? " is-selected" : ""}" data-act="vote" data-target="${partyEscapeHtml(id)}"${!canVote || self ? " disabled" : ""}>
+                                    ${partyEscapeHtml(nameOf(id))}${self ? " (you)" : ""}
+                                    ${view.votedIds.includes(id) ? `<i class="bi bi-check-circle-fill" title="Has voted"></i>` : ""}
+                                    <span class="party-choice-voters">${clues.length ? partyEscapeHtml(clues.join(" · ")) : "No clue given"}</span>
+                                </button>`;
+                        }).join("")}</div>
+                    </div>
+                    <div class="party-hint text-center">${view.votedIds.length} of ${view.order.length} voted. You can change your vote until everyone has voted. A tie means nobody is caught.</div>`;
+            }
+
+            function renderGuess() {
+                const isGuesser = view.guessId === party.myId;
+
+                return `
+                    <div class="party-stage" style="--stage-c: var(--orange)">
+                        <span class="party-stage-kicker">Caught!</span>
+                        <h2 class="party-stage-title">${partyEscapeHtml(nameOf(view.guessId))} was voted out</h2>
+                        <p class="party-stage-text">${isGuesser ? "You are caught, but you can still win: guess the secret word." : "If they were the imposter, they get one guess at the secret word."}</p>
+                    </div>
+                    ${partyTimerHtml("phaseTimer")}
+                    ${isGuesser
+                        ? `<form class="party-chat-form" id="guessForm">
+                               <input type="text" class="input-cyan" id="guessInput" maxlength="${MAX_GUESS_LENGTH}" placeholder="The secret word is..." autocomplete="off">
+                               <button type="submit" class="btn action-btn-primary"><i class="bi bi-send"></i> Guess</button>
+                           </form>`
+                        : `<div class="party-empty-hint">Waiting for the last guess</div>`}`;
+            }
+
+            function renderResult() {
+                const result = view.result;
+                const imposters = view.imposterIds.map(nameOf).join(" and ");
+
+                let headline;
+                let stageColour;
+                if (!result.caught) {
+                    headline = result.accusedId ? `Wrong! ${partyEscapeHtml(nameOf(result.accusedId))} was innocent` : "A tie, so nobody was caught";
+                    stageColour = "var(--red)";
+                } else if (result.guessed) {
+                    headline = "Caught, but the imposter guessed the word!";
+                    stageColour = "var(--orange)";
+                } else {
+                    headline = "The crew caught the imposter!";
+                    stageColour = "var(--lime)";
+                }
+
+                const players = party.players;
+                const rows = players.map(p => ({ name: p.name, order: p.order, self: p.id === party.myId, points: view.scores[p.id] || 0, gain: view.gains[p.id] || 0 }));
+
+                return `
+                    <div class="party-stage" style="--stage-c: ${stageColour}">
+                        <span class="party-stage-kicker">Round ${view.round} result</span>
+                        <h2 class="party-stage-title">${headline}</h2>
+                        <p class="party-stage-text">The word was <b>${partyEscapeHtml(view.word)}</b> (${partyEscapeHtml(view.packLabel)}). The imposter${view.imposterIds.length > 1 ? "s were" : " was"} <b>${partyEscapeHtml(imposters)}</b>.${result.caught ? ` Last guess: <b>${partyEscapeHtml(view.guess || "none")}</b>.` : ""}</p>
+                    </div>
+
+                    <div>
+                        <span class="party-label">Votes</span>
+                        <div class="party-choices">${view.order.map(id => {
+                            const voters = Object.entries(result.votes).filter(([, target]) => target === id).map(([voter]) => nameOf(voter));
+                            const isImposter = view.imposterIds.includes(id);
+                            return `
+                                <div class="party-choice ${isImposter ? "is-wrong" : ""}">
+                                    ${partyEscapeHtml(nameOf(id))}${isImposter ? " · imposter" : ""}
+                                    <span class="imp-vote-count">${voters.length}</span>
+                                    <span class="party-choice-voters">${voters.length ? `Votes from ${partyEscapeHtml(voters.join(", "))}` : "No votes"}</span>
+                                </div>`;
+                        }).join("")}</div>
+                    </div>
+
+                    <div>
+                        <span class="party-label">Scores</span>
+                        ${partyScoreboardHtml(rows)}
+                    </div>
+
+                    <div class="party-row">
+                        <button type="button" class="btn action-btn-ghost" data-act="share"><i class="bi bi-share"></i> Share result</button>
+                        ${party.isHost ? `
+                            <button type="button" class="btn action-btn-ghost" data-act="lobby"><i class="bi bi-sliders"></i> Change settings</button>
+                            <button type="button" class="btn action-btn-primary" data-act="start"${party.players.length >= MIN_PLAYERS ? "" : " disabled"}><i class="bi bi-arrow-repeat"></i> Next round</button>` : ""}
+                    </div>
+                    ${party.isHost ? "" : `<div class="party-hint text-center">Waiting for the room creator to start the next round.</div>`}`;
+            }
+
+            function render() {
+                if (!view) return;
+
+                const focused = document.activeElement && document.activeElement.id;
+                const draft = focused ? document.activeElement.value : null;
+
+                switch (view.phase) {
+                    case "lobby": gameBody.innerHTML = renderLobby(); break;
+                    case "clues": gameBody.innerHTML = renderClues(); break;
+                    case "vote": gameBody.innerHTML = renderVote(); break;
+                    case "guess": gameBody.innerHTML = renderGuess(); break;
+                    case "result": gameBody.innerHTML = renderResult(); break;
+                }
+
+                // This keeps a half-typed clue or guess when a new view arrives.
+                const input = focused && document.getElementById(focused);
+                if (input && input.tagName === "INPUT") {
+                    input.value = draft;
+                    input.focus();
+                } else {
+                    const autoFocus = document.getElementById("clueInput") || document.getElementById("guessInput");
+                    if (autoFocus) autoFocus.focus();
+                }
+
+                updateTimer();
+                renderBadges();
+                renderFooter();
+            }
+
+            function renderBadges() {
+                const badges = {};
+
+                for (const player of party.players) {
+                    const badge = { chip: view.scores[player.id] || 0 };
+
+                    if (view.phase === "clues" && view.turnId === player.id) {
+                        badge.icon = "bi-chat-dots-fill";
+                        badge.iconTitle = "Giving a clue";
+                    } else if (view.phase === "vote" && view.order.includes(player.id)) {
+                        badge.icon = view.votedIds.includes(player.id) ? "bi-check-circle-fill" : "bi-hourglass-split";
+                        badge.iconTitle = view.votedIds.includes(player.id) ? "Voted" : "Thinking";
+                    } else if (view.phase !== "lobby" && !view.order.includes(player.id)) {
+                        badge.note = "watching";
+                    }
+
+                    badges[player.id] = badge;
+                }
+
+                party.setBadges(badges);
+            }
+
+            function renderFooter() {
+                document.getElementById("footerRound").textContent = view.round;
+                document.getElementById("footerPhase").textContent = PHASE_LABELS[view.phase] || "-";
+                document.getElementById("footerPack").textContent = view.packLabel;
+            }
+
+            function updateTimer() {
+                updatePartyTimer(document.getElementById("phaseTimer"), viewDeadline, viewTotalMs);
+            }
+
+            function startTimerLoop() {
+                clearInterval(timerInterval);
+                timerInterval = setInterval(updateTimer, TIMER_TICK_MS);
+            }
+
+            function serializeResult() {
+                if (!view || view.phase !== "result") return "";
+                const result = view.result;
+                const outcome = !result.caught ? "The imposter escaped" : result.guessed ? "The imposter was caught but guessed the word" : "The crew caught the imposter";
+                const scores = party.players
+                    .map(p => ({ name: p.name, points: view.scores[p.id] || 0 }))
+                    .sort((a, b) => b.points - a.points)
+                    .map(p => `${p.name} ${p.points}`)
+                    .join(", ");
+                return `🕵️ Imposter round ${view.round}: ${outcome}. The word was "${view.word}". Scores: ${scores}`;
+            }
+
+            // ---------- UI events ----------
+
+            bindPartySegments(gameBody, (key, value) => party.act({ type: "setting", key, value }));
+
+            gameBody.addEventListener("click", event => {
+                const button = event.target.closest("[data-act]");
+                if (!button || button.disabled) return;
+
+                switch (button.dataset.act) {
+                    case "start": party.act({ type: "start" }); break;
+                    case "lobby": party.act({ type: "lobby" }); break;
+                    case "vote": party.act({ type: "vote", target: button.dataset.target }); break;
+                    case "share": partyShareText(serializeResult(), button); break;
+                    case "toggleSecret":
+                        secretHidden = !secretHidden;
+                        render();
+                        break;
+                }
+            });
+
+            gameBody.addEventListener("submit", event => {
+                event.preventDefault();
+
+                if (event.target.id === "clueForm") {
+                    const text = partyCleanText(document.getElementById("clueInput").value, MAX_CLUE_LENGTH);
+                    if (!text) {
+                        showInfoToast("Type a clue first");
+                        return;
+                    }
+                    document.getElementById("clueInput").value = "";
+                    party.act({ type: "clue", text });
+                }
+
+                if (event.target.id === "guessForm") {
+                    const text = partyCleanText(document.getElementById("guessInput").value, MAX_GUESS_LENGTH);
+                    if (!text) {
+                        showInfoToast("Type a guess first");
+                        return;
+                    }
+                    party.act({ type: "guess", text });
+                }
+            });
+
+            document.getElementById("copyResultBtn").addEventListener("click", event => partyCopyText(serializeResult(), event.currentTarget));
+        </script>
+    </body>
+</html>

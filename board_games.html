@@ -1,0 +1,1368 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Codexael Toolstack - Board Game Duel</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <!-- Metadata -->
+        <meta name="description" content="Tic-Tac-Toe, Connect Four and Dots & Boxes online. The winner stays on. 2-12 players.">
+        <meta name="author" content="Codexael">
+        <meta name="theme-color" content="#fff4e0" media="(prefers-color-scheme: light)">
+        <meta name="theme-color" content="#17140f" media="(prefers-color-scheme: dark)">
+
+        <!-- Open Graph -->
+        <meta property="og:title" content="Codexael Toolstack — Board Game Duel: Play with Friends">
+        <meta property="og:description" content="Tic-Tac-Toe, Connect Four and Dots & Boxes online. The winner stays on. 2-12 players.">
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="https://tools.codexael.com/board_games.html">
+        <meta property="og:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+        <meta property="og:image:width" content="1200">
+        <meta property="og:image:height" content="630">
+        <meta property="og:image:type" content="image/png">
+        <meta property="og:image:alt" content="Codexael Toolstack — Board Game Duel: Play with Friends">
+        <meta property="og:site_name" content="Codexael Toolstack">
+
+        <!-- Twitter Card -->
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="Codexael Toolstack — Board Game Duel: Play with Friends">
+        <meta name="twitter:description" content="Tic-Tac-Toe, Connect Four and Dots & Boxes online. The winner stays on. 2-12 players.">
+        <meta name="twitter:image" content="https://tools.codexael.com/assets/images/og-cover.png">
+
+        <!-- Favicon / App Icon -->
+        <link rel="icon" type="image/svg+xml" href="assets/images/codexael_icon.svg">
+        <link rel="apple-touch-icon" href="assets/images/codexael_icon.svg">
+
+        <!-- Bootstrap 5.2.0-beta1 -->
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+
+        <!-- Bootstrap with Popper 5.2.0-beta1 -->
+        <script src="js/bootstrap.bundle.min.js"></script>
+
+        <!-- Bootstrap Icons 1.11.3 -->
+        <link rel="stylesheet" href="css/bootstrap-icons.min.css">
+
+        <!-- PeerJS 1.5.4 -->
+        <script src="js/peerjs.min.js"></script>
+
+        <!-- Google fonts -->
+        <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+        <!-- Custom CSS -->
+        <link rel="stylesheet" href="css/keycaps.css">
+        <link rel="stylesheet" href="css/party-games.css">
+
+        <style>
+            /* Each of the two seats in a match has its own colour on every board. */
+            .bg-seat0 {
+                --seat-c: var(--red);
+            }
+
+            .bg-seat1 {
+                --seat-c: var(--yellow);
+            }
+
+            /* Players in the match */
+
+            .bg-players {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 10px;
+            }
+
+            .bg-player {
+                min-width: 0;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                padding: 8px 10px;
+                background: var(--paper);
+                border: 3px solid var(--ink);
+                border-left: 10px solid var(--seat-c);
+                box-shadow: 2px 2px 0 var(--ink);
+                font-size: 0.85rem;
+                font-weight: 700;
+            }
+
+            .bg-player.is-turn {
+                background: var(--seat-c);
+                color: #111111;
+                transform: rotate(-1deg);
+            }
+
+            .bg-player-mark {
+                width: 28px;
+                height: 28px;
+                flex-shrink: 0;
+                display: grid;
+                place-items: center;
+                background: var(--seat-c);
+                color: #111111;
+                border: 2.5px solid var(--ink);
+                border-radius: 50%;
+                font-family: var(--display-font);
+                font-size: 0.85rem;
+            }
+
+            .bg-player-name {
+                flex: 1;
+                min-width: 0;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+            .bg-player-score {
+                font-family: var(--display-font);
+                font-size: 1.2rem;
+            }
+
+            /* Tic-Tac-Toe */
+
+            .bg-ttt {
+                width: 100%;
+                max-width: 340px;
+                margin: 0 auto;
+                display: grid;
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                gap: 10px;
+            }
+
+            .bg-ttt-cell {
+                aspect-ratio: 1;
+                padding: 0;
+                background: var(--paper);
+                color: var(--ink);
+                border: 3px solid var(--ink);
+                border-radius: 12px;
+                box-shadow: 0 4px 0 var(--ink);
+                font-family: var(--display-font);
+                font-size: clamp(2rem, 9vw, 3.2rem);
+                line-height: 1;
+                transition: transform 0.08s, box-shadow 0.08s, background-color 0.12s;
+            }
+
+            .bg-ttt-cell:hover:not(:disabled) {
+                background: var(--bg);
+                transform: translateY(1px);
+                box-shadow: 0 3px 0 var(--ink);
+            }
+
+            .bg-ttt-cell:disabled {
+                cursor: default;
+            }
+
+            .bg-ttt-cell.is-filled {
+                background: var(--seat-c);
+                color: #111111;
+                transform: translateY(3px);
+                box-shadow: 0 1px 0 var(--ink);
+            }
+
+            .bg-ttt-cell.is-win {
+                background: var(--lime);
+                animation: bg-pulse 0.8s ease-in-out 3;
+            }
+
+            /* Connect Four */
+
+            .bg-c4 {
+                width: 100%;
+                max-width: 470px;
+                margin: 0 auto;
+                display: grid;
+                grid-template-columns: repeat(7, minmax(0, 1fr));
+                gap: 4px;
+                padding: 8px;
+                background: var(--blue);
+                border: 4px solid var(--ink);
+                border-radius: 14px;
+                box-shadow: 4px 4px 0 var(--ink);
+            }
+
+            .bg-c4-col {
+                min-width: 0;
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+                padding: 4px 2px;
+                background: transparent;
+                border: 0;
+                border-radius: 10px;
+                overflow: hidden;
+            }
+
+            .bg-c4-col:hover:not(:disabled) {
+                background: rgba(255, 255, 255, 0.3);
+            }
+
+            .bg-c4-col:focus-visible {
+                outline: 3px solid #111111;
+                outline-offset: -2px;
+                background: rgba(255, 255, 255, 0.3);
+            }
+
+            .bg-c4-col:disabled {
+                cursor: default;
+            }
+
+            .bg-c4-disc {
+                display: block;
+                width: 100%;
+                aspect-ratio: 1;
+                background: var(--paper);
+                border: 3px solid #111111;
+                border-radius: 50%;
+            }
+
+            .bg-c4-disc.is-filled {
+                background: var(--seat-c);
+            }
+
+            .bg-c4-disc.is-win {
+                box-shadow: 0 0 0 3px var(--lime), 0 0 0 5px #111111;
+                animation: bg-pulse 0.8s ease-in-out 3;
+            }
+
+            /* The newest disc falls from above the board, row by row. */
+            .bg-c4-disc.is-drop {
+                animation: bg-drop 0.4s cubic-bezier(0.5, 0, 1, 1);
+            }
+
+            @keyframes bg-drop {
+                from { transform: translateY(calc(var(--drop) * (-100% - 6px))); }
+                to { transform: translateY(0); }
+            }
+
+            /* Dots & Boxes */
+
+            .bg-dots {
+                --g: 16px;
+                width: 100%;
+                max-width: 440px;
+                margin: 0 auto;
+                aspect-ratio: 1;
+                display: grid;
+                grid-template-columns: repeat(var(--n), var(--g) minmax(0, 1fr)) var(--g);
+                grid-template-rows: repeat(var(--n), var(--g) minmax(0, 1fr)) var(--g);
+            }
+
+            .bg-dot {
+                margin: 2px;
+                background: var(--ink);
+                border-radius: 50%;
+            }
+
+            .bg-dots-edge {
+                position: relative;
+                min-width: 0;
+                min-height: 0;
+                padding: 0;
+                background: transparent;
+                border: 0;
+            }
+
+            .bg-dots-edge::before {
+                content: "";
+                position: absolute;
+                background: var(--ink);
+                border-radius: 3px;
+                opacity: 0.14;
+            }
+
+            .bg-dots-edge.is-h::before {
+                left: 2px;
+                right: 2px;
+                top: 50%;
+                height: 6px;
+                transform: translateY(-50%);
+            }
+
+            .bg-dots-edge.is-v::before {
+                top: 2px;
+                bottom: 2px;
+                left: 50%;
+                width: 6px;
+                transform: translateX(-50%);
+            }
+
+            .bg-dots-edge:hover:not(:disabled)::before,
+            .bg-dots-edge:focus-visible::before {
+                background: var(--seat-c);
+                opacity: 1;
+                box-shadow: 0 0 0 2px var(--ink);
+            }
+
+            .bg-dots-edge:focus-visible {
+                outline: none;
+            }
+
+            .bg-dots-edge:disabled {
+                cursor: default;
+            }
+
+            .bg-dots-edge.is-taken::before {
+                background: var(--seat-c);
+                opacity: 1;
+                box-shadow: 0 0 0 2px var(--ink);
+            }
+
+            .bg-dots-edge.is-last::before {
+                animation: bg-pulse 0.8s ease-in-out 2;
+            }
+
+            .bg-dots-box {
+                min-width: 0;
+                min-height: 0;
+                display: grid;
+                place-items: center;
+                margin: 4px;
+                font-family: var(--display-font);
+                font-size: clamp(0.75rem, 3vw, 1.2rem);
+            }
+
+            .bg-dots-box.is-filled {
+                background: var(--seat-c);
+                color: #111111;
+                border: 2px solid var(--ink);
+            }
+
+            @keyframes bg-pulse {
+                50% { transform: scale(0.9); }
+            }
+
+            /* Queue and history */
+
+            .bg-list {
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+            }
+
+            .bg-list-row {
+                min-width: 0;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                padding: 5px 10px;
+                background: var(--paper);
+                border: 3px solid var(--ink);
+                border-left: 8px solid var(--member-c, var(--ink));
+                box-shadow: 1.5px 1.5px 0 var(--ink);
+                font-size: 0.82rem;
+                font-weight: 700;
+            }
+
+            .bg-list-row.is-self {
+                background: var(--bg);
+            }
+
+            .bg-list-tag {
+                flex-shrink: 0;
+                min-width: 3.4em;
+                padding: 0 5px;
+                background: var(--yellow);
+                color: #111111;
+                border: 2px solid var(--ink);
+                font-size: 0.68rem;
+                text-align: center;
+                text-transform: uppercase;
+            }
+
+            .bg-list-name {
+                flex: 1;
+                min-width: 0;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+            .bg-history-row {
+                font-weight: 400;
+            }
+
+            .bg-history-row .bg-list-name {
+                white-space: normal;
+                overflow-wrap: anywhere;
+            }
+
+            .bg-history-row b {
+                font-weight: 700;
+            }
+
+            @media (max-width: 575px) {
+                .bg-players {
+                    grid-template-columns: 1fr;
+                }
+
+                .bg-ttt {
+                    gap: 8px;
+                }
+
+                .bg-c4 {
+                    gap: 2px;
+                    padding: 5px;
+                    border-width: 3px;
+                }
+
+                .bg-c4-col {
+                    gap: 4px;
+                    padding: 3px 1px;
+                }
+
+                .bg-c4-disc {
+                    border-width: 2px;
+                }
+
+                @keyframes bg-drop {
+                    from { transform: translateY(calc(var(--drop) * (-100% - 4px))); }
+                    to { transform: translateY(0); }
+                }
+
+                .bg-dots {
+                    --g: 18px;
+                }
+            }
+
+            @media (prefers-reduced-motion: reduce) {
+                .bg-ttt-cell {
+                    transition: none;
+                }
+
+                .bg-ttt-cell.is-win,
+                .bg-c4-disc.is-win,
+                .bg-c4-disc.is-drop,
+                .bg-dots-edge.is-last::before {
+                    animation: none;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <!-- Common layout -->
+        <div id="navbar-container"></div>
+
+        <div class="container-fluid tool-wrapper">
+
+            <!-- Setup view -->
+            <div class="row" id="partySetup"></div>
+
+            <!-- Room view -->
+            <div class="row g-3 g-md-0 gx-md-3 gx-0 d-none party-room" id="partyRoom">
+
+                <div class="col-md-8 editor-panel party-game-panel" id="gamePanel" style="--panel-c: var(--yellow)">
+                    <div class="editor-header">
+                        <span class="editor-title">Board Game Duel</span>
+                        <div class="editor-actions">
+                            <button title="Copy result" data-shortcut="copy" id="copyResultBtn"><i class="bi bi-copy icon-btn"></i></button>
+                            <button title="Fullscreen" onclick="toggleEditorFullScreen('gamePanel')"><i class="bi bi-arrows-fullscreen icon-btn"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="party-body invisible-scrollbars" id="gameBody"></div>
+
+                    <div class="editor-footer">
+                        <div class="status">
+                            <span>Match <b id="footerMatch">0</b></span>
+                            <span>Game <b id="footerGame">-</b></span>
+                            <span>Turn <b id="footerTurn">-</b></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4 editor-panel party-side-panel" id="partyPanel"></div>
+
+            </div>
+        </div>
+
+        <div id="footer-container"></div>
+
+        <!-- Common JS -->
+        <script src="js/tool-help.js"></script>
+        <script src="js/storage.js"></script>
+        <script src="js/common.js"></script>
+        <script src="js/script.js"></script>
+        <script src="js/party-room.js"></script>
+
+        <!-- Custom JS -->
+        <script>
+            const pageTitle = "Board Game Duel";
+
+            const MIN_PLAYERS = 2;
+            const MAX_PLAYERS = 12;
+            const MAX_HISTORY = 20;
+            const TIMER_TICK_MS = 250;
+
+            const GAME_LABELS = { ttt: "Tic-Tac-Toe", c4: "Connect Four", dots: "Dots & Boxes" };
+            const TTT_MARKS = ["X", "O"];
+            const GAME_OPTIONS = Object.entries(GAME_LABELS);
+            const SIZE_OPTIONS = [["3", "3×3 boxes"], ["4", "4×4 boxes"], ["5", "5×5 boxes"]];
+            const TIMER_OPTIONS = [["0", "No timer"], ["15", "15s"], ["30", "30s"]];
+
+            const gameBody = document.getElementById("gameBody");
+
+            // This holds the newest view from the referee, and every client draws only from it.
+            let view = null;
+            let viewDeadline = null;
+            let viewTotalMs = 0;
+            let timerInterval = null;
+
+            // This remembers the last Connect Four move that was animated, so a disc only falls once.
+            let lastDropKey = "";
+
+            // This is true after a player clicks Resign once and must click again to confirm.
+            let resignArmed = false;
+
+            // ---------- Rules ----------
+
+            const TTT_LINES = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]];
+            const C4_COLS = 7;
+            const C4_ROWS = 6;
+
+            // This returns the three cells of a Tic-Tac-Toe line held by one player, or null when there is none.
+            function tttWinLine(board) {
+                for (const line of TTT_LINES) {
+                    const [a, b, c] = line;
+                    if (board[a] !== null && board[a] === board[b] && board[a] === board[c]) return [...line];
+                }
+                return null;
+            }
+
+            // This returns the row a disc lands on in a Connect Four column, where row 0 is the top, or -1 when the column is full.
+            function c4DropRow(board, col) {
+                for (let row = C4_ROWS - 1; row >= 0; row--) {
+                    if (board[row * C4_COLS + col] === null) return row;
+                }
+                return -1;
+            }
+
+            // This returns every cell of a line of four or more through the given cell, or null when there is no such line.
+            function c4WinLine(board, index) {
+                const seat = board[index];
+                if (seat === null || seat === undefined) return null;
+
+                const row = Math.floor(index / C4_COLS);
+                const col = index % C4_COLS;
+
+                for (const [dr, dc] of [[0, 1], [1, 0], [1, 1], [1, -1]]) {
+                    const cells = [index];
+                    for (const sign of [1, -1]) {
+                        let r = row + dr * sign;
+                        let c = col + dc * sign;
+                        while (r >= 0 && r < C4_ROWS && c >= 0 && c < C4_COLS && board[r * C4_COLS + c] === seat) {
+                            cells.push(r * C4_COLS + c);
+                            r += dr * sign;
+                            c += dc * sign;
+                        }
+                    }
+                    if (cells.length >= 4) return cells.sort((x, y) => x - y);
+                }
+
+                return null;
+            }
+
+            // This returns how many lines a Dots & Boxes board has, with the across lines first and the down lines after them.
+            function dotsEdgeCount(size) {
+                return 2 * size * (size + 1);
+            }
+
+            // This returns the four line numbers around a box as top, bottom, left and right.
+            function dotsBoxEdges(size, box) {
+                const row = Math.floor(box / size);
+                const col = box % size;
+                const across = size * (size + 1);
+                return [row * size + col, (row + 1) * size + col, across + row * (size + 1) + col, across + row * (size + 1) + col + 1];
+            }
+
+            // This returns the one or two boxes that touch a line.
+            function dotsEdgeBoxes(size, edge) {
+                const across = size * (size + 1);
+
+                if (edge < across) {
+                    const row = Math.floor(edge / size);
+                    const col = edge % size;
+                    return [row - 1, row].filter(r => r >= 0 && r < size).map(r => r * size + col);
+                }
+
+                const down = edge - across;
+                const row = Math.floor(down / (size + 1));
+                const col = down % (size + 1);
+                return [col - 1, col].filter(c => c >= 0 && c < size).map(c => row * size + c);
+            }
+
+            // This returns the boxes that a new line closes, where edges already holds the new line.
+            function dotsClosedBoxes(size, edges, edge) {
+                return dotsEdgeBoxes(size, edge).filter(box => dotsBoxEdges(size, box).every(e => edges[e] !== null));
+            }
+
+            // ---------- Referee state ----------
+
+            // This holds the whole game, and only the referee keeps it.
+            const game = {
+                phase: "lobby",
+                settings: { game: "ttt", size: "3", timer: "0" },
+                queue: [],
+                seats: [],
+                seatNames: [],
+                match: 0,
+                kind: "ttt",
+                size: 3,
+                board: [],
+                boxes: [],
+                scores: [0, 0],
+                turn: 0,
+                moveCount: 0,
+                lastMove: null,
+                winner: null,
+                line: [],
+                reason: "",
+                lastWinnerId: null,
+                history: [],
+                wins: new Map(),
+                winsByGame: new Map(),
+                deadline: 0,
+                totalMs: 0,
+                timer: null
+            };
+
+            const FRESH_GAME = { ...game, settings: { ...game.settings } };
+
+            function resetGame() {
+                clearTimeout(game.timer);
+                Object.assign(game, FRESH_GAME, {
+                    settings: { ...FRESH_GAME.settings },
+                    queue: [],
+                    seats: [],
+                    seatNames: [],
+                    board: [],
+                    boxes: [],
+                    scores: [0, 0],
+                    line: [],
+                    history: [],
+                    wins: new Map(),
+                    winsByGame: new Map()
+                });
+            }
+
+            function setPhaseTimer(ms, onEnd) {
+                clearTimeout(game.timer);
+                game.totalMs = ms;
+                game.deadline = Date.now() + ms;
+                game.timer = setTimeout(onEnd, ms);
+            }
+
+            function clearPhaseTimer() {
+                clearTimeout(game.timer);
+                game.deadline = 0;
+                game.totalMs = 0;
+            }
+
+            function startMoveTimer() {
+                const ms = Number(game.settings.timer) * 1000;
+                if (ms && game.phase === "play") setPhaseTimer(ms, moveTimedOut);
+                else clearPhaseTimer();
+            }
+
+            // This drops anyone who has left the room from the queue.
+            function syncQueue() {
+                const ids = party.players.map(p => p.id);
+                game.queue = game.queue.filter(id => ids.includes(id));
+            }
+
+            function cellCount(kind, size) {
+                if (kind === "ttt") return 9;
+                if (kind === "c4") return C4_COLS * C4_ROWS;
+                return dotsEdgeCount(size);
+            }
+
+            // This returns the moves the player on turn may make, as cells, columns or lines.
+            function legalMoves() {
+                if (game.kind === "c4") return [...Array(C4_COLS).keys()].filter(col => c4DropRow(game.board, col) >= 0);
+                return game.board.map((value, index) => value === null ? index : -1).filter(index => index >= 0);
+            }
+
+            function startMatch() {
+                syncQueue();
+                if (game.queue.length < 2) {
+                    showInfoToast("Two players must be in the queue to start a match");
+                    return;
+                }
+
+                const pair = game.queue.slice(0, 2);
+
+                // This lets the challenger move first when the last winner stays on, and picks at random otherwise.
+                game.seats = game.lastWinnerId === pair[0] ? [pair[1], pair[0]] : partyShuffle(pair);
+                game.seatNames = game.seats.map(nameOf);
+                game.match += 1;
+                game.kind = game.settings.game;
+                game.size = Number(game.settings.size);
+                game.board = Array(cellCount(game.kind, game.size)).fill(null);
+                game.boxes = game.kind === "dots" ? Array(game.size * game.size).fill(null) : [];
+                game.scores = [0, 0];
+                game.turn = 0;
+                game.moveCount = 0;
+                game.lastMove = null;
+                game.winner = null;
+                game.line = [];
+                game.reason = "";
+                game.phase = "play";
+
+                startMoveTimer();
+                publish();
+            }
+
+            // This plays one legal move for the player on turn and then checks for the end of the match.
+            function applyMove(move) {
+                const seat = game.turn;
+                game.moveCount += 1;
+
+                if (game.kind === "ttt") {
+                    game.board[move] = seat;
+                    game.lastMove = move;
+
+                    const line = tttWinLine(game.board);
+                    if (line) {
+                        game.line = line;
+                        finishMatch(seat, "line");
+                        return;
+                    }
+                    if (game.board.every(value => value !== null)) {
+                        finishMatch("draw", "full");
+                        return;
+                    }
+                } else if (game.kind === "c4") {
+                    const index = c4DropRow(game.board, move) * C4_COLS + move;
+                    game.board[index] = seat;
+                    game.lastMove = index;
+
+                    const line = c4WinLine(game.board, index);
+                    if (line) {
+                        game.line = line;
+                        finishMatch(seat, "line");
+                        return;
+                    }
+                    if (game.board.every(value => value !== null)) {
+                        finishMatch("draw", "full");
+                        return;
+                    }
+                } else {
+                    game.board[move] = seat;
+                    game.lastMove = move;
+
+                    const closed = dotsClosedBoxes(game.size, game.board, move);
+                    for (const box of closed) game.boxes[box] = seat;
+                    game.scores[seat] += closed.length;
+
+                    if (game.boxes.every(value => value !== null)) {
+                        const [a, b] = game.scores;
+                        finishMatch(a === b ? "draw" : a > b ? 0 : 1, "boxes");
+                        return;
+                    }
+
+                    // This gives the same player another move after they close a box.
+                    if (closed.length) {
+                        startMoveTimer();
+                        publish();
+                        return;
+                    }
+                }
+
+                game.turn = 1 - seat;
+                startMoveTimer();
+                publish();
+            }
+
+            function moveTimedOut() {
+                if (game.phase !== "play") return;
+
+                const name = game.seatNames[game.turn];
+
+                // This passes the turn in Dots & Boxes, because a random line could give boxes away.
+                if (game.kind === "dots") {
+                    party.emit({ type: "notice", text: `${name} ran out of time, so the turn passes` });
+                    game.turn = 1 - game.turn;
+                    startMoveTimer();
+                    publish();
+                    return;
+                }
+
+                party.emit({ type: "notice", text: `${name} ran out of time, so a random move was made` });
+                const moves = legalMoves();
+                applyMove(moves[partyRandomInt(moves.length)]);
+            }
+
+            // This moves the loser to the back of the queue and keeps the winner at the front, and on a draw both go to the back.
+            function rotateQueue(winnerId) {
+                const [a, b] = game.seats;
+                const rest = game.queue.filter(id => id !== a && id !== b);
+                const stays = id => game.queue.includes(id);
+
+                if (!winnerId) {
+                    game.queue = [...rest, ...[a, b].filter(stays)];
+                    return;
+                }
+
+                const loserId = winnerId === a ? b : a;
+                game.queue = [...(stays(winnerId) ? [winnerId] : []), ...rest, ...(stays(loserId) ? [loserId] : [])];
+            }
+
+            function finishMatch(winner, reason) {
+                clearPhaseTimer();
+
+                const winnerId = winner === "draw" ? null : game.seats[winner];
+
+                game.phase = "result";
+                game.winner = winner;
+                game.reason = reason;
+                game.lastWinnerId = winnerId;
+
+                if (winnerId) {
+                    game.wins.set(winnerId, (game.wins.get(winnerId) || 0) + 1);
+                    const perGame = game.winsByGame.get(winnerId) || { ttt: 0, c4: 0, dots: 0 };
+                    perGame[game.kind] += 1;
+                    game.winsByGame.set(winnerId, perGame);
+                }
+
+                game.history.unshift({ match: game.match, kind: game.kind, names: [...game.seatNames], winner, reason, scores: [...game.scores] });
+                game.history = game.history.slice(0, MAX_HISTORY);
+
+                rotateQueue(winnerId);
+                publish();
+            }
+
+            function buildView() {
+                return {
+                    phase: game.phase,
+                    settings: { ...game.settings },
+                    match: game.match,
+                    kind: game.kind,
+                    size: game.size,
+                    queue: [...game.queue],
+                    seats: [...game.seats],
+                    seatNames: [...game.seatNames],
+                    board: [...game.board],
+                    boxes: [...game.boxes],
+                    scores: [...game.scores],
+                    turn: game.turn,
+                    moveCount: game.moveCount,
+                    lastMove: game.lastMove,
+                    winner: game.winner,
+                    line: [...game.line],
+                    reason: game.reason,
+                    history: game.history.map(entry => ({ ...entry, names: [...entry.names], scores: [...entry.scores] })),
+                    wins: Object.fromEntries(game.wins),
+                    winsByGame: Object.fromEntries([...game.winsByGame].map(([id, perGame]) => [id, { ...perGame }])),
+                    remainingMs: game.deadline ? Math.max(0, game.deadline - Date.now()) : 0,
+                    totalMs: game.totalMs
+                };
+            }
+
+            function publish() {
+                syncQueue();
+                party.publish(buildView);
+            }
+
+            // This applies one move from a player after checking that the move is allowed right now.
+            function handleAction(player, action) {
+                if (!action || typeof action.type !== "string") return;
+
+                switch (action.type) {
+                    case "setting": {
+                        if (!player.host || game.phase !== "lobby") return;
+                        const allowed = { game: Object.keys(GAME_LABELS), size: SIZE_OPTIONS.map(([v]) => v), timer: TIMER_OPTIONS.map(([v]) => v) };
+                        if (!allowed[action.key] || !allowed[action.key].includes(String(action.value))) return;
+                        game.settings[action.key] = String(action.value);
+                        publish();
+                        return;
+                    }
+
+                    case "start":
+                        if (!player.host || (game.phase !== "lobby" && game.phase !== "result")) return;
+                        startMatch();
+                        return;
+
+                    case "lobby":
+                        if (!player.host || game.phase !== "result") return;
+                        game.phase = "lobby";
+                        publish();
+                        return;
+
+                    case "queue": {
+                        const inQueue = game.queue.includes(player.id);
+
+                        if (action.on === true) {
+                            if (inQueue) return;
+                            game.queue.push(player.id);
+                        } else {
+                            if (!inQueue) return;
+                            if (game.phase === "play" && game.seats.includes(player.id)) {
+                                party.emit({ type: "notice", text: "Finish or resign your match before you leave the queue" }, [player.id]);
+                                return;
+                            }
+                            game.queue = game.queue.filter(id => id !== player.id);
+                        }
+
+                        publish();
+                        return;
+                    }
+
+                    case "move": {
+                        if (game.phase !== "play" || player.id !== game.seats[game.turn]) return;
+                        const move = Number(action.move);
+                        if (!Number.isInteger(move) || !legalMoves().includes(move)) return;
+                        applyMove(move);
+                        return;
+                    }
+
+                    case "resign": {
+                        const seat = game.seats.indexOf(player.id);
+                        if (game.phase !== "play" || seat < 0) return;
+                        finishMatch(1 - seat, "resign");
+                        return;
+                    }
+                }
+            }
+
+            function handleLeave(player) {
+                game.wins.delete(player.id);
+                game.winsByGame.delete(player.id);
+                game.queue = game.queue.filter(id => id !== player.id);
+
+                // This gives the match to the other player when someone at the board leaves.
+                const seat = game.seats.indexOf(player.id);
+                if (game.phase === "play" && seat >= 0) {
+                    finishMatch(1 - seat, "left");
+                    return;
+                }
+
+                publish();
+            }
+
+            // ---------- Room ----------
+
+            const party = createPartyRoom({
+                gameId: "board",
+                title: "Board Game Duel",
+                icon: "bi-grid-3x3",
+                colour: "var(--yellow)",
+                intro: "Play Tic-Tac-Toe, Connect Four or Dots & Boxes against a friend while the rest of the room watches and waits for their turn. The winner stays on.",
+                minPlayers: MIN_PLAYERS,
+                maxPlayers: MAX_PLAYERS,
+                onEnter() {
+                    lastDropKey = "";
+                    if (party.isHost) {
+                        resetGame();
+                        game.queue = [party.myId];
+                        publish();
+                    }
+                    startTimerLoop();
+                },
+                onExit() {
+                    resetGame();
+                    view = null;
+                    lastDropKey = "";
+                    resignArmed = false;
+                    clearInterval(timerInterval);
+                    gameBody.innerHTML = "";
+                },
+                onView(next) {
+                    if (!next || typeof next.phase !== "string") return;
+
+                    view = next;
+                    resignArmed = false;
+                    viewDeadline = partyDeadlineFrom(next.remainingMs);
+                    viewTotalMs = next.totalMs;
+                    render();
+                },
+                onEvent(event) {
+                    if (event && event.type === "notice") showInfoToast(String(event.text));
+                },
+                host: {
+                    onJoin(player) {
+                        if (!game.queue.includes(player.id)) game.queue.push(player.id);
+                        publish();
+                    },
+                    onLeave: handleLeave,
+                    onAction: handleAction
+                }
+            });
+
+            // ---------- Rendering ----------
+
+            function nameOf(id) {
+                const player = party.getPlayer(id);
+                return player ? player.name : "Someone who left";
+            }
+
+            function colourOf(id) {
+                const player = party.getPlayer(id);
+                return partyColourClass(player ? player.order : 0);
+            }
+
+            function seatMark(seat) {
+                return view.kind === "ttt" ? TTT_MARKS[seat] : "";
+            }
+
+            function canMove() {
+                return view.phase === "play" && view.seats[view.turn] === party.myId;
+            }
+
+            function renderPlayers() {
+                return `
+                    <div class="bg-players">${[0, 1].map(seat => {
+                        const id = view.seats[seat];
+                        const isTurn = view.phase === "play" && view.turn === seat;
+                        return `
+                            <div class="bg-player bg-seat${seat}${isTurn ? " is-turn" : ""}">
+                                <span class="bg-player-mark" aria-hidden="true">${seatMark(seat)}</span>
+                                <span class="bg-player-name" title="${partyEscapeHtml(view.seatNames[seat])}">${isTurn ? `<i class="bi bi-caret-right-fill"></i> ` : ""}${partyEscapeHtml(view.seatNames[seat])}${id === party.myId ? " (you)" : ""}</span>
+                                ${view.kind === "dots" ? `<b class="bg-player-score" title="Boxes">${view.scores[seat]}</b>` : ""}
+                            </div>`;
+                    }).join("")}</div>`;
+            }
+
+            function renderTtt() {
+                const active = canMove();
+
+                return `<div class="bg-ttt" role="group" aria-label="Tic-Tac-Toe board">${view.board.map((value, index) => {
+                    const filled = value !== null;
+                    const label = `Row ${Math.floor(index / 3) + 1}, column ${index % 3 + 1}, ${filled ? TTT_MARKS[value] : "empty"}`;
+                    return `<button type="button" class="bg-ttt-cell${filled ? ` bg-seat${value} is-filled` : ""}${view.line.includes(index) ? " is-win" : ""}" data-act="move" data-move="${index}" aria-label="${label}"${active && !filled ? "" : " disabled"}>${filled ? TTT_MARKS[value] : ""}</button>`;
+                }).join("")}</div>`;
+            }
+
+            function renderC4() {
+                const active = canMove();
+                const dropKey = `${view.match}:${view.moveCount}`;
+                const animate = view.lastMove !== null && dropKey !== lastDropKey;
+                lastDropKey = dropKey;
+
+                const columns = [];
+                for (let col = 0; col < C4_COLS; col++) {
+                    let free = 0;
+                    let discs = "";
+
+                    for (let row = 0; row < C4_ROWS; row++) {
+                        const index = row * C4_COLS + col;
+                        const value = view.board[index];
+                        if (value === null) free += 1;
+
+                        const classes = ["bg-c4-disc"];
+                        if (value !== null) classes.push(`bg-seat${value}`, "is-filled");
+                        if (view.line.includes(index)) classes.push("is-win");
+                        if (animate && index === view.lastMove) classes.push("is-drop");
+
+                        discs += `<span class="${classes.join(" ")}"${classes.includes("is-drop") ? ` style="--drop: ${row + 1}"` : ""}></span>`;
+                    }
+
+                    columns.push(`<button type="button" class="bg-c4-col" data-act="move" data-move="${col}" aria-label="Column ${col + 1}, ${free} free"${active && free ? "" : " disabled"}>${discs}</button>`);
+                }
+
+                return `<div class="bg-c4 bg-seat${view.turn}" role="group" aria-label="Connect Four board">${columns.join("")}</div>`;
+            }
+
+            function renderDots() {
+                const size = view.size;
+                const across = size * (size + 1);
+                const active = canMove();
+                let cells = "";
+
+                for (let gr = 0; gr <= 2 * size; gr++) {
+                    for (let gc = 0; gc <= 2 * size; gc++) {
+                        if (gr % 2 === 0 && gc % 2 === 0) {
+                            cells += `<span class="bg-dot"></span>`;
+                            continue;
+                        }
+
+                        if (gr % 2 === 1 && gc % 2 === 1) {
+                            const box = ((gr - 1) / 2) * size + (gc - 1) / 2;
+                            const owner = view.boxes[box];
+                            cells += owner === null
+                                ? `<span class="bg-dots-box"></span>`
+                                : `<span class="bg-dots-box bg-seat${owner} is-filled" title="${partyEscapeHtml(view.seatNames[owner])}">${partyEscapeHtml(view.seatNames[owner].charAt(0).toUpperCase())}</span>`;
+                            continue;
+                        }
+
+                        const isAcross = gr % 2 === 0;
+                        const row = isAcross ? gr / 2 : (gr - 1) / 2;
+                        const col = isAcross ? (gc - 1) / 2 : gc / 2;
+                        const edge = isAcross ? row * size + col : across + row * (size + 1) + col;
+                        const owner = view.board[edge];
+                        const taken = owner !== null;
+                        const label = `${isAcross ? "Across" : "Down"} line at row ${row + 1}, column ${col + 1}, ${taken ? "drawn" : "open"}`;
+
+                        cells += `<button type="button" class="bg-dots-edge ${isAcross ? "is-h" : "is-v"}${taken ? ` is-taken bg-seat${owner}` : ""}${edge === view.lastMove ? " is-last" : ""}" data-act="move" data-move="${edge}" aria-label="${label}"${active && !taken ? "" : " disabled"}></button>`;
+                    }
+                }
+
+                return `<div class="bg-dots bg-seat${view.turn}" style="--n: ${size}" role="group" aria-label="Dots and Boxes board">${cells}</div>`;
+            }
+
+            function renderBoard() {
+                if (view.kind === "c4") return renderC4();
+                if (view.kind === "dots") return renderDots();
+                return renderTtt();
+            }
+
+            function renderQueue() {
+                const inQueue = view.queue.includes(party.myId);
+                const playing = view.phase === "play" && view.seats.includes(party.myId);
+
+                return `
+                    <div>
+                        <span class="party-label">Queue (${view.queue.length})</span>
+                        ${view.queue.length ? `<div class="bg-list">${view.queue.map((id, index) => {
+                            const tag = index < 2 ? (view.phase === "play" ? "Playing" : "Next") : `#${index - 1}`;
+                            return `
+                                <div class="bg-list-row ${colourOf(id)}${id === party.myId ? " is-self" : ""}">
+                                    <span class="bg-list-tag">${tag}</span>
+                                    <span class="bg-list-name" title="${partyEscapeHtml(nameOf(id))}">${partyEscapeHtml(nameOf(id))}${id === party.myId ? " (you)" : ""}</span>
+                                    <span title="Wins">${view.wins[id] || 0} <i class="bi bi-trophy-fill"></i></span>
+                                </div>`;
+                        }).join("")}</div>` : `<div class="party-empty-hint">Nobody is in the queue</div>`}
+                    </div>
+                    ${playing ? "" : `<button type="button" class="btn action-btn-ghost" data-act="queue" data-on="${inQueue ? "0" : "1"}"><i class="bi ${inQueue ? "bi-box-arrow-left" : "bi-box-arrow-in-right"}"></i> ${inQueue ? "Leave the queue and watch" : "Join the queue"}</button>`}`;
+            }
+
+            function renderScores() {
+                const rows = party.players.map(p => ({ name: p.name, order: p.order, self: p.id === party.myId, points: view.wins[p.id] || 0 }));
+
+                return `
+                    <div>
+                        <span class="party-label">Wins</span>
+                        ${partyScoreboardHtml(rows)}
+                    </div>`;
+            }
+
+            function historyText(entry) {
+                const [a, b] = entry.names.map(partyEscapeHtml);
+                const score = entry.kind === "dots" ? ` (${entry.scores[0]}-${entry.scores[1]})` : "";
+                if (entry.winner === "draw") return `<b>${a}</b> and <b>${b}</b> drew${score}`;
+                const winner = entry.winner === 0 ? a : b;
+                const loser = entry.winner === 0 ? b : a;
+                const how = entry.reason === "resign" ? " (resigned)" : entry.reason === "left" ? " (left)" : "";
+                return `<b>${winner}</b> beat <b>${loser}</b>${score}${how}`;
+            }
+
+            function renderHistory() {
+                if (!view.history.length) return "";
+
+                return `
+                    <div>
+                        <span class="party-label">Match history</span>
+                        <div class="bg-list">${view.history.map(entry => `
+                            <div class="bg-list-row bg-history-row">
+                                <span class="bg-list-tag">#${entry.match}</span>
+                                <span class="bg-list-name">${partyEscapeHtml(GAME_LABELS[entry.kind])} · ${historyText(entry)}</span>
+                            </div>`).join("")}</div>
+                    </div>`;
+            }
+
+            function renderLobby() {
+                const canEdit = party.isHost;
+                const ready = view.queue.length >= 2;
+
+                return `
+                    <div class="party-stage" style="--stage-c: var(--yellow)">
+                        <span class="party-stage-kicker">How to play</span>
+                        <p class="party-stage-text">The first two players in the queue play, and everyone else watches live. The winner stays on and the loser goes to the back of the queue. After a draw, both players go to the back.</p>
+                    </div>
+
+                    <div class="party-settings">
+                        <div>
+                            <span class="party-label">Game</span>
+                            ${partySegmentHtml("game", GAME_OPTIONS, view.settings.game, !canEdit)}
+                        </div>
+                        ${view.settings.game === "dots" ? `
+                            <div>
+                                <span class="party-label">Board size</span>
+                                ${partySegmentHtml("size", SIZE_OPTIONS, view.settings.size, !canEdit)}
+                            </div>` : ""}
+                        <div>
+                            <span class="party-label">Turn timer</span>
+                            ${partySegmentHtml("timer", TIMER_OPTIONS, view.settings.timer, !canEdit)}
+                        </div>
+                        <div class="party-hint">${view.settings.game === "dots" ? "When time runs out, the turn passes to the other player." : "When time runs out, a random move is made."}</div>
+                    </div>
+
+                    ${canEdit
+                        ? `<button type="button" class="btn action-btn-primary" data-act="start"${ready ? "" : " disabled"}><i class="bi bi-play-fill"></i> Start match</button>
+                           <div class="party-hint text-center">${ready ? `${partyEscapeHtml(nameOf(view.queue[0]))} and ${partyEscapeHtml(nameOf(view.queue[1]))} play first.` : "Waiting for two players in the queue."}</div>`
+                        : `<div class="party-empty-hint">Waiting for the room creator to start the match</div>`}
+
+                    ${renderQueue()}
+                    ${renderScores()}
+                    ${renderHistory()}`;
+            }
+
+            function renderPlay() {
+                const mySeat = view.seats.indexOf(party.myId);
+                const turnName = partyEscapeHtml(view.seatNames[view.turn]);
+                let hint;
+
+                if (mySeat < 0) hint = `You are watching. It is ${turnName}'s turn.`;
+                else if (canMove()) hint = view.kind === "dots" ? "Your turn: draw a line, and close a box to move again." : "Your turn: make a move.";
+                else hint = `Waiting for ${turnName}.`;
+
+                return `
+                    ${renderPlayers()}
+                    <div class="party-hint text-center">${hint}</div>
+                    ${viewTotalMs ? partyTimerHtml("phaseTimer") : ""}
+                    ${renderBoard()}
+                    ${mySeat >= 0 ? `<button type="button" class="btn ${resignArmed ? "action-btn-primary" : "action-btn-ghost"}" data-act="resign"><i class="bi bi-flag"></i> ${resignArmed ? "Click again to resign" : "Resign"}</button>` : ""}
+                    ${renderQueue()}
+                    ${renderScores()}
+                    ${renderHistory()}`;
+            }
+
+            function resultHeadline() {
+                if (view.winner === "draw") return view.kind === "dots" ? `A draw at ${view.scores[0]}-${view.scores[1]}` : "It is a draw";
+
+                const winner = partyEscapeHtml(view.seatNames[view.winner]);
+                const loser = partyEscapeHtml(view.seatNames[1 - view.winner]);
+
+                switch (view.reason) {
+                    case "resign": return `${loser} resigned, so ${winner} wins`;
+                    case "left": return `${loser} left, so ${winner} wins`;
+                    case "boxes": return `${winner} wins ${Math.max(...view.scores)}-${Math.min(...view.scores)}`;
+                    default: return view.kind === "c4" ? `${winner} connected four!` : `${winner} got three in a row!`;
+                }
+            }
+
+            function renderResult() {
+                const ready = view.queue.length >= 2;
+
+                return `
+                    <div class="party-stage" style="--stage-c: ${view.winner === "draw" ? "var(--cyan)" : "var(--lime)"}">
+                        <span class="party-stage-kicker">Match ${view.match} · ${partyEscapeHtml(GAME_LABELS[view.kind])}</span>
+                        <h2 class="party-stage-title">${resultHeadline()}</h2>
+                        <p class="party-stage-text">${ready ? `Next up: ${partyEscapeHtml(nameOf(view.queue[0]))} against ${partyEscapeHtml(nameOf(view.queue[1]))}.` : "Two players must be in the queue for the next match."}</p>
+                    </div>
+
+                    ${renderPlayers()}
+                    ${renderBoard()}
+
+                    <div class="party-row">
+                        <button type="button" class="btn action-btn-ghost" data-act="share"><i class="bi bi-share"></i> Share result</button>
+                        ${party.isHost ? `
+                            <button type="button" class="btn action-btn-ghost" data-act="lobby"><i class="bi bi-sliders"></i> Change game</button>
+                            <button type="button" class="btn action-btn-primary" data-act="start"${ready ? "" : " disabled"}><i class="bi bi-arrow-repeat"></i> Next match</button>` : ""}
+                    </div>
+                    ${party.isHost ? "" : `<div class="party-hint text-center">Waiting for the room creator to start the next match.</div>`}
+
+                    ${renderQueue()}
+                    ${renderScores()}
+                    ${renderHistory()}`;
+            }
+
+            function render() {
+                if (!view) return;
+
+                // This keeps keyboard focus on the same board button when a new view arrives.
+                const active = document.activeElement;
+                const focusMove = active && gameBody.contains(active) && active.dataset ? active.dataset.move : undefined;
+
+                switch (view.phase) {
+                    case "lobby": gameBody.innerHTML = renderLobby(); break;
+                    case "play": gameBody.innerHTML = renderPlay(); break;
+                    case "result": gameBody.innerHTML = renderResult(); break;
+                }
+
+                if (focusMove !== undefined) {
+                    const again = gameBody.querySelector(`[data-move="${focusMove}"]`);
+                    if (again && !again.disabled) again.focus();
+                }
+
+                updateTimer();
+                renderBadges();
+                renderFooter();
+            }
+
+            function renderBadges() {
+                const badges = {};
+
+                for (const player of party.players) {
+                    const badge = { chip: view.wins[player.id] || 0 };
+                    const queueIndex = view.queue.indexOf(player.id);
+                    const seat = view.seats.indexOf(player.id);
+
+                    if (view.phase === "play" && seat >= 0) {
+                        badge.note = "playing";
+                        if (view.turn === seat) {
+                            badge.icon = "bi-hand-index-thumb-fill";
+                            badge.iconTitle = "Their turn";
+                        }
+                    } else if (queueIndex >= 0) {
+                        badge.note = queueIndex < 2 ? "next" : `#${queueIndex - 1} in queue`;
+                    } else {
+                        badge.note = "watching";
+                    }
+
+                    badges[player.id] = badge;
+                }
+
+                party.setBadges(badges);
+            }
+
+            function renderFooter() {
+                const kind = view.phase === "lobby" ? view.settings.game : view.kind;
+                document.getElementById("footerMatch").textContent = view.match;
+                document.getElementById("footerGame").textContent = GAME_LABELS[kind] || "-";
+                document.getElementById("footerTurn").textContent = view.phase === "play" ? view.seatNames[view.turn] : "-";
+            }
+
+            function updateTimer() {
+                updatePartyTimer(document.getElementById("phaseTimer"), viewDeadline, viewTotalMs);
+            }
+
+            function startTimerLoop() {
+                clearInterval(timerInterval);
+                timerInterval = setInterval(updateTimer, TIMER_TICK_MS);
+            }
+
+            function serializeResult() {
+                if (!view || view.phase !== "result") return "";
+
+                const label = GAME_LABELS[view.kind];
+                const mySeat = view.seats.indexOf(party.myId);
+
+                if (view.winner !== "draw" && mySeat === view.winner) {
+                    const count = (view.winsByGame[party.myId] || {})[view.kind] || 1;
+                    return `🏆 I won ${count} game${count === 1 ? "" : "s"} of ${label} in Board Game Duel`;
+                }
+
+                if (view.winner === "draw") return `🤝 ${view.seatNames[0]} and ${view.seatNames[1]} drew at ${label} in Board Game Duel`;
+                return `🏆 ${view.seatNames[view.winner]} beat ${view.seatNames[1 - view.winner]} at ${label} in Board Game Duel`;
+            }
+
+            // ---------- UI events ----------
+
+            bindPartySegments(gameBody, (key, value) => party.act({ type: "setting", key, value }));
+
+            gameBody.addEventListener("click", event => {
+                const button = event.target.closest("[data-act]");
+                if (!button || button.disabled) return;
+
+                switch (button.dataset.act) {
+                    case "start": party.act({ type: "start" }); break;
+                    case "lobby": party.act({ type: "lobby" }); break;
+                    case "queue": party.act({ type: "queue", on: button.dataset.on === "1" }); break;
+                    case "move": party.act({ type: "move", move: Number(button.dataset.move) }); break;
+                    case "resign":
+                        // This asks for a second click so a resign is never a slip of the finger.
+                        if (resignArmed) {
+                            resignArmed = false;
+                            party.act({ type: "resign" });
+                        } else {
+                            resignArmed = true;
+                            render();
+                        }
+                        break;
+                    case "share": partyShareText(serializeResult(), button); break;
+                }
+            });
+
+            document.getElementById("copyResultBtn").addEventListener("click", event => partyCopyText(serializeResult(), event.currentTarget));
+        </script>
+    </body>
+</html>
